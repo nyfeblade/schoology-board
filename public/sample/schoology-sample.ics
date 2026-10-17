@@ -1,0 +1,197 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Schoology Board//Sample feed (fake data)//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Sample Student
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261019T120000Z
+DTEND;VALUE=DATE-TIME:20261019T120000Z
+UID:sb-sample-001@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000001/info
+SUMMARY:Lab Safety Contract (signed)
+DESCRIPTION:Upload a photo of the signed contract. - Link: https://example.
+ schoology.com/assignment/1000000001/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261020T035900Z
+DTEND;VALUE=DATE-TIME:20261020T035900Z
+UID:sb-sample-002@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000002/info
+SUMMARY:Problem Set 4.2
+DESCRIPTION:Section 4.2\, problems 1-29 odd. Show your work. - Link: https:
+ //example.schoology.com/assignment/1000000002/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261020T035900Z
+DTEND;VALUE=DATE-TIME:20261020T035900Z
+UID:sb-sample-003@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000003/assessment
+SUMMARY:Vocabulario Quiz 3B
+DESCRIPTION:Ten questions\, one attempt. - Link: https://example.schoology.
+ com/assignment/1000000003/assessment
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261021T035900Z
+DTEND;VALUE=DATE-TIME:20261021T035900Z
+UID:sb-sample-004@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000004/info
+SUMMARY:DBQ: Causes of the French Revolution
+DESCRIPTION:Use at least four of the six documents. 600-900 words. - Link: 
+ https://example.schoology.com/assignment/1000000004/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261021T120000Z
+DTEND;VALUE=DATE-TIME:20261021T120000Z
+UID:sb-sample-005@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000005/info
+SUMMARY:Lab Report: Osmosis in Potato Cores
+DESCRIPTION:Include your data table\, graph\, and a conclusion\; one per la
+ b group. - Link: https://example.schoology.com/assignment/1000000005/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261022T035900Z
+DTEND;VALUE=DATE-TIME:20261022T035900Z
+UID:sb-sample-006@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000006/info
+SUMMARY:Problem Set 4.3
+DESCRIPTION:Section 4.3\, problems 2-30 even. - Link: https://example.schoo
+ logy.com/assignment/1000000006/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261022T035900Z
+DTEND;VALUE=DATE-TIME:20261022T035900Z
+UID:sb-sample-007@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000007/info
+SUMMARY:Essay Outline: Of Mice and Men\, Chapters 1-3
+DESCRIPTION:Thesis + three body paragraph topics\; use the outline template
+ \; cite page numbers. - Link: https://example.schoology.com/assignment/100
+ 0000007/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261023T035900Z
+DTEND;VALUE=DATE-TIME:20261023T035900Z
+UID:sb-sample-008@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000008/info
+SUMMARY:Práctica 3-1: Preterite vs. Imperfect
+DESCRIPTION:Workbook pp. 41-43. - Link: https://example.schoology.com/assig
+ nment/1000000008/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261023T035900Z
+DTEND;VALUE=DATE-TIME:20261023T035900Z
+UID:sb-sample-009@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000009/assessment
+SUMMARY:Cell Organelles Quiz
+DESCRIPTION:Covers sections 7.1-7.3. - Link: https://example.schoology.com/
+ assignment/1000000009/assessment
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261023T120000Z
+DTEND;VALUE=DATE-TIME:20261023T120000Z
+UID:sb-sample-010@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000010/info
+SUMMARY:Primary Source Analysis: Declaration of the Rights of Man
+DESCRIPTION:Answer the five SOAPS questions. - Link: https://example.school
+ ogy.com/assignment/1000000010/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261024T035900Z
+DTEND;VALUE=DATE-TIME:20261024T035900Z
+UID:sb-sample-011@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000011/info
+SUMMARY:Two-Column Proof Practice
+DESCRIPTION:Proofs 1-6 on the handout. - Link: https://example.schoology.co
+ m/assignment/1000000011/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261024T035900Z
+DTEND;VALUE=DATE-TIME:20261024T035900Z
+UID:sb-sample-012@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000012/info
+SUMMARY:Novel Reading Log\, Week 8
+DESCRIPTION:Log at least 120 minutes\; one-paragraph reflection. - Link: ht
+ tps://example.schoology.com/assignment/1000000012/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261024T160000Z
+DTEND;VALUE=DATE-TIME:20261024T160000Z
+UID:sb-sample-013@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000013/assessment
+SUMMARY:Geometry Chapter 4 Quiz
+DESCRIPTION:Opens Friday 3 PM\, closes Saturday noon. - Link: https://examp
+ le.schoology.com/assignment/1000000013/assessment
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261025T035900Z
+DTEND;VALUE=DATE-TIME:20261025T035900Z
+UID:sb-sample-014@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000014/info
+SUMMARY:Module 2 Proctor Note and Answer Sheet
+DESCRIPTION:Your proctor signs and uploads this. - Link: https://example.sc
+ hoology.com/assignment/1000000014/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261026T120000Z
+DTEND;VALUE=DATE-TIME:20261026T120000Z
+UID:sb-sample-015@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000015/info
+SUMMARY:Spanish Oral Presentation: Mi rutina
+DESCRIPTION:Two minutes\, no notes. - Link: https://example.schoology.com/a
+ ssignment/1000000015/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261028T035900Z
+DTEND;VALUE=DATE-TIME:20261028T035900Z
+UID:sb-sample-016@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000016/assessment
+SUMMARY:History Unit 3 Test
+DESCRIPTION:50 minutes\, one attempt. - Link: https://example.schoology.com
+ /assignment/1000000016/assessment
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261028T120000Z
+DTEND;VALUE=DATE-TIME:20261028T120000Z
+UID:sb-sample-017@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000017/info
+SUMMARY:Biology Reading: Chapter 8 Notes
+DESCRIPTION:Cornell notes on 8.1-8.2. - Link: https://example.schoology.com
+ /assignment/1000000017/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE-TIME:20261031T035900Z
+DTEND;VALUE=DATE-TIME:20261031T035900Z
+UID:sb-sample-018@example.invalid
+URL;VALUE=URI:https://example.schoology.com/assignment/1000000018/info
+SUMMARY:Essay Draft: Of Mice and Men
+DESCRIPTION:Full draft\, 900-1200 words. - Link: https://example.schoology.
+ com/assignment/1000000018/info
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261016T120000Z
+DTSTART;VALUE=DATE:20261023
+DTEND;VALUE=DATE:20261024
+UID:sb-sample-019@example.invalid
+URL;VALUE=URI:https://example.schoology.com/event/1000000019/profile
+SUMMARY:Picture Day
+DESCRIPTION: - Link: https://example.schoology.com/event/1000000019/profile
+END:VEVENT
+END:VCALENDAR

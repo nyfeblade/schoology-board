@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Schoology Board: your assignments on a kanban board</title>
+<meta name="description" content="Paste your Schoology calendar link or drop your .ics and Course Assignment Sheet PDFs. Get a drag-and-drop board that also works offline. Nothing is stored on a server.">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Schoology Board">
+<meta property="og:description" content="Your Schoology assignments on a drag-and-drop board. Works offline. Free and open source.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/board/board.css">
+</head>
+<body>
+<!-- The board is framework-free so the exact same code ships inside the offline download. -->
+<div id="app"><div class="loading"><span class="spinner"></span> Loading your board…</div><noscript>Schoology Board needs JavaScript.</noscript></div>
+<script id="sb-config" type="application/json">{"mode":"web","proxy":"/api/feed","assetBase":"/board/","sampleUrl":"/sample/schoology-sample.ics"}</script>
+<script src="/board/ics.js" defer></script>
+<script src="/board/cas.js" defer></script>
+<script src="/board/board.js" defer></script>
+</body>
+</html>

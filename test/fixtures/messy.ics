@@ -1,0 +1,72 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Schoology Board//Messy parser fixture (fake data)//EN
+BEGIN:VTIMEZONE
+TZID:America/Chicago
+BEGIN:STANDARD
+DTSTART:19701101T020000
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0600
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:messy-1@example.invalid
+DTSTART;TZID=America/Chicago:20261020T235900
+SUMMARY:Essay\, part 2\; final draft \\ revisions
+DESCRIPTION:Line one\nLine two - Link: https://example.schoology.com/a
+ ssignment/2000000001/info
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Reminder that must be ignored
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:messy-2@example.invalid
+DTSTART;VALUE=DATE:20261023
+SUMMARY:No School - Teacher Workday
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261021T150000Z
+SUMMARY:Event with no UID or link
+END:VEVENT
+BEGIN:VEVENT
+UID:messy-4@example.invalid
+DTSTART;TZID="Eastern Standard Time":20261022T080000
+URL;VALUE=URI:https://example.schoology.com/assessment/2000000004/info
+summary:Lowercase property names and a Windows zone
+END:VEVENT
+BEGIN:VEVENT
+UID:messy-5@example.invalid
+DTSTART:20261024T090000
+SUMMARY:Floating local time
+STATUS:CANCELLED
+END:VEVENT
+BEGIN:VEVENT
+UID:messy-6@example.invalid
+DTSTART:20261024T090000
+SUMMARY:Floating local time
+CATEGORIES:Chemistry\, Honors,Science
+END:VEVENT
+BEGIN:VEVENT
+UID:messy-7@example.invalid
+DUE:20261025T035900Z
+SUMMARY:Lab 3 write-up (Physics A)
+END:VEVENT
+BEGIN:VEVENT
+UID:messy-8@example.invalid
+DTSTART:20261026T035900Z
+SUMMARY:Lab 4 write-up (Physics A)
+END:VEVENT
+BEGIN:VEVENT
+UID:messy-9@example.invalid
+SUMMARY:No date at all
+END:VEVENT
+BEGIN:VEVENT
+UID:messy-10@example.invalid
+DTSTART:20261027T120000Z
+SUMMARY:Read pp 10-20 (pp 10-20)
+DESCRIPTION:Unicode folding test caf√
+ © done
+END:VEVENT
+END:VCALENDAR

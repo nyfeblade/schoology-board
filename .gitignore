@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+.vercel/
+public/board/vendor/
+scratch/
+test-results/
+*.log
+.env*
