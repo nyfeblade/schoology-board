@@ -190,7 +190,7 @@
     });
     if (!course && opts.fileName) {
       course = decodeURIComponent(String(opts.fileName).replace(/\+/g, ' '))
-        .replace(/\.pdf$/i, '').replace(/[-_ ]*([A-Z]{2,6} )?Course Assignment Sheet.*$/i, '').replace(/[_+]/g, ' ').trim() || null;
+        .replace(/\.pdf$/i, '').replace(/[-_ ]*Course Assignment Sheet.*$/i, '').replace(/[_+]/g, ' ').trim() || null;
       if (/^COURSE[ _]NAME$/i.test(course || '')) course = null;
     }
     if (!course) { course = 'Unsorted'; warnings.push('Could not find the course name; using "Unsorted".'); }
