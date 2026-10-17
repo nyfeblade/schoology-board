@@ -46,15 +46,29 @@
     key: svg('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>'),
     left: svg('<path d="m15 18-6-6 6-6"/>'),
     right: svg('<path d="m9 18 6-6-6-6"/>'),
-    x: svg('<path d="M18 6 6 18M6 6l12 12"/>')
+    x: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
+    more: svg('<circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/>'),
+    upload: svg('<path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>'),
+    imp: svg('<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>'),
+    search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+    filter: svg('<path d="M3 5h18M6 12h12M10 19h4"/>'),
+    check: svg('<path d="M20 6 9 17l-5-5"/>'),
+    edit: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
+    trash: svg('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'),
+    ext: svg('<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>'),
+    arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+    star: svg('<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>')
   };
+  var BIG_UPLOAD = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>';
+  var REPO = 'https://github.com/nyfeblade/schoology-board';
+  var SHORT = { todo: 'To do', started: 'Started', proctor: 'Proctor', done: 'Done' };
 
   // ---------- state ----------
   function blank() {
     return {
       v: 1, boardId: rid(), updated: 0, ics: {}, cas: {}, custom: {}, cats: [], order: [], rename: {},
-      ov: {}, hidden: {}, status: {}, rules: [], lastImport: null, feedUrl: '', seenExport: null,
-      prefs: { view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, course: null, q: '' }
+      ov: {}, hidden: {}, status: {}, rules: [], lastImport: null, feedUrl: '', seenExport: null, createdAt: null,
+      prefs: { view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '' }
     };
   }
   function normalizeState(st) {
@@ -71,13 +85,17 @@
     var st = saved;
     if (baked && (!saved || (saved.seenExport !== baked.exportedAt && (baked.updated || 0) > (saved.updated || 0)))) st = baked;
     st = normalizeState(st);
+    // Every visit opens on this week; the range dates are remembered.
+    st.prefs.view = 'week'; st.prefs.weekOffset = 0; st.prefs.q = '';
     if (baked) st.seenExport = baked.exportedAt;
+    // Boards from before "board created" existed start counting from the first load after the update.
+    if (!st.createdAt && Object.keys(st.ics).length + Object.keys(st.cas).length + Object.keys(st.custom).length) { st.createdAt = Date.now(); st._migrated = true; }
     return st;
   }
   function save() {
     S.updated = Date.now();
     try { localStorage.setItem(K, JSON.stringify(S)); }
-    catch (e) { toast("Couldn't save to this browser's storage. Changes will be lost on reload."); }
+    catch (e) { toastErr("Couldn't save to this browser's storage. Changes will be lost on reload."); }
   }
 
   // ---------- categories ----------
@@ -135,6 +153,8 @@
     out.forEach(function (it) {
       var ov = S.ov[it.id];
       if (ov) OV_FIELDS.forEach(function (f) { if (ov[f] !== undefined) it[f] = ov[f]; });
+      // Audience tags ("Grades 7-12", "FT Students Only") are never classes, even in boards saved before this rule.
+      if (it.source === 'ics' && it.course && !(ov && ov.course) && ics.isAudienceTag(it.course)) it.course = null;
       if (!it.course && it.source === 'ics') { var rc = ruleCourse(it.title); if (rc) it.course = rc; }
       it.explicitCourse = !!it.course;
     });
@@ -152,14 +172,36 @@
       }
       return true;
     });
+    // Still unsorted calendar items: guess the class from the title (CAS sheets are the source of truth).
+    var guess = classifier(out);
+    result.forEach(function (it) {
+      if (it.source === 'ics' && !it.explicitCourse) { var g = guess(it.title, it.kind); if (g) { it.course = g.course; it.autoCourse = g.why; } }
+    });
     result.forEach(function (it) {
       it.course = alias(it.course || UNSORTED) || UNSORTED;
       it.d = toDate(it.due);
       it.col = S.status[it.id] || it.inheritStatus || (/\bproctor/i.test(it.title) ? 'proctor' : 'todo');
       if (COL_IDS.indexOf(it.col) < 0) it.col = 'todo';
+      // Imported work due before the board existed counts as already handled: hidden, not overdue, not Completed.
+      it.pre = isPre(it);
     });
-    return result;
+    return S.prefs.showPre ? result : result.filter(function (it) { return !it.pre; });
   }
+  function classifier(out) {
+    var known = [], seen = {}, examples = [];
+    function add(c) { c = c && alias(c); if (c && c !== UNSORTED && !seen[c]) { seen[c] = 1; known.push(c); } }
+    out.forEach(function (it) {
+      if (it.source === 'cas') { add(it.course); examples.push({ title: it.title, course: alias(it.course) }); }
+    });
+    S.cats.forEach(add);
+    out.forEach(function (it) {
+      if (it.source === 'custom' && it.course) { add(it.course); examples.push({ title: it.title, course: alias(it.course) }); }
+      if (it.source === 'ics' && it.explicitCourse) { add(it.course); if (S.ov[it.id] && S.ov[it.id].course) examples.push({ title: it.title, course: alias(it.course) }); }
+    });
+    return ics.buildClassifier(known, examples, out.filter(function (i) { return i.source === 'ics'; }));
+  }
+  function isPre(it) { return !!S.createdAt && it.source !== 'custom' && it.d.getTime() < S.createdAt; }
+  function markCreated(at) { if (!S.createdAt) S.createdAt = at || Date.now(); }
   function categories(items) {
     var names = {};
     (items || allItems()).forEach(function (i) { names[i.course] = (names[i.course] || 0) + 1; });
@@ -178,7 +220,7 @@
   // ---------- views ----------
   function viewRange() {
     var p = S.prefs, today = sod(new Date());
-    if (p.view === 'today') return { from: today, to: addDays(today, 1), label: 'Today', overdue: true };
+    if (p.view === 'today') return { from: today, to: addDays(today, 1), label: 'Today' }; // today's local date only
     if (p.view === 'week') {
       var m = addDays(monday(today), 7 * (p.weekOffset || 0)), e = addDays(m, 6);
       return { from: m, to: addDays(m, 7), label: fmtShort(m) + '\u2013' + (e.getMonth() === m.getMonth() ? e.getDate() : fmtShort(e)) };
@@ -194,7 +236,6 @@
     if (S.prefs.hidePast && it.d < today) return false;
     if (!r.from) return true;
     if (it.d >= r.from && it.d < r.to) return true;
-    if (r.overdue && it.d < r.from && it.col !== 'done') return true;
     return false;
   }
   function matchesQ(it) {
@@ -204,14 +245,78 @@
   }
 
   // ---------- toast ----------
-  function toast(msg, action, fn, ms) {
+  // Bottom-right on desktop, bottom-centre on phones. Neutral by default, red border only for errors.
+  function toast(msg, action, fn, ms, isErr) {
     var box = $('#sb-toast');
     if (!box) { box = document.createElement('div'); box.id = 'sb-toast'; box.setAttribute('role', 'status'); box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
-    var t = document.createElement('div'); t.className = 'toast';
+    while (box.children.length >= 3) box.firstChild.remove();
+    var t = document.createElement('div'); t.className = 'toast' + (isErr ? ' err' : '');
     t.innerHTML = '<span>' + esc(msg) + '</span>' + (action ? '<button type="button">' + esc(action) + '</button>' : '');
     if (action) t.querySelector('button').onclick = function () { fn(); t.remove(); };
     box.appendChild(t);
-    setTimeout(function () { t.remove(); }, ms || (action ? 7000 : 3500));
+    setTimeout(function () { t.remove(); }, ms || (action ? 6000 : 3000));
+  }
+  function toastErr(msg) { toast(msg, null, null, 6000, true); }
+
+  // ---------- menus (popover on desktop, bottom sheet on phones) ----------
+  var openMenu = null;
+  function sheetMode() { return matchMedia('(max-width: 900px), (pointer: coarse)').matches; }
+  function closeMenu(restore) {
+    if (!openMenu) return;
+    var m = openMenu; openMenu = null;
+    m.el.remove(); if (m.scrim) m.scrim.remove();
+    m.anchor.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', m.outside, true);
+    window.removeEventListener('scroll', m.onScroll, true);
+    window.removeEventListener('resize', m.onScroll);
+    if (restore && document.contains(m.anchor)) m.anchor.focus({ preventScroll: true });
+  }
+  function menu(anchor, items, opts) {
+    if (openMenu && openMenu.anchor === anchor) { closeMenu(true); return; }
+    closeMenu(false);
+    opts = opts || {};
+    var sheet = sheetMode();
+    var el = document.createElement('div');
+    el.className = 'menu' + (sheet ? ' sheet' : ''); el.id = 'sb-menu'; el.setAttribute('role', 'menu');
+    if (opts.label) el.setAttribute('aria-label', opts.label);
+    el.innerHTML = (sheet && opts.title ? '<div class="menu-title">' + esc(opts.title) + '</div>' : '') + items.map(function (it, i) {
+      if (it.sep) return '<div class="menu-sep" role="separator"></div>';
+      if (it.heading) return '<div class="menu-h" role="presentation">' + esc(it.heading) + '</div>';
+      if (it.check) return '<label class="menu-i' + (it.cls ? ' ' + it.cls : '') + '" role="menuitemcheckbox" aria-checked="' + !!it.checked + '"><input type="checkbox" id="' + it.id + '"' + (it.checked ? ' checked' : '') + '><span>' + esc(it.label) + '</span>' + (it.kbd ? '<kbd>' + esc(it.kbd) + '</kbd>' : '') + '</label>';
+      return '<button type="button" class="menu-i' + (it.cls ? ' ' + it.cls : '') + '" role="menuitem" data-i="' + i + '"' + (it.id ? ' id="' + it.id + '"' : '') + '>' + (it.icon || '') + '<span>' + esc(it.label) + '</span>' + (it.kbd ? '<kbd>' + esc(it.kbd) + '</kbd>' : '') + '</button>';
+    }).join('');
+    var scrim = null;
+    if (sheet) { scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.appendChild(scrim); }
+    document.body.appendChild(el);
+    if (!sheet) {
+      var r = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
+      var top = r.bottom + 6; if (top + h > innerHeight - 8 && r.top - 6 - h > 8) top = r.top - 6 - h;
+      el.style.top = top + 'px';
+      el.style.left = Math.max(8, Math.min(innerWidth - w - 8, (opts.alignLeft ? r.left : r.right - w))) + 'px';
+    }
+    $$('button.menu-i', el).forEach(function (b) {
+      b.onclick = function () { var it = items[+b.dataset.i]; closeMenu(!!it.restore); if (it.onClick) it.onClick(); };
+    });
+    items.forEach(function (it) { if (it.check) { var cb = $('#' + it.id, el); cb.onchange = function () { cb.parentNode.setAttribute('aria-checked', String(cb.checked)); it.onChange(cb.checked); }; } });
+    anchor.setAttribute('aria-expanded', 'true');
+    var m = { el: el, scrim: scrim, anchor: anchor };
+    m.outside = function (e) { if (!el.contains(e.target) && !anchor.contains(e.target)) { if (scrim && e.target === scrim) e.preventDefault(); closeMenu(false); } };
+    m.onScroll = function (e) { if (!sheet && !(e && e.target && el.contains(e.target))) closeMenu(false); };
+    document.addEventListener('pointerdown', m.outside, true);
+    if (!sheet) { window.addEventListener('scroll', m.onScroll, true); window.addEventListener('resize', m.onScroll); }
+    openMenu = m;
+    var first = $('.menu-i', el); if (first) first.focus({ preventScroll: true });
+  }
+  function menuKeys(e) {
+    if (!openMenu) return false;
+    var list = $$('.menu-i', openMenu.el), i = list.indexOf(document.activeElement);
+    if (e.key === 'Escape') { closeMenu(true); e.preventDefault(); return true; }
+    if (e.key === 'Tab') { closeMenu(false); return false; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      var n = list[(i + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length]; if (n) n.focus(); e.preventDefault(); return true;
+    }
+    if (e.key === 'Home' || e.key === 'End') { var x = e.key === 'Home' ? list[0] : list[list.length - 1]; if (x) x.focus(); e.preventDefault(); return true; }
+    return openMenu.el.contains(document.activeElement);
   }
 
   // ---------- rendering ----------
@@ -223,34 +328,38 @@
   }
 
   function renderShell() {
+    closeMenu(false);
     app.innerHTML =
-      '<header class="sb-head"><h1>Schoology Board <span id="sb-label"></span></h1>' +
-      '<div class="right"><span id="sb-prog"></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span>' +
-      '<button class="btn" id="sb-import" title="Import (I)">' + ICON.down + '<span class="lbl">Import</span></button>' +
-      (S.feedUrl ? '<button class="btn" id="sb-refresh" title="Refresh from your calendar link">' + ICON.refresh + '<span class="lbl">Refresh</span></button>' : '') +
-      '<button class="btn" id="sb-add" title="Add a task (N)">' + ICON.plus + '<span class="lbl">Add</span></button>' +
-      '<button class="btn" id="sb-cats" title="Categories">' + ICON.tag + '<span class="lbl">Categories</span></button>' +
-      '<button class="btn primary" id="sb-offline" title="Download a self-contained copy that works without internet">' + ICON.dl + '<span class="lbl">Download for offline</span></button>' +
-      '<button class="btn ghost" id="sb-keys" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">' + ICON.key + '</button>' +
+      '<header class="sb-head"><h1><span class="name">Schoology Board</span> <span id="sb-label"></span></h1>' +
+      '<div class="prog"><span id="sb-prog"></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div>' +
+      '<div class="acts">' +
+      '<button class="btn primary" id="sb-add" title="Add a task (N)" aria-label="Add a task">' + ICON.plus + '<span class="lbl">Add</span></button>' +
+      '<button class="btn hide-m" id="sb-import" title="Import (I)">' + ICON.imp + '<span class="lbl">Import</span></button>' +
+      '<button class="btn icon" id="sb-more" title="More" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">' + ICON.more + '</button>' +
       '</div></header>' +
-      '<div class="sb-tools">' +
+      '<div class="sb-tools" id="sb-tools"><div class="tl">' +
       '<div class="seg" role="group" aria-label="View"><button data-view="today">Due today</button><button data-view="week">Week</button><button data-view="all">All</button><button data-view="range">Range</button></div>' +
-      '<span class="weeknav" id="sb-weeknav"><button class="btn ghost" id="sb-prev" aria-label="Previous week" title="Previous week ([)">' + ICON.left + '</button><b id="sb-week"></b><button class="btn ghost" id="sb-next" aria-label="Next week" title="Next week (])">' + ICON.right + '</button><button class="btn ghost small" id="sb-thisweek">This week</button></span>' +
-      '<span class="range" id="sb-range"><input type="date" id="sb-from" aria-label="From"> to <input type="date" id="sb-to" aria-label="To"></span>' +
-      '<label class="toggle"><input type="checkbox" id="sb-hidepast"> Hide past</label>' +
-      '<input type="search" id="sb-search" placeholder="Search   /" aria-label="Search tasks">' +
-      '</div>' +
-      '<div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div>' +
+      '<span class="weeknav" id="sb-weeknav"><button class="btn ghost icon" id="sb-prev" aria-label="Previous week" title="Previous week ([)">' + ICON.left + '</button><b id="sb-week"></b><button class="btn ghost icon" id="sb-next" aria-label="Next week" title="Next week (])">' + ICON.right + '</button><button class="btn ghost small" id="sb-thisweek">This week</button></span>' +
+      '<span class="range" id="sb-range"><input type="date" id="sb-from" aria-label="From"><span>to</span><input type="date" id="sb-to" aria-label="To"></span>' +
+      '</div><div class="tr">' +
+      '<div class="search"><button class="btn icon search-btn" id="sb-search-btn" aria-label="Search" title="Search (/)">' + ICON.search + '</button>' +
+      '<span class="sfield">' + ICON.search + '<input type="search" id="sb-search" placeholder="Search" aria-label="Search tasks"><kbd class="kbd-only">/</kbd></span></div>' +
+      '<button class="btn" id="sb-filter" aria-haspopup="menu" aria-expanded="false" title="Filter">' + ICON.filter + '<span class="lbl">Filter</span><i class="dot" aria-hidden="true"></i></button>' +
+      '</div></div>' +
+      '<div class="chips-wrap"><div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div></div>' +
+      '<nav class="colnav" id="sb-colnav" aria-label="Jump to column"></nav>' +
       '<main class="board" id="sb-board" aria-label="Board"></main>' +
       '<div class="foot">' + (MODE === 'offline' ? 'Offline copy \u00b7 progress is saved in this browser' + (CFG.home ? ' \u00b7 <a href="' + esc(CFG.home) + '" target="_blank" rel="noopener">open the website</a>' : '') :
-        'Everything stays in your browser \u00b7 <a href="https://github.com/nyfeblade/schoology-board" target="_blank" rel="noopener">Open source</a>') +
+        'Everything stays in your browser \u00b7 <a href="' + REPO + '" target="_blank" rel="noopener">Open source</a>') +
       ' \u00b7 <a href="#" id="sb-reset">Reset board</a></div>';
     $('#sb-import').onclick = openImport;
     $('#sb-add').onclick = function () { openEditor(null); };
-    $('#sb-cats').onclick = openCategories;
-    $('#sb-offline').onclick = downloadOffline;
-    $('#sb-keys').onclick = openKeys;
-    if ($('#sb-refresh')) $('#sb-refresh').onclick = function () { importLink(S.feedUrl, true); };
+    $('#sb-more').onclick = function () { moreMenu(this); };
+    $('#sb-filter').onclick = function () {
+      var items = [{ check: true, id: 'sb-hidepast', label: 'Hide past', kbd: 'H', checked: !!S.prefs.hidePast, onChange: function (v) { S.prefs.hidePast = v; save(); renderBoard(); } }];
+      if (S.createdAt) items.push({ sep: true }, { check: true, id: 'sb-showpre', label: 'Show items from before this board was created (' + new Date(S.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ')', checked: !!S.prefs.showPre, onChange: function (v) { S.prefs.showPre = v; save(); renderBoard(); } });
+      menu(this, items, { title: 'Filter', label: 'Filter' });
+    };
     $('#sb-reset').onclick = function (e) {
       e.preventDefault();
       if (confirm('Reset the board? This clears imported tasks, progress and categories in this browser.')) {
@@ -265,8 +374,30 @@
     $('#sb-thisweek').onclick = function () { S.prefs.weekOffset = 0; save(); renderBoard(); };
     $('#sb-from').onchange = function () { S.prefs.from = this.value; save(); renderBoard(); };
     $('#sb-to').onchange = function () { S.prefs.to = this.value; save(); renderBoard(); };
-    $('#sb-hidepast').onchange = function () { S.prefs.hidePast = this.checked; save(); renderBoard(); };
-    $('#sb-search').oninput = function () { S.prefs.q = this.value; renderBoard(); };
+    var sIn = $('#sb-search'), tools = $('#sb-tools');
+    sIn.oninput = function () { S.prefs.q = this.value; renderBoard(); };
+    sIn.onblur = function () { if (!sIn.value) tools.classList.remove('searching'); };
+    $('#sb-search-btn').onclick = function () { tools.classList.add('searching'); sIn.focus(); };
+    if (S.prefs.q) tools.classList.add('searching');
+    var board = $('#sb-board'), raf = 0;
+    board.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; syncColnav(); }); }, { passive: true });
+  }
+  function moreMenu(anchor) {
+    var items = [
+      { label: 'Import\u2026', icon: ICON.imp, kbd: 'I', cls: 'm-only', onClick: openImport },
+      S.feedUrl ? { label: 'Refresh from calendar link', icon: ICON.refresh, id: 'sb-refresh', onClick: function () { toast('Refreshing your calendar\u2026'); importLink(S.feedUrl, true); } } : null,
+      { label: 'Categories', icon: ICON.tag, id: 'sb-cats', onClick: openCategories },
+      { label: 'Download for offline', icon: ICON.dl, id: 'sb-offline', onClick: downloadOffline },
+      { label: 'Keyboard shortcuts', icon: ICON.key, kbd: '?', id: 'sb-keys', cls: 'kbd-only', onClick: openKeys }
+    ].filter(Boolean);
+    menu(anchor, items, { label: 'More actions' });
+  }
+  function syncColnav() {
+    var b = $('#sb-board'), nav = $('#sb-colnav'); if (!b || !nav) return;
+    var cols = $$('.col', b); if (!cols.length) return;
+    var mid = b.scrollLeft + b.clientWidth / 2, best = 0, bd = Infinity;
+    cols.forEach(function (c, i) { var d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid); if (d < bd) { bd = d; best = i; } });
+    $$('button', nav).forEach(function (x, i) { x.setAttribute('aria-current', String(i === best)); });
   }
   function setView(v) {
     S.prefs.view = v;
@@ -276,55 +407,75 @@
 
   function cardHtml(it, colId) {
     var h = (it.d - new Date()) / 36e5, done = colId === 'done';
-    var cls = done ? '' : (h < 0 ? ' soon late' : h < 36 ? ' soon' : '');
+    var cls = done ? '' : (h < 0 ? ' late overdue' : h < 36 ? ' late' : '');
     var url = safeUrl(it.url);
     var when = it.allDay ? 'All day' : fmtT(it.d);
     if (done) when = it.d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + when;
-    var meta = (it.note ? esc(it.note) + ' \u00b7 ' : '') + (h < 0 && !done ? 'Overdue \u00b7 ' : '') + esc(when);
+    if (h < 0 && !done) when = 'Overdue \u00b7 ' + when;
     var src = it.source === 'cas' ? '<span class="src" title="From a Course Assignment Sheet">CAS</span>' : it.source === 'custom' ? '<span class="src" title="Added by you">Mine</span>' : '';
     var label = it.title + ', ' + it.course + ', due ' + fmtDay(it.d) + ' ' + when + (done ? ', done' : '');
     return '<div class="card' + cls + '" tabindex="0" data-id="' + esc(it.id) + '" aria-label="' + esc(label) + '">' +
       (url ? '<a class="t" href="' + esc(url) + '" target="_blank" rel="noopener" draggable="false" tabindex="-1">' + esc(it.title) + '</a>' : '<span class="t">' + esc(it.title) + '</span>') +
-      '<div class="m"><span class="l"><span class="tag">' + esc(it.course) + '</span>' + src + '</span><b>' + meta + '</b></div>' +
-      '<button class="more" type="button" tabindex="-1" aria-label="Edit" title="Edit (E)">\u22ef</button></div>';
+      (it.note ? '<div class="note">' + esc(it.note) + '</div>' : '') +
+      '<div class="m"><span class="l"><span class="tag">' + esc(it.course) + '</span>' + src + '</span><span class="tm">' + esc(when) + '</span></div>' +
+      '<button class="more" type="button" tabindex="-1" aria-label="Card actions" aria-haspopup="menu" aria-expanded="false" title="Actions (M)">' + ICON.more + '</button></div>';
+  }
+  function cardMenu(el) {
+    var id = el.dataset.id, it = itemById(id); if (!it) return;
+    var url = safeUrl(it.url);
+    var items = [{ heading: 'Move to\u2026' }];
+    COLS.forEach(function (c, i) { if (c[0] !== it.col) items.push({ label: c[1], icon: ICON.arrow, kbd: String(i + 1), cls: 'move', onClick: function () { setStatus(id, c[0]); } }); });
+    items.push({ sep: true },
+      { label: it.col === 'done' ? 'Mark not done' : 'Mark done', icon: ICON.check, kbd: 'X', onClick: function () { toggleDone(id); } },
+      { label: 'Edit\u2026', icon: ICON.edit, kbd: 'E', onClick: function () { openEditor(id); } });
+    if (url) items.push({ label: 'Open in Schoology', icon: ICON.ext, onClick: function () { window.open(url, '_blank', 'noopener'); } });
+    items.push({ label: 'Delete', icon: ICON.trash, kbd: 'Del', onClick: function () { deleteItem(id); } });
+    menu(el.querySelector('.more'), items, { title: it.title, label: 'Card actions' });
   }
 
   var lastItems = [];
   function renderBoard() {
     if (!$('#sb-board')) return render();
-    var items = allItems(), r = viewRange(), p = S.prefs;
+    var items = allItems(), r = viewRange(), p = S.prefs, now = new Date();
     var viewItems = items.filter(function (it) { return inView(it, r) && matchesQ(it); });
     var cats = categories(items);
     $('#sb-label').textContent = r.label;
     $$('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === p.view)); });
     $('#sb-weeknav').style.display = p.view === 'week' ? '' : 'none';
-    $('#sb-week').textContent = p.weekOffset === 0 ? 'This week' : r.label;
+    $('#sb-week').textContent = r.label;
     $('#sb-thisweek').style.display = p.weekOffset ? '' : 'none';
     $('#sb-range').style.display = p.view === 'range' ? '' : 'none';
     $('#sb-from').value = p.from || ''; $('#sb-to').value = p.to || '';
-    $('#sb-hidepast').checked = !!p.hidePast;
+    $('#sb-filter').classList.toggle('on', !!(p.hidePast || p.showPre));
+    $('#sb-filter').setAttribute('aria-label', 'Filter' + (p.hidePast ? ' (hiding past)' : '') + (p.showPre ? ' (showing pre-board items)' : ''));
     if (document.activeElement !== $('#sb-search')) $('#sb-search').value = p.q || '';
-    var counts = {}, soon = {};
-    viewItems.forEach(function (it) {
-      if (it.col === 'done') return;
-      counts[it.course] = (counts[it.course] || 0) + 1;
-      if ((it.d - new Date()) / 36e5 < 36) soon[it.course] = (soon[it.course] || 0) + 1;
-    });
+    var counts = {};
+    viewItems.forEach(function (it) { if (it.col !== 'done') counts[it.course] = (counts[it.course] || 0) + 1; });
     var openTotal = viewItems.filter(function (i) { return i.col !== 'done'; }).length;
     if (p.course && cats.indexOf(p.course) < 0) p.course = null;
     $('#sb-chips').innerHTML = '<button class="chip" data-c="" aria-pressed="' + (!p.course) + '">All classes <b>' + openTotal + '</b></button>' +
-      cats.map(function (c) {
-        return '<button class="chip" data-c="' + esc(c) + '" aria-pressed="' + (p.course === c) + '">' + esc(c) + ' <b>' + (counts[c] || 0) + '</b>' +
-          (soon[c] ? '<span class="due" title="Due within 36 hours">\u2022 ' + soon[c] + '</span>' : '') + '</button>';
-      }).join('');
+      cats.filter(function (c) { return counts[c] || S.cats.indexOf(c) >= 0 || p.course === c; }).map(function (c) { return '<button class="chip" data-c="' + esc(c) + '" aria-pressed="' + (p.course === c) + '">' + esc(c) + ' <b>' + (counts[c] || 0) + '</b></button>'; }).join('');
     $$('#sb-chips .chip').forEach(function (b) { b.onclick = function () { S.prefs.course = b.dataset.c || null; save(); renderBoard(); }; });
+    var sel = $('#sb-chips .chip[aria-pressed="true"]'), cw = $('#sb-chips');
+    if (sel && cw.scrollWidth > cw.clientWidth && (sel.offsetLeft < cw.scrollLeft || sel.offsetLeft + sel.offsetWidth > cw.scrollLeft + cw.clientWidth)) cw.scrollLeft = sel.offsetLeft - 16;
     var shown = viewItems.filter(function (it) { return !p.course || it.course === p.course; });
     lastItems = shown;
-    var html = '', today = dayKey(new Date());
+    var q = (p.q || '').trim(), openShown = shown.filter(function (i) { return i.col !== 'done'; }).length;
+    var html = '', nav = '', today = dayKey(now);
     COLS.forEach(function (c) {
       var id = c[0], list = shown.filter(function (it) { return it.col === id; }).sort(function (a, b) { return a.d - b.d || a.title.localeCompare(b.title); });
+      nav += '<button type="button" data-col="' + id + '">' + esc(SHORT[id]) + '<b>' + list.length + '</b></button>';
       html += '<section class="col' + (id === 'done' ? ' done' : '') + '" data-col="' + id + '" aria-label="' + esc(c[1]) + '"><h2>' + esc(c[1]) + '<span>' + list.length + '</span></h2>';
-      if (!list.length) html += '<div class="empty-col">' + (id === 'todo' ? (viewItems.length ? 'Nothing left here. Nice.' : (items.length ? 'Nothing due in this view' : 'No tasks yet')) : 'Drop cards here') + '</div>';
+      if (!list.length) {
+        if (id === 'todo' && q && !shown.length) {
+          html += '<div class="empty-state"><p class="es-t">No matches for \u201c' + esc(q) + '\u201d</p><button class="btn" id="sb-clearq" type="button">Clear search</button></div>';
+        } else if (id === 'todo' && p.view === 'today' && !openShown && !q) {
+          var next = items.filter(function (i) { return i.col !== 'done' && i.d >= addDays(sod(now), 1) && (!p.course || i.course === p.course); }).sort(function (a, b) { return a.d - b.d; })[0];
+          html += '<div class="empty-state"><p class="es-t">Nothing due today.</p>' + (next ?
+            '<p class="es-s"><a href="#" id="sb-nextup" data-d="' + dayKey(next.d) + '">Next up: ' + esc(next.title) + ' \u00b7 ' + esc(next.d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })) + '</a></p>' :
+            '<p class="es-s">Nothing coming up either.</p>') + '</div>';
+        } else html += '<div class="empty-col">Drag cards here</div>';
+      }
       if (id === 'done') list.forEach(function (it) { html += cardHtml(it, id); });
       else cats.forEach(function (cl) {
         var g = list.filter(function (it) { return it.course === cl; });
@@ -340,6 +491,16 @@
       html += '</section>';
     });
     $('#sb-board').innerHTML = html;
+    $('#sb-colnav').innerHTML = nav;
+    $$('#sb-colnav button').forEach(function (b) {
+      b.onclick = function () { var col = $('.col[data-col="' + b.dataset.col + '"]'), bd = $('#sb-board'); bd.scrollTo({ left: col.offsetLeft - (bd.clientWidth - col.offsetWidth) / 2, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); };
+    });
+    syncColnav();
+    if ($('#sb-clearq')) $('#sb-clearq').onclick = function () { S.prefs.q = ''; $('#sb-search').value = ''; $('#sb-tools').classList.remove('searching'); renderBoard(); };
+    if ($('#sb-nextup')) $('#sb-nextup').onclick = function (e) {
+      e.preventDefault();
+      S.prefs.view = 'week'; S.prefs.weekOffset = Math.round((monday(parseDay(this.dataset.d)) - monday(new Date())) / (7 * 864e5)); save(); renderBoard();
+    };
     var done = shown.filter(function (i) { return i.col === 'done'; }).length;
     $('#sb-prog').textContent = done + ' of ' + shown.length + ' done';
     $('#sb-bar').style.width = (shown.length ? Math.round(100 * done / shown.length) : 0) + '%';
@@ -385,7 +546,7 @@
     $$('#sb-board .card').forEach(function (el) {
       el.addEventListener('pointerdown', onDown);
       el.addEventListener('dblclick', function (e) { if (e.target.closest('.more')) return; e.preventDefault(); toggleDone(el.dataset.id); });
-      el.querySelector('.more').addEventListener('click', function (e) { e.stopPropagation(); openEditor(el.dataset.id); });
+      el.querySelector('.more').addEventListener('click', function (e) { e.stopPropagation(); cardMenu(el); });
       var a = el.querySelector('a.t');
       if (a) a.addEventListener('click', function (e) { if (suppressClick) { e.preventDefault(); suppressClick = false; } });
     });
@@ -406,6 +567,8 @@
     document.body.appendChild(g);
     drag.ghost = g; drag.dx = x - r.left; drag.dy = y - r.top; drag.started = true;
     drag.el.classList.add('dragging');
+    closeMenu(false);
+    var bd = $('#sb-board'); if (bd) bd.classList.add('dragging-on');
     document.body.style.cursor = 'grabbing';
     moveGhost(x, y);
   }
@@ -444,6 +607,7 @@
     clearTimeout(drag.timer);
     if (drag.ghost) drag.ghost.remove();
     if (drag.el) drag.el.classList.remove('dragging');
+    var bd = $('#sb-board'); if (bd) bd.classList.remove('dragging-on');
     $$('.col.over').forEach(function (c) { c.classList.remove('over'); });
     document.body.style.cursor = '';
     document.removeEventListener('pointermove', onMove);
@@ -458,6 +622,7 @@
   function cardsInCol(col) { return $$('.col[data-col="' + col + '"] .card'); }
   document.addEventListener('keydown', function (e) {
     if (document.querySelector('dialog[open]')) return;
+    if (menuKeys(e)) return;
     if (isTyping(e)) { if (e.key === 'Escape') e.target.blur(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     var ae = document.activeElement;
@@ -467,6 +632,7 @@
       var id = card.dataset.id, col = card.closest('.col').dataset.col, ci = COL_IDS.indexOf(col);
       if (k === 'Enter') { var a = card.querySelector('a.t'); if (a) a.click(); else openEditor(id); e.preventDefault(); return; }
       if (k === 'e' || k === 'E') { openEditor(id); e.preventDefault(); return; }
+      if (k === 'm' || k === 'M' || (k === 'F10' && e.shiftKey) || k === 'ContextMenu') { cardMenu(card); e.preventDefault(); return; }
       if (k === 'x' || k === ' ') { toggleDone(id); e.preventDefault(); return; }
       if (/^[1-4]$/.test(k)) { setStatus(id, COL_IDS[+k - 1]); e.preventDefault(); return; }
       if (k === 'Delete' || k === 'Backspace') { deleteItem(id); e.preventDefault(); return; }
@@ -495,14 +661,14 @@
     if (!hasData()) return;
     if (k === 'n' || k === 'N') { openEditor(null); e.preventDefault(); }
     else if (k === 'i' || k === 'I') { openImport(); e.preventDefault(); }
-    else if (k === '/') { var sb = $('#sb-search'); if (sb) { sb.focus(); e.preventDefault(); } }
+    else if (k === '/') { var sb = $('#sb-search'); if (sb) { $('#sb-tools').classList.add('searching'); sb.focus(); e.preventDefault(); } }
     else if (k === '?') { openKeys(); e.preventDefault(); }
     else if (k === 't') setView('today');
     else if (k === 'w') setView('week');
     else if (k === 'a') setView('all');
     else if (k === '[') { S.prefs.view = 'week'; S.prefs.weekOffset--; save(); renderBoard(); }
     else if (k === ']') { S.prefs.view = 'week'; S.prefs.weekOffset++; save(); renderBoard(); }
-    else if (k === 'h') { S.prefs.hidePast = !S.prefs.hidePast; save(); renderBoard(); }
+    else if (k === 'h') { S.prefs.hidePast = !S.prefs.hidePast; save(); renderBoard(); toast(S.prefs.hidePast ? 'Hiding past items' : 'Showing past items'); }
     else if (k === 'ArrowDown' || k === 'j') { var f = $('#sb-board .card'); if (f) { f.focus(); e.preventDefault(); } }
   });
 
@@ -510,20 +676,23 @@
   function dialog(title, body, foot, wide) {
     var d = document.createElement('dialog');
     if (wide) d.className = 'wide';
-    d.innerHTML = '<div class="dlg-h"><h3>' + esc(title) + '</h3><button class="btn ghost" data-close aria-label="Close">' + ICON.x + '</button></div>' +
+    d.innerHTML = '<div class="dlg-h"><h3>' + esc(title) + '</h3><button class="btn ghost icon" data-close aria-label="Close">' + ICON.x + '</button></div>' +
       '<div class="dlg-b">' + body + '</div>' + (foot ? '<div class="dlg-f">' + foot + '</div>' : '');
     document.body.appendChild(d);
     d.addEventListener('close', function () { d.remove(); });
     $$('[data-close]', d).forEach(function (b) { b.onclick = function () { d.close(); }; });
     d.addEventListener('mousedown', function (e) { if (e.target === d) d.close(); });
+    d.setAttribute('tabindex', '-1');
+    closeMenu(false);
     d.showModal();
+    d.focus({ preventScroll: true });
     return d;
   }
 
   function openKeys() {
     var rows = [['N', 'Add a task'], ['I', 'Import a calendar link, .ics or CAS PDF'], ['/', 'Search'], ['T W A', 'Due today, Week, All'], ['[ ]', 'Previous / next week'], ['H', 'Hide past'],
       ['\u2191 \u2193 \u2190 \u2192', 'Move focus between cards'], ['1 2 3 4', 'Move the card to a column'], ['Shift+\u2190 Shift+\u2192', 'Move the card one column'], ['X Space', 'Toggle done (or double-click)'],
-      ['E', 'Edit the card'], ['Enter', 'Open it in Schoology'], ['Delete', 'Delete the card (with undo)'], ['?', 'This list']];
+      ['E', 'Edit the card'], ['M', 'Card menu (move, done, edit, delete)'], ['Enter', 'Open it in Schoology'], ['Delete', 'Delete the card (with undo)'], ['?', 'This list']];
     dialog('Keyboard shortcuts', '<div class="keys">' + rows.map(function (r) {
       return '<span>' + r[0].split(' ').map(function (x) { return '<kbd>' + esc(x) + '</kbd>'; }).join(' ') + '</span><span class="muted">' + esc(r[1]) + '</span>';
     }).join('') + '</div><p class="hint">Drag cards between columns with a mouse, or long-press and drag on a touch screen.</p>');
@@ -684,20 +853,22 @@
   // ---------- import ----------
   function importPanel(first) {
     var canLink = MODE === 'web' || !!CFG.proxy;
-    return '<div class="step"><h3><i>1</i> Paste your Schoology calendar link</h3>' +
-      '<form class="row" id="imp-form"><input type="url" id="imp-url" placeholder="webcal://\u2026 or https://\u2026/calendar/feed/ical/\u2026" aria-label="Schoology calendar link" value="' + esc(S.feedUrl || '') + '"' + (canLink ? '' : ' disabled') + '>' +
-      '<button class="btn primary" id="imp-go"' + (canLink ? '' : ' disabled') + '>Build my board</button></form>' +
-      '<label class="toggle small" style="margin-top:8px"><input type="checkbox" id="imp-remember"' + (S.feedUrl || first ? ' checked' : '') + '> Remember the link on this device for one-click refresh</label>' +
+    return '<div class="imp">' +
+      '<form id="imp-form" novalidate><label class="imp-l" for="imp-url">Paste your Schoology calendar link</label>' +
+      '<div class="row"><input type="url" id="imp-url" placeholder="webcal://\u2026 or https://\u2026/calendar/feed/ical/\u2026" value="' + esc(S.feedUrl || '') + '"' + (canLink ? '' : ' disabled') + ' autocomplete="off" spellcheck="false">' +
+      '<button class="btn primary" id="imp-go"' + (canLink ? '' : ' disabled') + '>Build my board</button></div>' +
+      '<label class="remember"><input type="checkbox" id="imp-remember"' + (S.feedUrl || first ? ' checked' : '') + '> Remember the link on this device for one-click refresh</label>' +
       '<div class="err" id="imp-err" role="alert"></div>' +
       (MODE === 'offline' ? '<p class="hint">Needs internet: the link is fetched through ' + esc(CFG.home || 'the website') + '. Offline, drop an .ics file instead.</p>' : '') +
-      '<details class="how"><summary>Where do I find this link?</summary><ol>' +
-      '<li>In Schoology, open the account menu (top-right) and choose <b>Settings</b> (Account Settings).</li>' +
+      '<details class="how"' + (first ? ' open' : '') + '><summary>Where do I find this link?</summary><ol class="how-steps">' +
+      '<li>In Schoology, open the account menu (top right) and choose <b>Settings</b>.</li>' +
       '<li>Under <b>Share Your Schoology Calendar</b>, click <b>Enable</b>.</li>' +
-      '<li>Copy the URL in <b>Use this iCal link</b> and paste it here.</li></ol>' +
-      '<p class="small muted">Steps from PowerSchool\'s Schoology help. Your calendar needs at least one entry. Some schools hide this setting. Treat the link like a password: anyone with it can read your calendar.</p></details></div>' +
+      '<li>Copy the URL under <b>Use this iCal link</b> and paste it above.</li></ol>' +
+      '<p class="small dim">From PowerSchool\'s Schoology help. Your calendar needs at least one entry, and some schools hide this setting. Treat the link like a password.</p></details></form>' +
       '<div class="or">or</div>' +
-      '<div class="step"><h3><i>2</i> Drop files</h3><label class="drop" id="imp-drop" tabindex="0"><input type="file" id="imp-file" class="sr" multiple accept=".ics,.ical,.ifb,.pdf,text/calendar,application/pdf">' +
-      '<b>Drop a Schoology .ics file or Course Assignment Sheet PDFs</b><br><span class="small">or click to choose \u00b7 PDFs are read right here in your browser</span></label>' +
+      '<label class="drop" id="imp-drop" tabindex="0"><input type="file" id="imp-file" class="sr" tabindex="-1" multiple accept=".ics,.ical,.ifb,.pdf,text/calendar,application/pdf">' +
+      '<span class="drop-ic">' + BIG_UPLOAD + '</span><span class="drop-t">Drop a Schoology .ics or Course Assignment Sheet PDFs</span>' +
+      '<span class="drop-s">or click to choose \u00b7 PDFs are read here in your browser</span></label>' +
       '<div class="err" id="imp-ferr" role="alert"></div></div>';
   }
   function bindImport(root, onDone) {
@@ -720,14 +891,18 @@
   }
 
   function renderFirstRun() {
-    app.innerHTML = '<div class="hero"><h2>Your Schoology assignments,<br>on one <span>board</span>.</h2>' +
-      '<p class="lead">Paste your calendar link or drop your files and you\'re set. Drag cards from <b>Need to be done</b> to <b>Completed</b>. Your board lives in your browser.</p>' +
-      importPanel(true) +
-      (CFG.sampleUrl ? '<div class="or">or</div><div style="text-align:center"><button class="btn" id="imp-sample">Try the sample board</button><p class="hint">Made-up classes and assignments, so you can look around first.</p></div>' : '') +
-      '</div><div class="foot">' + (MODE === 'web' ? 'Free and <a href="https://github.com/nyfeblade/schoology-board" target="_blank" rel="noopener">open source</a>. Not affiliated with Schoology or PowerSchool.' : 'Offline copy') + '</div>';
+    closeMenu(false);
+    var two = !!CFG.preview;
+    app.innerHTML = '<div class="hero' + (two ? ' two' : '') + '"><div class="hero-l">' +
+      '<h2>Your Schoology assignments, on one board.</h2>' +
+      '<p class="lead">Paste your calendar link or drop your files. Drag cards from <b>Need to be done</b> to <b>Completed</b>. Everything stays in your browser.</p>' +
+      (CFG.sampleUrl ? '<button class="btn" id="imp-sample">Try the sample board ' + ICON.arrow + '</button>' : '') +
+      importPanel(true) + '</div>' +
+      (two ? '<div class="hero-r" aria-hidden="true"><img src="' + esc(CFG.preview) + '" alt="" width="1200" height="750" decoding="async"></div>' : '') +
+      '</div><footer class="foot fr"><span>' + (MODE === 'web' ? 'Free and open source. Not affiliated with Schoology or PowerSchool.' : 'Offline copy of Schoology Board.') + '</span>' +
+      '<a class="btn small" href="' + REPO + '" target="_blank" rel="noopener">' + ICON.star + ' Star on GitHub</a></footer>';
     bindImport(app, null);
     if ($('#imp-sample')) $('#imp-sample').onclick = loadSample;
-    setTimeout(function () { var u = $('#imp-url'); if (u && !u.disabled && matchMedia('(hover:hover)').matches) u.focus(); }, 0);
   }
 
   function busy(root, on, msg) {
@@ -744,7 +919,6 @@
     var errEl = root ? $('#imp-err', root) : null;
     if (errEl) errEl.textContent = '';
     busy(root, true, 'Fetching your calendar\u2026');
-    var rbtn = $('#sb-refresh'); if (rbtn && !root) rbtn.disabled = true;
     var proxy = MODE === 'web' ? (CFG.proxy || '/api/feed') : CFG.proxy;
     fetch(proxy, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }), cache: 'no-store' })
       .then(function (r) {
@@ -761,9 +935,9 @@
       })
       .catch(function (e) {
         var msg = e && e.message && !/Failed to fetch|NetworkError|Load failed/i.test(e.message) ? e.message : 'Network error. Check your connection and try again.';
-        if (errEl) errEl.textContent = msg; else toast(msg);
+        if (errEl) errEl.textContent = msg; else toastErr(msg);
       })
-      .then(function () { busy(root, false); if (rbtn) rbtn.disabled = false; });
+      .then(function () { busy(root, false); });
   }
 
   function applyIcs(text, source, opts) {
@@ -773,11 +947,11 @@
       it.due = /Z$/.test(it.due) ? d.toISOString() : localStr(d);
     });
     if (!items.length) throw new Error('That calendar has no events yet.');
+    markCreated();
     var before = S.ics, map = {}, fresh = 0;
     items.forEach(function (it) { if (!before[it.uid]) fresh++; map[it.uid] = it; });
     S.ics = map;
     S.lastImport = { at: Date.now(), source: source, count: items.length };
-    if (S.prefs.view === 'week' && !allItems().some(function (i) { return inView(i, viewRange()); })) S.prefs.view = 'all';
     save();
     if (!$('#sb-board')) renderShell();
     renderBoard();
@@ -800,7 +974,7 @@
     icsFiles.forEach(function (f) { chain = chain.then(function () { return readFile(f); }).then(function (b) { applyIcs(ics.decodeBytes(b), 'file'); }); });
     if (pdfs.length) {
       chain = chain.then(function () {
-        if (errEl) errEl.innerHTML = '<span class="spinner"></span> <span class="muted">Reading ' + pdfs.length + ' PDF' + (pdfs.length > 1 ? 's' : '') + '\u2026</span>';
+        if (errEl) errEl.innerHTML = '<span class="loadmsg"><span class="spinner"></span> Reading ' + pdfs.length + ' PDF' + (pdfs.length > 1 ? 's' : '') + '\u2026</span>';
         return Promise.all(pdfs.map(parseCasFile));
       }).then(function (results) {
         if (errEl) errEl.textContent = '';
@@ -808,7 +982,7 @@
         openCasPreview(results);
       });
     } else chain = chain.then(function () { if (onDone) onDone(); });
-    chain.catch(function (e) { var m = (e && e.message) || 'Could not read that file.'; if (errEl) errEl.textContent = m; else toast(m); });
+    chain.catch(function (e) { var m = (e && e.message) || 'Could not read that file.'; if (errEl) errEl.textContent = m; else toastErr(m); });
   }
 
   var pdfjsPromise = null;
@@ -853,7 +1027,7 @@
         it.on = it.selected;
         if (S.cas[it.id]) { it.dup = 'Already added'; it.on = false; }
         var m = icsItems.filter(function (x) { return sameish(it, x); });
-        if (m.length) { it.dup = m.length > 1 ? 'On calendar (' + m.length + ')' : 'On calendar'; it.on = false; it.matches = m.map(function (x) { return x.id; }); }
+        if (m.length) { it.dup = m.length > 1 ? 'Already on calendar (' + m.length + ')' : 'Already on calendar'; it.on = false; it.matches = m.map(function (x) { return x.id; }); }
       });
     });
     var kindName = { read: 'Reading', submit: 'Submit', do: 'Task', class: 'In class' };
@@ -870,16 +1044,16 @@
             return '<tr data-i="' + i + '"' + (it.on ? '' : ' class="off"') + '><td><input type="checkbox"' + (it.on ? ' checked' : '') + ' aria-label="Include"></td>' +
               '<td><input type="date" value="' + dayKey(dd) + '" aria-label="Due date"></td><td><input type="time" value="' + pad(dd.getHours()) + ':' + pad(dd.getMinutes()) + '" aria-label="Due time"></td>' +
               '<td style="width:100%"><input type="text" value="' + esc(it.title) + '" aria-label="Title"></td>' +
-              '<td class="k">' + esc(kindName[it.kind] || it.kind) + '</td><td class="dup">' + esc(it.dup || '') + '</td></tr>';
+              '<td class="k"><span class="pill kind">' + esc(kindName[it.kind] || it.kind) + '</span></td><td class="dup">' + (it.dup ? '<span class="pill">' + esc(it.dup) + '</span>' : '') + '</td></tr>';
           }).join('') + '</tbody></table></section>';
       }).join('') + '<datalist id="cas-cats">' + categories().map(function (c) { return '<option value="' + esc(c) + '">'; }).join('') + '</datalist>' +
         '<p class="hint">Readings and other work become cards too; learning objectives are skipped. Items already on your Schoology calendar start unchecked so you don\'t get doubles, and their class is copied onto the calendar card.</p>';
     }
     var total = function () { return results.reduce(function (s, r) { return s + r.items.filter(function (i) { return i.on; }).length; }, 0); };
     var d = dialog('Check your Course Assignment Sheet' + (results.length > 1 ? 's' : ''), draw(),
-      '<span class="r"><button class="btn" data-close>Cancel</button><button class="btn primary" id="cas-add">Add ' + total() + ' tasks</button></span>', true);
+      '<span class="r"><button class="btn" data-close>Cancel</button><button class="btn primary" id="cas-add">Add ' + total() + ' task' + (total() === 1 ? '' : 's') + '</button></span>', true);
     function upd() {
-      $('#cas-add', d).textContent = 'Add ' + total() + ' tasks';
+      var n = total(); $('#cas-add', d).textContent = 'Add ' + n + ' task' + (n === 1 ? '' : 's'); $('#cas-add', d).disabled = !n;
       $$('.cas-file', d).forEach(function (sec) { $('.cas-n', sec).textContent = results[+sec.dataset.f].items.filter(function (i) { return i.on; }).length; });
     }
     $$('.cas-file', d).forEach(function (sec) {
@@ -902,6 +1076,7 @@
     });
     $('#cas-add', d).onclick = function () {
       var added = 0;
+      markCreated();
       results.forEach(function (r) {
         r.items.forEach(function (it) {
           if (it.matches) it.matches.forEach(function (mid) { // teach matching calendar items their class
@@ -936,15 +1111,16 @@
       // Slide the sample so its first week is this week.
       var items = ics.parseIcs(text), first = items.reduce(function (m, i) { var dd = toDate(i.due); return dd < m ? dd : m; }, new Date(8.64e15));
       var today = new Date(), wkend = today.getDay() === 0 || today.getDay() === 6;
-      var target = addDays(monday(today), wkend ? 7 : 0); // on weekends, show the coming week
+      var target = addDays(monday(today), wkend ? 7 : 0); // on weekends the sample shows the coming week
       var weeks = Math.round((target - monday(first)) / (7 * 864e5));
       S.rules = SAMPLE_RULES.slice();
       S.order = ['Biology', 'World History', 'Geometry', 'English 10', 'Spanish II'];
       var st = { 'sb-sample-001@example.invalid': 'done', 'sb-sample-003@example.invalid': 'done', 'sb-sample-010@example.invalid': 'started', 'sb-sample-014@example.invalid': 'proctor' };
       Object.keys(st).forEach(function (k) { S.status[k] = st[k]; });
       S.prefs.view = 'week'; S.prefs.weekOffset = wkend ? 1 : 0;
+      markCreated(addDays(target, -7).getTime()); // the made-up board "started" a week before the sample week
       applyIcs(text, 'sample', { shiftMs: weeks * 7 * 864e5 });
-    }).catch(function (e) { toast(e.message); if (btn) { btn.disabled = false; btn.textContent = 'Try the sample board'; } });
+    }).catch(function (e) { toastErr(e.message); if (btn) { btn.disabled = false; btn.innerHTML = 'Try the sample board ' + ICON.arrow; } });
   }
 
   // ---------- offline download ----------
@@ -985,18 +1161,20 @@
         '<script id="sb-src-board">' + scriptSafe(files.board) + '</script>\n</body></html>\n';
     });
   }
+  var packing = false;
   function downloadOffline() {
-    var btn = $('#sb-offline'), old = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span><span class="lbl"> Packing\u2026</span>';
+    if (packing) return;
+    packing = true;
+    toast('Packing your offline copy\u2026', null, null, 1500);
     buildOfflineHtml().then(function (html) {
       var a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
       a.download = 'schoology-board-' + dayKey(new Date()) + '.html';
       document.body.appendChild(a); a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-      toast('Saved. Open the file from your Downloads. Progress you make there stays in that browser.', null, null, 6000);
-    }).catch(function (e) { toast('Could not build the offline file: ' + e.message); })
-      .then(function () { btn.disabled = false; btn.innerHTML = old; });
+      toast('Saved. Open the file from your Downloads; progress there stays in that browser.', null, null, 5000);
+    }).catch(function (e) { toastErr('Could not build the offline file: ' + e.message); })
+      .then(function () { packing = false; });
   }
 
   // ---------- boot ----------
@@ -1004,11 +1182,12 @@
     app = document.getElementById('app');
     if (!app) return;
     S = load();
-    if (MODE === 'offline') save();
+    var migrated = S._migrated; delete S._migrated;
+    if (MODE === 'offline' || migrated) save();
     render();
     setInterval(function () { if (!drag && !document.querySelector('dialog[open]') && $('#sb-board') && !(document.activeElement && document.activeElement.classList.contains('card'))) renderBoard(); }, 60000);
-    window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); render(); } });
+    window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; render(); } });
   }
-  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, version: '1.0.0' };
+  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, version: '1.1.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

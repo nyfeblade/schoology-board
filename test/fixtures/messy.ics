@@ -39,13 +39,13 @@ END:VEVENT
 BEGIN:VEVENT
 UID:messy-5@example.invalid
 DTSTART:20261024T090000
-SUMMARY:Floating local time
+SUMMARY:Titration worksheet (floating local time)
 STATUS:CANCELLED
 END:VEVENT
 BEGIN:VEVENT
 UID:messy-6@example.invalid
 DTSTART:20261024T090000
-SUMMARY:Floating local time
+SUMMARY:Titration worksheet (floating local time)
 CATEGORIES:Chemistry\, Honors,Science
 END:VEVENT
 BEGIN:VEVENT

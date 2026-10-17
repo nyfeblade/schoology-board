@@ -1,0 +1,4130 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Schoology Board//Synthetic school year (fake data)//EN
+CALSCALE:GREGORIAN
+X-WR-CALNAME:Example Student (fake)
+BEGIN:VEVENT
+UID:sb-year-0001@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260825T035900Z
+SUMMARY:ALG2 Homework 1
+URL;VALUE=URI:https://example.schoology.com/assignment/7000000
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000000
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0002@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260825T035900Z
+SUMMARY:Spanish I Quiz 1
+URL;VALUE=URI:https://example.schoology.com/assignment/7000001
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000001
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0003@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260825T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 1
+URL;VALUE=URI:https://example.schoology.com/assignment/7000002
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000002
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0004@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260826T035900Z
+SUMMARY:ALG2 Homework 2
+URL;VALUE=URI:https://example.schoology.com/assignment/7000003
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000003
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0005@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260825T225900
+SUMMARY:Apologia Chem - Module 01 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000004
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000004
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0006@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260827T035900Z
+SUMMARY:ALG2 Homework 3
+URL;VALUE=URI:https://example.schoology.com/assignment/7000005
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000005
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0007@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260826T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-01
+URL;VALUE=URI:https://example.schoology.com/assignment/7000006
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000006
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0008@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260827T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 2
+URL;VALUE=URI:https://example.schoology.com/assignment/7000007
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000007
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0009@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260828T035900Z
+SUMMARY:ALG2 Homework 4
+URL;VALUE=URI:https://example.schoology.com/assignment/7000008
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000008
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0010@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20260827T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #1
+URL;VALUE=URI:https://example.schoology.com/assignment/7000009
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000009
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0011@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260828T225900
+SUMMARY:ALG2 Quiz 1
+URL;VALUE=URI:https://example.schoology.com/assessment/7000010
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000010
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0012@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260829T035900Z
+SUMMARY:Spanish I Quiz 2
+URL;VALUE=URI:https://example.schoology.com/assignment/7000011
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000011
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0013@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260901T035900Z
+SUMMARY:ALG2 Homework 5
+URL;VALUE=URI:https://example.schoology.com/assignment/7000012
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000012
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0014@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260901T035900Z
+SUMMARY:Spanish I Quiz 3
+URL;VALUE=URI:https://example.schoology.com/assignment/7000013
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000013
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0015@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260901T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 3
+URL;VALUE=URI:https://example.schoology.com/assignment/7000014
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000014
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0016@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260902T035900Z
+SUMMARY:ALG2 Homework 6
+URL;VALUE=URI:https://example.schoology.com/assignment/7000015
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000015
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0017@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260901T225900
+SUMMARY:Apologia Chem - Module 01 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000016
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000016
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0018@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260903T035900Z
+SUMMARY:ALG2 Homework 7
+URL;VALUE=URI:https://example.schoology.com/assignment/7000017
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000017
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0019@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260902T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-02
+URL;VALUE=URI:https://example.schoology.com/assignment/7000018
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000018
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0020@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260903T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 4
+URL;VALUE=URI:https://example.schoology.com/assignment/7000019
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000019
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0021@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260904T035900Z
+SUMMARY:ALG2 Homework 8
+URL;VALUE=URI:https://example.schoology.com/assignment/7000020
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000020
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0022@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20260903T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #2
+URL;VALUE=URI:https://example.schoology.com/assignment/7000021
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000021
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0023@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260905T035900Z
+SUMMARY:Spanish I Quiz 4
+URL;VALUE=URI:https://example.schoology.com/assignment/7000022
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000022
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0024@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260908T035900Z
+SUMMARY:ALG2 Homework 9
+URL;VALUE=URI:https://example.schoology.com/assignment/7000023
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000023
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0025@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260908T035900Z
+SUMMARY:Spanish I Quiz 5
+URL;VALUE=URI:https://example.schoology.com/assignment/7000024
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000024
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0026@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260908T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 5
+URL;VALUE=URI:https://example.schoology.com/assignment/7000025
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000025
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0027@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260909T035900Z
+SUMMARY:ALG2 Homework 10
+URL;VALUE=URI:https://example.schoology.com/assignment/7000026
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000026
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0028@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260908T225900
+SUMMARY:Apologia Chem - Module 02 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000027
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000027
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0029@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260910T035900Z
+SUMMARY:ALG2 Homework 11
+URL;VALUE=URI:https://example.schoology.com/assignment/7000028
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000028
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0030@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260909T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-03
+URL;VALUE=URI:https://example.schoology.com/assignment/7000029
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000029
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0031@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260910T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 6
+URL;VALUE=URI:https://example.schoology.com/assignment/7000030
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000030
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0032@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260911T035900Z
+SUMMARY:ALG2 Homework 12
+URL;VALUE=URI:https://example.schoology.com/assignment/7000031
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000031
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0033@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20260910T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #3
+URL;VALUE=URI:https://example.schoology.com/assignment/7000032
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000032
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0034@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260911T225900
+SUMMARY:ALG2 Quiz 2
+URL;VALUE=URI:https://example.schoology.com/assessment/7000033
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000033
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0035@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260912T035900Z
+SUMMARY:Spanish I Quiz 6
+URL;VALUE=URI:https://example.schoology.com/assignment/7000034
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000034
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0036@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260915T035900Z
+SUMMARY:ALG2 Homework 13
+URL;VALUE=URI:https://example.schoology.com/assignment/7000035
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000035
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0037@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260915T035900Z
+SUMMARY:Spanish I Quiz 7
+URL;VALUE=URI:https://example.schoology.com/assignment/7000036
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000036
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0038@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260915T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 7
+URL;VALUE=URI:https://example.schoology.com/assignment/7000037
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000037
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0039@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260916T035900Z
+SUMMARY:ALG2 Homework 14
+URL;VALUE=URI:https://example.schoology.com/assignment/7000038
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000038
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0040@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260915T225900
+SUMMARY:Apologia Chem - Module 02 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000039
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000039
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0041@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260917T035900Z
+SUMMARY:ALG2 Homework 15
+URL;VALUE=URI:https://example.schoology.com/assignment/7000040
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000040
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0042@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260916T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-04
+URL;VALUE=URI:https://example.schoology.com/assignment/7000041
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000041
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0043@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260917T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 8
+URL;VALUE=URI:https://example.schoology.com/assignment/7000042
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000042
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0044@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260918T035900Z
+SUMMARY:ALG2 Homework 16
+URL;VALUE=URI:https://example.schoology.com/assignment/7000043
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000043
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0045@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20260917T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #4
+URL;VALUE=URI:https://example.schoology.com/assignment/7000044
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000044
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0046@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260919T035900Z
+SUMMARY:Spanish I Quiz 8
+URL;VALUE=URI:https://example.schoology.com/assignment/7000045
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000045
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0047@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260922T035900Z
+SUMMARY:ALG2 Homework 17
+URL;VALUE=URI:https://example.schoology.com/assignment/7000046
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000046
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0048@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260922T035900Z
+SUMMARY:Spanish I Quiz 9
+URL;VALUE=URI:https://example.schoology.com/assignment/7000047
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000047
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0049@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260922T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 9
+URL;VALUE=URI:https://example.schoology.com/assignment/7000048
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000048
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0050@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260923T035900Z
+SUMMARY:ALG2 Homework 18
+URL;VALUE=URI:https://example.schoology.com/assignment/7000049
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000049
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0051@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260922T225900
+SUMMARY:Apologia Chem - Module 03 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000050
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000050
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0052@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260924T035900Z
+SUMMARY:ALG2 Homework 19
+URL;VALUE=URI:https://example.schoology.com/assignment/7000051
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000051
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0053@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260923T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-05
+URL;VALUE=URI:https://example.schoology.com/assignment/7000052
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000052
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0054@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260924T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 10
+URL;VALUE=URI:https://example.schoology.com/assignment/7000053
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000053
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0055@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260925T035900Z
+SUMMARY:ALG2 Homework 20
+URL;VALUE=URI:https://example.schoology.com/assignment/7000054
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000054
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0056@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20260924T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #5
+URL;VALUE=URI:https://example.schoology.com/assignment/7000055
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000055
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0057@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260925T225900
+SUMMARY:ALG2 Quiz 3
+URL;VALUE=URI:https://example.schoology.com/assessment/7000056
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000056
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0058@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260926T035900Z
+SUMMARY:Spanish I Quiz 10
+URL;VALUE=URI:https://example.schoology.com/assignment/7000057
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000057
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0059@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260929T035900Z
+SUMMARY:ALG2 Homework 21
+URL;VALUE=URI:https://example.schoology.com/assignment/7000058
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000058
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0060@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260929T035900Z
+SUMMARY:Spanish I Quiz 11
+URL;VALUE=URI:https://example.schoology.com/assignment/7000059
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000059
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0061@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260929T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 11
+URL;VALUE=URI:https://example.schoology.com/assignment/7000060
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000060
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0062@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260930T035900Z
+SUMMARY:ALG2 Homework 22
+URL;VALUE=URI:https://example.schoology.com/assignment/7000061
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000061
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0063@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20260929T225900
+SUMMARY:Apologia Chem - Module 03 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000062
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000062
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0064@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261001T035900Z
+SUMMARY:ALG2 Homework 23
+URL;VALUE=URI:https://example.schoology.com/assignment/7000063
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000063
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0065@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260930T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-06
+URL;VALUE=URI:https://example.schoology.com/assignment/7000064
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000064
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0066@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261001T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 12
+URL;VALUE=URI:https://example.schoology.com/assignment/7000065
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000065
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0067@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261002T035900Z
+SUMMARY:ALG2 Homework 24
+URL;VALUE=URI:https://example.schoology.com/assignment/7000066
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000066
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0068@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261001T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #6
+URL;VALUE=URI:https://example.schoology.com/assignment/7000067
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000067
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0069@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261003T035900Z
+SUMMARY:Spanish I Quiz 12
+URL;VALUE=URI:https://example.schoology.com/assignment/7000068
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000068
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0070@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261006T035900Z
+SUMMARY:ALG2 Homework 25
+DESCRIPTION:Read §2.3 — answer 1–12 (odds).
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0071@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261006T035900Z
+SUMMARY:Spanish I Quiz 13
+URL;VALUE=URI:https://example.schoology.com/assignment/7000069
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000069
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0072@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261006T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 13
+URL;VALUE=URI:https://example.schoology.com/assignment/7000070
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000070
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0073@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261007T035900Z
+SUMMARY:ALG2 Homework 26
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote.
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0074@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261006T225900
+SUMMARY:Apologia Chem - Module 04 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000071
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000071
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0075@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261008T035900Z
+SUMMARY:ALG2 Homework 27
+URL;VALUE=URI:https://example.schoology.com/assignment/7000072
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000072
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0076@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261007T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-07
+URL;VALUE=URI:https://example.schoology.com/assignment/7000073
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000073
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0077@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261008T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 14
+URL;VALUE=URI:https://example.schoology.com/assignment/7000074
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000074
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0078@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261009T035900Z
+SUMMARY:ALG2 Homework 28
+URL;VALUE=URI:https://example.schoology.com/assignment/7000075
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000075
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0079@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261008T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #7
+URL;VALUE=URI:https://example.schoology.com/assignment/7000076
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000076
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0080@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261009T225900
+SUMMARY:ALG2 Quiz 4
+URL;VALUE=URI:https://example.schoology.com/assessment/7000077
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000077
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0081@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261010T035900Z
+SUMMARY:Spanish I Quiz 14
+URL;VALUE=URI:https://example.schoology.com/assignment/7000078
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000078
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0082@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261013T035900Z
+SUMMARY:ALG2 Homework 29
+URL;VALUE=URI:https://example.schoology.com/assignment/7000079
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000079
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0083@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261013T035900Z
+SUMMARY:Spanish I Quiz 15
+URL;VALUE=URI:https://example.schoology.com/assignment/7000080
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000080
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0084@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261013T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 15
+URL;VALUE=URI:https://example.schoology.com/assignment/7000081
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000081
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0085@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261014T035900Z
+SUMMARY:ALG2 Homework 30
+URL;VALUE=URI:https://example.schoology.com/assignment/7000082
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000082
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0086@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261013T225900
+SUMMARY:Apologia Chem - Module 04 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000083
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000083
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0087@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261015T035900Z
+SUMMARY:ALG2 Homework 31
+URL;VALUE=URI:https://example.schoology.com/assignment/7000084
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000084
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0088@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261014T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-08
+URL;VALUE=URI:https://example.schoology.com/assignment/7000085
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000085
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0089@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261015T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 16
+URL;VALUE=URI:https://example.schoology.com/assignment/7000086
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000086
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0090@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261016T035900Z
+SUMMARY:ALG2 Homework 32
+URL;VALUE=URI:https://example.schoology.com/assignment/7000087
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000087
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0091@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261015T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #8
+URL;VALUE=URI:https://example.schoology.com/assignment/7000088
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000088
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0092@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261017T035900Z
+SUMMARY:Spanish I Quiz 16
+URL;VALUE=URI:https://example.schoology.com/assignment/7000089
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000089
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0093@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261020T035900Z
+SUMMARY:ALG2 Homework 33
+URL;VALUE=URI:https://example.schoology.com/assignment/7000090
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000090
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0094@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261020T035900Z
+SUMMARY:Spanish I Quiz 17
+URL;VALUE=URI:https://example.schoology.com/assignment/7000091
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000091
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0095@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261020T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 17
+URL;VALUE=URI:https://example.schoology.com/assignment/7000092
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000092
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0096@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261021T035900Z
+SUMMARY:ALG2 Homework 34
+URL;VALUE=URI:https://example.schoology.com/assignment/7000093
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000093
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0097@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261020T225900
+SUMMARY:Apologia Chem - Module 05 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000094
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000094
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0098@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261022T035900Z
+SUMMARY:ALG2 Homework 35
+DESCRIPTION:Show all work\, then upload a photo.
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0099@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261021T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-09
+URL;VALUE=URI:https://example.schoology.com/assignment/7000095
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000095
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0100@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261022T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 18
+URL;VALUE=URI:https://example.schoology.com/assignment/7000096
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000096
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0101@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261023T035900Z
+SUMMARY:ALG2 Homework 36
+URL;VALUE=URI:https://example.schoology.com/assignment/7000097
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000097
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0102@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261022T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #9
+URL;VALUE=URI:https://example.schoology.com/assignment/7000098
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000098
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0103@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261023T225900
+SUMMARY:ALG2 Quiz 5
+URL;VALUE=URI:https://example.schoology.com/assessment/7000099
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000099
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0104@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261024T035900Z
+SUMMARY:Spanish I Quiz 18
+URL;VALUE=URI:https://example.schoology.com/assignment/7000100
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000100
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0105@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261027T035900Z
+SUMMARY:ALG2 Homework 37
+URL;VALUE=URI:https://example.schoology.com/assignment/7000101
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000101
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0106@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261027T035900Z
+SUMMARY:Spanish I Quiz 19
+URL;VALUE=URI:https://example.schoology.com/assignment/7000102
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000102
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0107@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261027T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 19
+URL;VALUE=URI:https://example.schoology.com/assignment/7000103
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000103
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0108@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261028T035900Z
+SUMMARY:ALG2 Homework 38
+URL;VALUE=URI:https://example.schoology.com/assignment/7000104
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000104
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0109@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261027T225900
+SUMMARY:Apologia Chem - Module 05 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000105
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000105
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0110@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261029T035900Z
+SUMMARY:ALG2 Homework 39
+URL;VALUE=URI:https://example.schoology.com/assignment/7000106
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000106
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0111@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261028T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-10
+URL;VALUE=URI:https://example.schoology.com/assignment/7000107
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000107
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0112@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261029T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 20
+URL;VALUE=URI:https://example.schoology.com/assignment/7000108
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000108
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0113@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261030T035900Z
+SUMMARY:ALG2 Homework 40
+URL;VALUE=URI:https://example.schoology.com/assignment/7000109
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000109
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0114@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261029T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #10
+URL;VALUE=URI:https://example.schoology.com/assignment/7000110
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000110
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0115@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261031T035900Z
+SUMMARY:Spanish I Quiz 20
+URL;VALUE=URI:https://example.schoology.com/assignment/7000111
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000111
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0116@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261103T045900Z
+SUMMARY:ALG2 Homework 41
+URL;VALUE=URI:https://example.schoology.com/assignment/7000112
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000112
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0117@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261103T045900Z
+SUMMARY:Spanish I Quiz 21
+URL;VALUE=URI:https://example.schoology.com/assignment/7000113
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000113
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0118@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261103T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 21
+URL;VALUE=URI:https://example.schoology.com/assignment/7000114
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000114
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0119@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261104T045900Z
+SUMMARY:ALG2 Homework 42
+URL;VALUE=URI:https://example.schoology.com/assignment/7000115
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000115
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0120@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261103T225900
+SUMMARY:Apologia Chem - Module 06 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000116
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000116
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0121@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261105T045900Z
+SUMMARY:ALG2 Homework 43
+URL;VALUE=URI:https://example.schoology.com/assignment/7000117
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000117
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0122@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261104T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-11
+URL;VALUE=URI:https://example.schoology.com/assignment/7000118
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000118
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0123@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261105T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 22
+URL;VALUE=URI:https://example.schoology.com/assignment/7000119
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000119
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0124@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261106T045900Z
+SUMMARY:ALG2 Homework 44
+URL;VALUE=URI:https://example.schoology.com/assignment/7000120
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000120
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0125@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261105T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #11
+URL;VALUE=URI:https://example.schoology.com/assignment/7000121
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000121
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0126@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261106T225900
+SUMMARY:ALG2 Quiz 6
+URL;VALUE=URI:https://example.schoology.com/assessment/7000122
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000122
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0127@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261107T045900Z
+SUMMARY:Spanish I Quiz 22
+URL;VALUE=URI:https://example.schoology.com/assignment/7000123
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000123
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0128@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261110T045900Z
+SUMMARY:ALG2 Homework 45
+URL;VALUE=URI:https://example.schoology.com/assignment/7000124
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000124
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0129@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261110T045900Z
+SUMMARY:Spanish I Quiz 23
+URL;VALUE=URI:https://example.schoology.com/assignment/7000125
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000125
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0130@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261110T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 23
+URL;VALUE=URI:https://example.schoology.com/assignment/7000126
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000126
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0131@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261111T045900Z
+SUMMARY:ALG2 Homework 46
+URL;VALUE=URI:https://example.schoology.com/assignment/7000127
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000127
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0132@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261110T225900
+SUMMARY:Apologia Chem - Module 06 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000128
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000128
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0133@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261112T045900Z
+SUMMARY:ALG2 Homework 47
+DESCRIPTION:Show all work\, then upload a photo.
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0134@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261111T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-12
+URL;VALUE=URI:https://example.schoology.com/assignment/7000129
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000129
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0135@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261112T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 24
+URL;VALUE=URI:https://example.schoology.com/assignment/7000130
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000130
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0136@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261113T045900Z
+SUMMARY:ALG2 Homework 48
+URL;VALUE=URI:https://example.schoology.com/assignment/7000131
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000131
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0137@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261112T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #12
+URL;VALUE=URI:https://example.schoology.com/assignment/7000132
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000132
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0138@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261114T045900Z
+SUMMARY:Spanish I Quiz 24
+URL;VALUE=URI:https://example.schoology.com/assignment/7000133
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000133
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0139@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261117T045900Z
+SUMMARY:ALG2 Homework 49
+URL;VALUE=URI:https://example.schoology.com/assignment/7000134
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000134
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0140@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261117T045900Z
+SUMMARY:Spanish I Quiz 25
+URL;VALUE=URI:https://example.schoology.com/assignment/7000135
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000135
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0141@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261117T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 25
+URL;VALUE=URI:https://example.schoology.com/assignment/7000136
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000136
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0142@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261118T045900Z
+SUMMARY:ALG2 Homework 50
+URL;VALUE=URI:https://example.schoology.com/assignment/7000137
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000137
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0143@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261117T225900
+SUMMARY:Apologia Chem - Module 07 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000138
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000138
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0144@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261119T045900Z
+SUMMARY:ALG2 Homework 51
+URL;VALUE=URI:https://example.schoology.com/assignment/7000139
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000139
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0145@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261118T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-13
+URL;VALUE=URI:https://example.schoology.com/assignment/7000140
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000140
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0146@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261119T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 26
+URL;VALUE=URI:https://example.schoology.com/assignment/7000141
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000141
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0147@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261120T045900Z
+SUMMARY:ALG2 Homework 52
+URL;VALUE=URI:https://example.schoology.com/assignment/7000142
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000142
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0148@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261119T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #13
+URL;VALUE=URI:https://example.schoology.com/assignment/7000143
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000143
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0149@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261120T225900
+SUMMARY:ALG2 Quiz 7
+URL;VALUE=URI:https://example.schoology.com/assessment/7000144
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000144
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0150@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261121T045900Z
+SUMMARY:Spanish I Quiz 26
+URL;VALUE=URI:https://example.schoology.com/assignment/7000145
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000145
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0151@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261201T045900Z
+SUMMARY:ALG2 Homework 53
+DESCRIPTION:Read §2.3 — answer 1–12 (odds).
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0152@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261201T045900Z
+SUMMARY:Spanish I Quiz 27
+URL;VALUE=URI:https://example.schoology.com/assignment/7000146
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000146
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0153@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261201T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 27
+URL;VALUE=URI:https://example.schoology.com/assignment/7000147
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000147
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0154@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261202T045900Z
+SUMMARY:ALG2 Homework 54
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote.
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0155@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261201T225900
+SUMMARY:Apologia Chem - Module 07 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000148
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000148
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0156@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261203T045900Z
+SUMMARY:ALG2 Homework 55
+URL;VALUE=URI:https://example.schoology.com/assignment/7000149
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000149
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0157@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261202T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-14
+URL;VALUE=URI:https://example.schoology.com/assignment/7000150
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000150
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0158@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261203T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 28
+URL;VALUE=URI:https://example.schoology.com/assignment/7000151
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000151
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0159@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261204T045900Z
+SUMMARY:ALG2 Homework 56
+URL;VALUE=URI:https://example.schoology.com/assignment/7000152
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000152
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0160@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261203T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #14
+URL;VALUE=URI:https://example.schoology.com/assignment/7000153
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000153
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0161@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261205T045900Z
+SUMMARY:Spanish I Quiz 28
+URL;VALUE=URI:https://example.schoology.com/assignment/7000154
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000154
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0162@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261208T045900Z
+SUMMARY:ALG2 Homework 57
+URL;VALUE=URI:https://example.schoology.com/assignment/7000155
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000155
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0163@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261208T045900Z
+SUMMARY:Spanish I Quiz 29
+URL;VALUE=URI:https://example.schoology.com/assignment/7000156
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000156
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0164@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261208T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 29
+URL;VALUE=URI:https://example.schoology.com/assignment/7000157
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000157
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0165@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261209T045900Z
+SUMMARY:ALG2 Homework 58
+URL;VALUE=URI:https://example.schoology.com/assignment/7000158
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000158
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0166@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261208T225900
+SUMMARY:Apologia Chem - Module 08 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000159
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000159
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0167@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261210T045900Z
+SUMMARY:ALG2 Homework 59
+URL;VALUE=URI:https://example.schoology.com/assignment/7000160
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000160
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0168@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261209T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-15
+URL;VALUE=URI:https://example.schoology.com/assignment/7000161
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000161
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0169@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261210T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 30
+URL;VALUE=URI:https://example.schoology.com/assignment/7000162
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000162
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0170@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261211T045900Z
+SUMMARY:ALG2 Homework 60
+URL;VALUE=URI:https://example.schoology.com/assignment/7000163
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000163
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0171@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261210T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #15
+URL;VALUE=URI:https://example.schoology.com/assignment/7000164
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000164
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0172@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261211T225900
+SUMMARY:ALG2 Quiz 8
+URL;VALUE=URI:https://example.schoology.com/assessment/7000165
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000165
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0173@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261212T045900Z
+SUMMARY:Spanish I Quiz 30
+URL;VALUE=URI:https://example.schoology.com/assignment/7000166
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000166
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0174@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261215T045900Z
+SUMMARY:ALG2 Homework 61
+URL;VALUE=URI:https://example.schoology.com/assignment/7000167
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000167
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0175@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261215T045900Z
+SUMMARY:Spanish I Quiz 31
+URL;VALUE=URI:https://example.schoology.com/assignment/7000168
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000168
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0176@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261215T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 31
+URL;VALUE=URI:https://example.schoology.com/assignment/7000169
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000169
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0177@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261216T045900Z
+SUMMARY:ALG2 Homework 62
+URL;VALUE=URI:https://example.schoology.com/assignment/7000170
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000170
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0178@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261215T225900
+SUMMARY:Apologia Chem - Module 08 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000171
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000171
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0179@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261217T045900Z
+SUMMARY:ALG2 Homework 63
+URL;VALUE=URI:https://example.schoology.com/assignment/7000172
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000172
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0180@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261216T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-16
+URL;VALUE=URI:https://example.schoology.com/assignment/7000173
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000173
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0181@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261217T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 32
+URL;VALUE=URI:https://example.schoology.com/assignment/7000174
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000174
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0182@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261218T045900Z
+SUMMARY:ALG2 Homework 64
+URL;VALUE=URI:https://example.schoology.com/assignment/7000175
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000175
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0183@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20261217T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #16
+URL;VALUE=URI:https://example.schoology.com/assignment/7000176
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000176
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0184@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261219T045900Z
+SUMMARY:Spanish I Quiz 32
+URL;VALUE=URI:https://example.schoology.com/assignment/7000177
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000177
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0185@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270105T045900Z
+SUMMARY:ALG2 Homework 65
+URL;VALUE=URI:https://example.schoology.com/assignment/7000178
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000178
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0186@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270105T045900Z
+SUMMARY:Spanish I Quiz 33
+URL;VALUE=URI:https://example.schoology.com/assignment/7000179
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000179
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0187@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270105T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 33
+URL;VALUE=URI:https://example.schoology.com/assignment/7000180
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000180
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0188@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270106T045900Z
+SUMMARY:ALG2 Homework 66
+URL;VALUE=URI:https://example.schoology.com/assignment/7000181
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000181
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0189@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270105T225900
+SUMMARY:Apologia Chem - Module 09 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000182
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000182
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0190@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270107T045900Z
+SUMMARY:ALG2 Homework 67
+URL;VALUE=URI:https://example.schoology.com/assignment/7000183
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000183
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0191@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270106T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-17
+URL;VALUE=URI:https://example.schoology.com/assignment/7000184
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000184
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0192@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270107T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 34
+URL;VALUE=URI:https://example.schoology.com/assignment/7000185
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000185
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0193@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270108T045900Z
+SUMMARY:ALG2 Homework 68
+URL;VALUE=URI:https://example.schoology.com/assignment/7000186
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000186
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0194@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270107T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #17
+URL;VALUE=URI:https://example.schoology.com/assignment/7000187
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000187
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0195@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270108T225900
+SUMMARY:ALG2 Quiz 9
+URL;VALUE=URI:https://example.schoology.com/assessment/7000188
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000188
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0196@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270109T045900Z
+SUMMARY:Spanish I Quiz 34
+URL;VALUE=URI:https://example.schoology.com/assignment/7000189
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000189
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0197@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270112T045900Z
+SUMMARY:ALG2 Homework 69
+URL;VALUE=URI:https://example.schoology.com/assignment/7000190
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000190
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0198@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270112T045900Z
+SUMMARY:Spanish I Quiz 35
+URL;VALUE=URI:https://example.schoology.com/assignment/7000191
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000191
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0199@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270112T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 35
+URL;VALUE=URI:https://example.schoology.com/assignment/7000192
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000192
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0200@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270113T045900Z
+SUMMARY:ALG2 Homework 70
+URL;VALUE=URI:https://example.schoology.com/assignment/7000193
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000193
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0201@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270112T225900
+SUMMARY:Apologia Chem - Module 09 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000194
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000194
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0202@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270114T045900Z
+SUMMARY:ALG2 Homework 71
+URL;VALUE=URI:https://example.schoology.com/assignment/7000195
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000195
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0203@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270113T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-18
+URL;VALUE=URI:https://example.schoology.com/assignment/7000196
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000196
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0204@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270114T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 36
+URL;VALUE=URI:https://example.schoology.com/assignment/7000197
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000197
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0205@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270115T045900Z
+SUMMARY:ALG2 Homework 72
+URL;VALUE=URI:https://example.schoology.com/assignment/7000198
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000198
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0206@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270114T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #18
+URL;VALUE=URI:https://example.schoology.com/assignment/7000199
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000199
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0207@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270116T045900Z
+SUMMARY:Spanish I Quiz 36
+URL;VALUE=URI:https://example.schoology.com/assignment/7000200
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000200
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0208@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270119T045900Z
+SUMMARY:ALG2 Homework 73
+URL;VALUE=URI:https://example.schoology.com/assignment/7000201
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000201
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0209@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270119T045900Z
+SUMMARY:Spanish I Quiz 37
+URL;VALUE=URI:https://example.schoology.com/assignment/7000202
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000202
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0210@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270119T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 37
+URL;VALUE=URI:https://example.schoology.com/assignment/7000203
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000203
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0211@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270120T045900Z
+SUMMARY:ALG2 Homework 74
+URL;VALUE=URI:https://example.schoology.com/assignment/7000204
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000204
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0212@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270119T225900
+SUMMARY:Apologia Chem - Module 10 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000205
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000205
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0213@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270121T045900Z
+SUMMARY:ALG2 Homework 75
+URL;VALUE=URI:https://example.schoology.com/assignment/7000206
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000206
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0214@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270120T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-19
+URL;VALUE=URI:https://example.schoology.com/assignment/7000207
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000207
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0215@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270121T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 38
+URL;VALUE=URI:https://example.schoology.com/assignment/7000208
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000208
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0216@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270122T045900Z
+SUMMARY:ALG2 Homework 76
+URL;VALUE=URI:https://example.schoology.com/assignment/7000209
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000209
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0217@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270121T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #19
+URL;VALUE=URI:https://example.schoology.com/assignment/7000210
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000210
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0218@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270122T225900
+SUMMARY:ALG2 Quiz 10
+URL;VALUE=URI:https://example.schoology.com/assessment/7000211
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000211
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0219@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270123T045900Z
+SUMMARY:Spanish I Quiz 38
+URL;VALUE=URI:https://example.schoology.com/assignment/7000212
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000212
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0220@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270126T045900Z
+SUMMARY:ALG2 Homework 77
+URL;VALUE=URI:https://example.schoology.com/assignment/7000213
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000213
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0221@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270126T045900Z
+SUMMARY:Spanish I Quiz 39
+URL;VALUE=URI:https://example.schoology.com/assignment/7000214
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000214
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0222@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270126T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 39
+URL;VALUE=URI:https://example.schoology.com/assignment/7000215
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000215
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0223@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270127T045900Z
+SUMMARY:ALG2 Homework 78
+URL;VALUE=URI:https://example.schoology.com/assignment/7000216
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000216
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0224@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270126T225900
+SUMMARY:Apologia Chem - Module 10 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000217
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000217
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0225@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270128T045900Z
+SUMMARY:ALG2 Homework 79
+DESCRIPTION:Show all work\, then upload a photo.
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0226@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270127T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-20
+URL;VALUE=URI:https://example.schoology.com/assignment/7000218
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000218
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0227@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270128T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 40
+URL;VALUE=URI:https://example.schoology.com/assignment/7000219
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000219
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0228@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270129T045900Z
+SUMMARY:ALG2 Homework 80
+URL;VALUE=URI:https://example.schoology.com/assignment/7000220
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000220
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0229@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270128T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #20
+URL;VALUE=URI:https://example.schoology.com/assignment/7000221
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000221
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0230@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270130T045900Z
+SUMMARY:Spanish I Quiz 40
+URL;VALUE=URI:https://example.schoology.com/assignment/7000222
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000222
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0231@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270202T045900Z
+SUMMARY:ALG2 Homework 81
+URL;VALUE=URI:https://example.schoology.com/assignment/7000223
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000223
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0232@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270202T045900Z
+SUMMARY:Spanish I Quiz 41
+URL;VALUE=URI:https://example.schoology.com/assignment/7000224
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000224
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0233@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270202T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 41
+URL;VALUE=URI:https://example.schoology.com/assignment/7000225
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000225
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0234@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270203T045900Z
+SUMMARY:ALG2 Homework 82
+URL;VALUE=URI:https://example.schoology.com/assignment/7000226
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000226
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0235@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270202T225900
+SUMMARY:Apologia Chem - Module 11 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000227
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000227
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0236@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270204T045900Z
+SUMMARY:ALG2 Homework 83
+URL;VALUE=URI:https://example.schoology.com/assignment/7000228
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000228
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0237@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270203T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-21
+URL;VALUE=URI:https://example.schoology.com/assignment/7000229
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000229
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0238@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270204T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 42
+URL;VALUE=URI:https://example.schoology.com/assignment/7000230
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000230
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0239@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270205T045900Z
+SUMMARY:ALG2 Homework 84
+URL;VALUE=URI:https://example.schoology.com/assignment/7000231
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000231
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0240@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270204T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #21
+URL;VALUE=URI:https://example.schoology.com/assignment/7000232
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000232
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0241@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270205T225900
+SUMMARY:ALG2 Quiz 11
+URL;VALUE=URI:https://example.schoology.com/assessment/7000233
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000233
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0242@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270206T045900Z
+SUMMARY:Spanish I Quiz 42
+URL;VALUE=URI:https://example.schoology.com/assignment/7000234
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000234
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0243@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270209T045900Z
+SUMMARY:ALG2 Homework 85
+URL;VALUE=URI:https://example.schoology.com/assignment/7000235
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000235
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0244@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270209T045900Z
+SUMMARY:Spanish I Quiz 43
+URL;VALUE=URI:https://example.schoology.com/assignment/7000236
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000236
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0245@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270209T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 43
+URL;VALUE=URI:https://example.schoology.com/assignment/7000237
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000237
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0246@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270210T045900Z
+SUMMARY:ALG2 Homework 86
+URL;VALUE=URI:https://example.schoology.com/assignment/7000238
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000238
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0247@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270209T225900
+SUMMARY:Apologia Chem - Module 11 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000239
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000239
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0248@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270211T045900Z
+SUMMARY:ALG2 Homework 87
+URL;VALUE=URI:https://example.schoology.com/assignment/7000240
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000240
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0249@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270210T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-22
+URL;VALUE=URI:https://example.schoology.com/assignment/7000241
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000241
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0250@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270211T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 44
+URL;VALUE=URI:https://example.schoology.com/assignment/7000242
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000242
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0251@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270212T045900Z
+SUMMARY:ALG2 Homework 88
+URL;VALUE=URI:https://example.schoology.com/assignment/7000243
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000243
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0252@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270211T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #22
+URL;VALUE=URI:https://example.schoology.com/assignment/7000244
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000244
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0253@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270213T045900Z
+SUMMARY:Spanish I Quiz 44
+URL;VALUE=URI:https://example.schoology.com/assignment/7000245
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000245
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0254@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270216T045900Z
+SUMMARY:ALG2 Homework 89
+URL;VALUE=URI:https://example.schoology.com/assignment/7000246
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000246
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0255@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270216T045900Z
+SUMMARY:Spanish I Quiz 45
+URL;VALUE=URI:https://example.schoology.com/assignment/7000247
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000247
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0256@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270216T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 45
+URL;VALUE=URI:https://example.schoology.com/assignment/7000248
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000248
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0257@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270217T045900Z
+SUMMARY:ALG2 Homework 90
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote.
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0258@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270216T225900
+SUMMARY:Apologia Chem - Module 12 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000249
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000249
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0259@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270218T045900Z
+SUMMARY:ALG2 Homework 91
+URL;VALUE=URI:https://example.schoology.com/assignment/7000250
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000250
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0260@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270217T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-23
+URL;VALUE=URI:https://example.schoology.com/assignment/7000251
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000251
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0261@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270218T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 46
+URL;VALUE=URI:https://example.schoology.com/assignment/7000252
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000252
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0262@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270219T045900Z
+SUMMARY:ALG2 Homework 92
+URL;VALUE=URI:https://example.schoology.com/assignment/7000253
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000253
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0263@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270218T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #23
+URL;VALUE=URI:https://example.schoology.com/assignment/7000254
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000254
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0264@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270219T225900
+SUMMARY:ALG2 Quiz 12
+URL;VALUE=URI:https://example.schoology.com/assessment/7000255
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000255
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0265@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270220T045900Z
+SUMMARY:Spanish I Quiz 46
+URL;VALUE=URI:https://example.schoology.com/assignment/7000256
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000256
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0266@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270223T045900Z
+SUMMARY:ALG2 Homework 93
+URL;VALUE=URI:https://example.schoology.com/assignment/7000257
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000257
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0267@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270223T045900Z
+SUMMARY:Spanish I Quiz 47
+URL;VALUE=URI:https://example.schoology.com/assignment/7000258
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000258
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0268@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270223T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 47
+URL;VALUE=URI:https://example.schoology.com/assignment/7000259
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000259
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0269@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270224T045900Z
+SUMMARY:ALG2 Homework 94
+URL;VALUE=URI:https://example.schoology.com/assignment/7000260
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000260
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0270@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270223T225900
+SUMMARY:Apologia Chem - Module 12 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000261
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000261
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0271@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270225T045900Z
+SUMMARY:ALG2 Homework 95
+URL;VALUE=URI:https://example.schoology.com/assignment/7000262
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000262
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0272@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270224T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-24
+URL;VALUE=URI:https://example.schoology.com/assignment/7000263
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000263
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0273@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270225T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 48
+URL;VALUE=URI:https://example.schoology.com/assignment/7000264
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000264
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0274@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270226T045900Z
+SUMMARY:ALG2 Homework 96
+URL;VALUE=URI:https://example.schoology.com/assignment/7000265
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000265
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0275@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270225T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #24
+URL;VALUE=URI:https://example.schoology.com/assignment/7000266
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000266
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0276@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270227T045900Z
+SUMMARY:Spanish I Quiz 48
+URL;VALUE=URI:https://example.schoology.com/assignment/7000267
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000267
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0277@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270302T045900Z
+SUMMARY:ALG2 Homework 97
+URL;VALUE=URI:https://example.schoology.com/assignment/7000268
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000268
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0278@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270302T045900Z
+SUMMARY:Spanish I Quiz 49
+URL;VALUE=URI:https://example.schoology.com/assignment/7000269
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000269
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0279@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270302T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 49
+URL;VALUE=URI:https://example.schoology.com/assignment/7000270
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000270
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0280@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270303T045900Z
+SUMMARY:ALG2 Homework 98
+URL;VALUE=URI:https://example.schoology.com/assignment/7000271
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000271
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0281@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270302T225900
+SUMMARY:Apologia Chem - Module 13 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000272
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000272
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0282@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270304T045900Z
+SUMMARY:ALG2 Homework 99
+URL;VALUE=URI:https://example.schoology.com/assignment/7000273
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000273
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0283@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270303T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-25
+URL;VALUE=URI:https://example.schoology.com/assignment/7000274
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000274
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0284@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270304T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 50
+URL;VALUE=URI:https://example.schoology.com/assignment/7000275
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000275
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0285@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270305T045900Z
+SUMMARY:ALG2 Homework 100
+URL;VALUE=URI:https://example.schoology.com/assignment/7000276
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000276
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0286@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270304T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #25
+URL;VALUE=URI:https://example.schoology.com/assignment/7000277
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000277
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0287@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270305T225900
+SUMMARY:ALG2 Quiz 13
+URL;VALUE=URI:https://example.schoology.com/assessment/7000278
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000278
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0288@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270306T045900Z
+SUMMARY:Spanish I Quiz 50
+URL;VALUE=URI:https://example.schoology.com/assignment/7000279
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000279
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0289@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270309T045900Z
+SUMMARY:ALG2 Homework 101
+URL;VALUE=URI:https://example.schoology.com/assignment/7000280
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000280
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0290@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270309T045900Z
+SUMMARY:Spanish I Quiz 51
+URL;VALUE=URI:https://example.schoology.com/assignment/7000281
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000281
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0291@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270309T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 51
+URL;VALUE=URI:https://example.schoology.com/assignment/7000282
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000282
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0292@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270310T045900Z
+SUMMARY:ALG2 Homework 102
+URL;VALUE=URI:https://example.schoology.com/assignment/7000283
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000283
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0293@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270309T225900
+SUMMARY:Apologia Chem - Module 13 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000284
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000284
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0294@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270311T045900Z
+SUMMARY:ALG2 Homework 103
+URL;VALUE=URI:https://example.schoology.com/assignment/7000285
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000285
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0295@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270310T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-26
+URL;VALUE=URI:https://example.schoology.com/assignment/7000286
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000286
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0296@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270311T045900Z
+SUMMARY:Omnibus Primary HW Upload Day 52
+URL;VALUE=URI:https://example.schoology.com/assignment/7000287
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000287
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0297@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270312T045900Z
+SUMMARY:ALG2 Homework 104
+URL;VALUE=URI:https://example.schoology.com/assignment/7000288
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000288
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0298@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270311T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #26
+URL;VALUE=URI:https://example.schoology.com/assignment/7000289
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000289
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0299@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270313T045900Z
+SUMMARY:Spanish I Quiz 52
+URL;VALUE=URI:https://example.schoology.com/assignment/7000290
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000290
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0300@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270316T035900Z
+SUMMARY:ALG2 Homework 105
+DESCRIPTION:Read §2.3 — answer 1–12 (odds).
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0301@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270316T035900Z
+SUMMARY:Spanish I Quiz 53
+URL;VALUE=URI:https://example.schoology.com/assignment/7000291
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000291
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0302@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270316T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 53
+URL;VALUE=URI:https://example.schoology.com/assignment/7000292
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000292
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0303@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270317T035900Z
+SUMMARY:ALG2 Homework 106
+URL;VALUE=URI:https://example.schoology.com/assignment/7000293
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000293
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0304@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270316T225900
+SUMMARY:Apologia Chem - Module 14 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000294
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000294
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0305@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270318T035900Z
+SUMMARY:ALG2 Homework 107
+URL;VALUE=URI:https://example.schoology.com/assignment/7000295
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000295
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0306@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270317T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-27
+URL;VALUE=URI:https://example.schoology.com/assignment/7000296
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000296
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0307@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270318T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 54
+URL;VALUE=URI:https://example.schoology.com/assignment/7000297
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000297
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0308@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270319T035900Z
+SUMMARY:ALG2 Homework 108
+URL;VALUE=URI:https://example.schoology.com/assignment/7000298
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000298
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0309@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270318T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #27
+URL;VALUE=URI:https://example.schoology.com/assignment/7000299
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000299
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0310@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270319T225900
+SUMMARY:ALG2 Quiz 14
+URL;VALUE=URI:https://example.schoology.com/assessment/7000300
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000300
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0311@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270320T035900Z
+SUMMARY:Spanish I Quiz 54
+URL;VALUE=URI:https://example.schoology.com/assignment/7000301
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000301
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0312@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270330T035900Z
+SUMMARY:ALG2 Homework 109
+URL;VALUE=URI:https://example.schoology.com/assignment/7000302
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000302
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0313@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270330T035900Z
+SUMMARY:Spanish I Quiz 55
+URL;VALUE=URI:https://example.schoology.com/assignment/7000303
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000303
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0314@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270330T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 55
+URL;VALUE=URI:https://example.schoology.com/assignment/7000304
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000304
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0315@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270331T035900Z
+SUMMARY:ALG2 Homework 110
+URL;VALUE=URI:https://example.schoology.com/assignment/7000305
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000305
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0316@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270330T225900
+SUMMARY:Apologia Chem - Module 14 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000306
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000306
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0317@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270401T035900Z
+SUMMARY:ALG2 Homework 111
+URL;VALUE=URI:https://example.schoology.com/assignment/7000307
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000307
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0318@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270331T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-28
+URL;VALUE=URI:https://example.schoology.com/assignment/7000308
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000308
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0319@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270401T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 56
+URL;VALUE=URI:https://example.schoology.com/assignment/7000309
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000309
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0320@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270402T035900Z
+SUMMARY:ALG2 Homework 112
+URL;VALUE=URI:https://example.schoology.com/assignment/7000310
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000310
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0321@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270401T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #28
+URL;VALUE=URI:https://example.schoology.com/assignment/7000311
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000311
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0322@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270403T035900Z
+SUMMARY:Spanish I Quiz 56
+URL;VALUE=URI:https://example.schoology.com/assignment/7000312
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000312
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0323@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270406T035900Z
+SUMMARY:ALG2 Homework 113
+URL;VALUE=URI:https://example.schoology.com/assignment/7000313
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000313
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0324@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270406T035900Z
+SUMMARY:Spanish I Quiz 57
+URL;VALUE=URI:https://example.schoology.com/assignment/7000314
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000314
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0325@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270406T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 57
+URL;VALUE=URI:https://example.schoology.com/assignment/7000315
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000315
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0326@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270407T035900Z
+SUMMARY:ALG2 Homework 114
+URL;VALUE=URI:https://example.schoology.com/assignment/7000316
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000316
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0327@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270406T225900
+SUMMARY:Apologia Chem - Module 15 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000317
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000317
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0328@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270408T035900Z
+SUMMARY:ALG2 Homework 115
+URL;VALUE=URI:https://example.schoology.com/assignment/7000318
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000318
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0329@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270407T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-29
+URL;VALUE=URI:https://example.schoology.com/assignment/7000319
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000319
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0330@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270408T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 58
+URL;VALUE=URI:https://example.schoology.com/assignment/7000320
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000320
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0331@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270409T035900Z
+SUMMARY:ALG2 Homework 116
+URL;VALUE=URI:https://example.schoology.com/assignment/7000321
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000321
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0332@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270408T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #29
+URL;VALUE=URI:https://example.schoology.com/assignment/7000322
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000322
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0333@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270409T225900
+SUMMARY:ALG2 Quiz 15
+URL;VALUE=URI:https://example.schoology.com/assessment/7000323
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000323
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0334@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270410T035900Z
+SUMMARY:Spanish I Quiz 58
+URL;VALUE=URI:https://example.schoology.com/assignment/7000324
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000324
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0335@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270413T035900Z
+SUMMARY:ALG2 Homework 117
+URL;VALUE=URI:https://example.schoology.com/assignment/7000325
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000325
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0336@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270413T035900Z
+SUMMARY:Spanish I Quiz 59
+URL;VALUE=URI:https://example.schoology.com/assignment/7000326
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000326
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0337@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270413T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 59
+URL;VALUE=URI:https://example.schoology.com/assignment/7000327
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000327
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0338@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270414T035900Z
+SUMMARY:ALG2 Homework 118
+URL;VALUE=URI:https://example.schoology.com/assignment/7000328
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000328
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0339@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270413T225900
+SUMMARY:Apologia Chem - Module 15 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000329
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000329
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0340@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270415T035900Z
+SUMMARY:ALG2 Homework 119
+DESCRIPTION:Show all work\, then upload a photo.
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0341@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270414T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-30
+URL;VALUE=URI:https://example.schoology.com/assignment/7000330
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000330
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0342@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270415T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 60
+URL;VALUE=URI:https://example.schoology.com/assignment/7000331
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000331
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0343@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270416T035900Z
+SUMMARY:ALG2 Homework 120
+URL;VALUE=URI:https://example.schoology.com/assignment/7000332
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000332
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0344@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270415T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #30
+URL;VALUE=URI:https://example.schoology.com/assignment/7000333
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000333
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0345@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270417T035900Z
+SUMMARY:Spanish I Quiz 60
+URL;VALUE=URI:https://example.schoology.com/assignment/7000334
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000334
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0346@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270420T035900Z
+SUMMARY:ALG2 Homework 121
+URL;VALUE=URI:https://example.schoology.com/assignment/7000335
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000335
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0347@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270420T035900Z
+SUMMARY:Spanish I Quiz 61
+URL;VALUE=URI:https://example.schoology.com/assignment/7000336
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000336
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0348@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270420T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 61
+URL;VALUE=URI:https://example.schoology.com/assignment/7000337
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000337
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0349@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270421T035900Z
+SUMMARY:ALG2 Homework 122
+URL;VALUE=URI:https://example.schoology.com/assignment/7000338
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000338
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0350@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270420T225900
+SUMMARY:Apologia Chem - Module 16 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000339
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000339
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0351@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270422T035900Z
+SUMMARY:ALG2 Homework 123
+URL;VALUE=URI:https://example.schoology.com/assignment/7000340
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000340
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0352@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270421T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-31
+URL;VALUE=URI:https://example.schoology.com/assignment/7000341
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000341
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0353@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270422T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 62
+URL;VALUE=URI:https://example.schoology.com/assignment/7000342
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000342
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0354@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270423T035900Z
+SUMMARY:ALG2 Homework 124
+URL;VALUE=URI:https://example.schoology.com/assignment/7000343
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000343
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0355@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270422T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #31
+URL;VALUE=URI:https://example.schoology.com/assignment/7000344
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000344
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0356@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270423T225900
+SUMMARY:ALG2 Quiz 16
+URL;VALUE=URI:https://example.schoology.com/assessment/7000345
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000345
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0357@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270424T035900Z
+SUMMARY:Spanish I Quiz 62
+URL;VALUE=URI:https://example.schoology.com/assignment/7000346
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000346
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0358@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270427T035900Z
+SUMMARY:ALG2 Homework 125
+URL;VALUE=URI:https://example.schoology.com/assignment/7000347
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000347
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0359@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270427T035900Z
+SUMMARY:Spanish I Quiz 63
+URL;VALUE=URI:https://example.schoology.com/assignment/7000348
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000348
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0360@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270427T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 63
+URL;VALUE=URI:https://example.schoology.com/assignment/7000349
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000349
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0361@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270428T035900Z
+SUMMARY:ALG2 Homework 126
+URL;VALUE=URI:https://example.schoology.com/assignment/7000350
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000350
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0362@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270427T225900
+SUMMARY:Apologia Chem - Module 16 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000351
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000351
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0363@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270429T035900Z
+SUMMARY:ALG2 Homework 127
+URL;VALUE=URI:https://example.schoology.com/assignment/7000352
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000352
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0364@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270428T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-32
+URL;VALUE=URI:https://example.schoology.com/assignment/7000353
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000353
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0365@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270429T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 64
+URL;VALUE=URI:https://example.schoology.com/assignment/7000354
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000354
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0366@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270430T035900Z
+SUMMARY:ALG2 Homework 128
+URL;VALUE=URI:https://example.schoology.com/assignment/7000355
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000355
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0367@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270429T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #32
+URL;VALUE=URI:https://example.schoology.com/assignment/7000356
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000356
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0368@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270501T035900Z
+SUMMARY:Spanish I Quiz 64
+URL;VALUE=URI:https://example.schoology.com/assignment/7000357
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000357
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0369@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270504T035900Z
+SUMMARY:ALG2 Homework 129
+URL;VALUE=URI:https://example.schoology.com/assignment/7000358
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000358
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0370@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270504T035900Z
+SUMMARY:Spanish I Quiz 65
+URL;VALUE=URI:https://example.schoology.com/assignment/7000359
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000359
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0371@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270504T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 65
+URL;VALUE=URI:https://example.schoology.com/assignment/7000360
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000360
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0372@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270505T035900Z
+SUMMARY:ALG2 Homework 130
+URL;VALUE=URI:https://example.schoology.com/assignment/7000361
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000361
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0373@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270504T225900
+SUMMARY:Apologia Chem - Module 17 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000362
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000362
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0374@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270506T035900Z
+SUMMARY:ALG2 Homework 131
+URL;VALUE=URI:https://example.schoology.com/assignment/7000363
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000363
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0375@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270505T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-33
+URL;VALUE=URI:https://example.schoology.com/assignment/7000364
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000364
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0376@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270506T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 66
+URL;VALUE=URI:https://example.schoology.com/assignment/7000365
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000365
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0377@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270507T035900Z
+SUMMARY:ALG2 Homework 132
+URL;VALUE=URI:https://example.schoology.com/assignment/7000366
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000366
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0378@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270506T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #33
+URL;VALUE=URI:https://example.schoology.com/assignment/7000367
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000367
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0379@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270507T225900
+SUMMARY:ALG2 Quiz 17
+URL;VALUE=URI:https://example.schoology.com/assessment/7000368
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000368
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0380@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270508T035900Z
+SUMMARY:Spanish I Quiz 66
+URL;VALUE=URI:https://example.schoology.com/assignment/7000369
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000369
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0381@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270511T035900Z
+SUMMARY:ALG2 Homework 133
+URL;VALUE=URI:https://example.schoology.com/assignment/7000370
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000370
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0382@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270511T035900Z
+SUMMARY:Spanish I Quiz 67
+URL;VALUE=URI:https://example.schoology.com/assignment/7000371
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000371
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0383@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270511T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 67
+URL;VALUE=URI:https://example.schoology.com/assignment/7000372
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000372
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0384@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270512T035900Z
+SUMMARY:ALG2 Homework 134
+URL;VALUE=URI:https://example.schoology.com/assignment/7000373
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000373
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0385@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270511T225900
+SUMMARY:Apologia Chem - Module 17 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000374
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000374
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0386@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270513T035900Z
+SUMMARY:ALG2 Homework 135
+URL;VALUE=URI:https://example.schoology.com/assignment/7000375
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000375
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0387@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270512T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-34
+URL;VALUE=URI:https://example.schoology.com/assignment/7000376
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000376
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0388@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270513T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 68
+URL;VALUE=URI:https://example.schoology.com/assignment/7000377
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000377
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0389@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270514T035900Z
+SUMMARY:ALG2 Homework 136
+URL;VALUE=URI:https://example.schoology.com/assignment/7000378
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000378
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0390@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270513T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #34
+URL;VALUE=URI:https://example.schoology.com/assignment/7000379
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000379
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0391@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270515T035900Z
+SUMMARY:Spanish I Quiz 68
+URL;VALUE=URI:https://example.schoology.com/assignment/7000380
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000380
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0392@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270518T035900Z
+SUMMARY:ALG2 Homework 137
+URL;VALUE=URI:https://example.schoology.com/assignment/7000381
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000381
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0393@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270518T035900Z
+SUMMARY:Spanish I Quiz 69
+URL;VALUE=URI:https://example.schoology.com/assignment/7000382
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000382
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0394@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270518T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 69
+URL;VALUE=URI:https://example.schoology.com/assignment/7000383
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000383
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0395@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270519T035900Z
+SUMMARY:ALG2 Homework 138
+URL;VALUE=URI:https://example.schoology.com/assignment/7000384
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000384
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0396@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270518T225900
+SUMMARY:Apologia Chem - Module 18 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000385
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000385
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0397@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270520T035900Z
+SUMMARY:ALG2 Homework 139
+URL;VALUE=URI:https://example.schoology.com/assignment/7000386
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000386
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0398@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270519T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-35
+URL;VALUE=URI:https://example.schoology.com/assignment/7000387
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000387
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0399@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270520T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 70
+URL;VALUE=URI:https://example.schoology.com/assignment/7000388
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000388
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0400@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270521T035900Z
+SUMMARY:ALG2 Homework 140
+URL;VALUE=URI:https://example.schoology.com/assignment/7000389
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000389
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0401@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270520T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #35
+URL;VALUE=URI:https://example.schoology.com/assignment/7000390
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000390
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0402@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270521T225900
+SUMMARY:ALG2 Quiz 18
+URL;VALUE=URI:https://example.schoology.com/assessment/7000391
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000391
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0403@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270522T035900Z
+SUMMARY:Spanish I Quiz 70
+URL;VALUE=URI:https://example.schoology.com/assignment/7000392
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000392
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0404@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270525T035900Z
+SUMMARY:ALG2 Homework 141
+URL;VALUE=URI:https://example.schoology.com/assignment/7000393
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000393
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0405@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270525T035900Z
+SUMMARY:Spanish I Quiz 71
+URL;VALUE=URI:https://example.schoology.com/assignment/7000394
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000394
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0406@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270525T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 71
+URL;VALUE=URI:https://example.schoology.com/assignment/7000395
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000395
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0407@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270526T035900Z
+SUMMARY:ALG2 Homework 142
+URL;VALUE=URI:https://example.schoology.com/assignment/7000396
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000396
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0408@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270525T225900
+SUMMARY:Apologia Chem - Module 18 Lab
+URL;VALUE=URI:https://example.schoology.com/assignment/7000397
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000397
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0409@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270527T035900Z
+SUMMARY:ALG2 Homework 143
+URL;VALUE=URI:https://example.schoology.com/assignment/7000398
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000398
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0410@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270526T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-36
+URL;VALUE=URI:https://example.schoology.com/assignment/7000399
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000399
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0411@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270527T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 72
+URL;VALUE=URI:https://example.schoology.com/assignment/7000400
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000400
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0412@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270528T035900Z
+SUMMARY:ALG2 Homework 144
+URL;VALUE=URI:https://example.schoology.com/assignment/7000401
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000401
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0413@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270527T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #36
+URL;VALUE=URI:https://example.schoology.com/assignment/7000402
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000402
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0414@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270529T035900Z
+SUMMARY:Spanish I Quiz 72
+URL;VALUE=URI:https://example.schoology.com/assignment/7000403
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000403
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0415@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270601T035900Z
+SUMMARY:ALG2 Homework 145
+URL;VALUE=URI:https://example.schoology.com/assignment/7000404
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000404
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0416@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270601T035900Z
+SUMMARY:Spanish I Quiz 73
+URL;VALUE=URI:https://example.schoology.com/assignment/7000405
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000405
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0417@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270601T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 73
+URL;VALUE=URI:https://example.schoology.com/assignment/7000406
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000406
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0418@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270602T035900Z
+SUMMARY:ALG2 Homework 146
+URL;VALUE=URI:https://example.schoology.com/assignment/7000407
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000407
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0419@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270601T225900
+SUMMARY:Apologia Chem - Module 19 Quiz
+URL;VALUE=URI:https://example.schoology.com/assessment/7000408
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000408
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0420@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270603T035900Z
+SUMMARY:ALG2 Homework 147
+URL;VALUE=URI:https://example.schoology.com/assignment/7000409
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000409
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0421@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270602T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-37
+URL;VALUE=URI:https://example.schoology.com/assignment/7000410
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000410
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0422@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270603T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 74
+URL;VALUE=URI:https://example.schoology.com/assignment/7000411
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000411
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0423@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270604T035900Z
+SUMMARY:ALG2 Homework 148
+URL;VALUE=URI:https://example.schoology.com/assignment/7000412
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000412
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0424@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Los_Angeles:20270603T210000
+SUMMARY:Writing Assignment (Writing Process): Resume\, Cover Letter\; Job C
+ all #37
+URL;VALUE=URI:https://example.schoology.com/assignment/7000413
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000413
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0425@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20270604T225900
+SUMMARY:ALG2 Quiz 19
+URL;VALUE=URI:https://example.schoology.com/assessment/7000414
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000414
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0426@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270605T035900Z
+SUMMARY:Spanish I Quiz 74
+URL;VALUE=URI:https://example.schoology.com/assignment/7000415
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000415
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0427@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/New_York:20260917T080000
+DUE:20260919T035900Z
+SUMMARY:Apologia Chem - Module 04 Test (proctored)
+URL;VALUE=URI:https://example.schoology.com/assessment/7000416
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000416
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0428@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/New_York:20261112T080000
+DUE:20261114T045900Z
+SUMMARY:Apologia Chem - Module 08 Test (proctored)
+URL;VALUE=URI:https://example.schoology.com/assessment/7000417
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000417
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0429@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/New_York:20270211T080000
+DUE:20270213T045900Z
+SUMMARY:Apologia Chem - Module 12 Test (proctored)
+URL;VALUE=URI:https://example.schoology.com/assessment/7000418
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000418
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0430@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/New_York:20270429T080000
+DUE:20270501T035900Z
+SUMMARY:Apologia Chem - Module 16 Test (proctored)
+URL;VALUE=URI:https://example.schoology.com/assessment/7000419
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000419
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0431@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261010T035900Z
+SUMMARY:Presentation One
+URL;VALUE=URI:https://example.schoology.com/assignment/7000420
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000420
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0432@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261212T045900Z
+SUMMARY:Presentation Two
+URL;VALUE=URI:https://example.schoology.com/assignment/7000421
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000421
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0433@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270213T045900Z
+SUMMARY:Presentation Three
+URL;VALUE=URI:https://example.schoology.com/assignment/7000422
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000422
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0434@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270417T035900Z
+SUMMARY:Presentation Four
+URL;VALUE=URI:https://example.schoology.com/assignment/7000423
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000423
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0435@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270522T035900Z
+SUMMARY:Presentation Five
+URL;VALUE=URI:https://example.schoology.com/assignment/7000424
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000424
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0436@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/New_York:20260824T080000
+DTEND;TZID=America/New_York:20260824T120000
+SUMMARY:Orientation (first week only)
+URL;VALUE=URI:https://example.schoology.com/event/7000425
+DESCRIPTION: - Link: https://example.schoology.com/event/7000425
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0437@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/New_York:20260910T190000
+SUMMARY:Parent Night (new parents and students)
+URL;VALUE=URI:https://example.schoology.com/event/7000426
+DESCRIPTION: - Link: https://example.schoology.com/event/7000426
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0438@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;VALUE=DATE:20260915
+SUMMARY:Picture Day (Grades K-6)
+URL;VALUE=URI:https://example.schoology.com/event/7000427
+DESCRIPTION: - Link: https://example.schoology.com/event/7000427
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0439@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261103
+SUMMARY:Picture Retakes (Grades K-6)
+URL;VALUE=URI:https://example.schoology.com/event/7000428
+DESCRIPTION: - Link: https://example.schoology.com/event/7000428
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0440@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;VALUE=DATE:20261123
+DTEND;VALUE=DATE:20261128
+SUMMARY:Thanksgiving Break (including Omnibus)
+URL;VALUE=URI:https://example.schoology.com/event/7000429
+DESCRIPTION: - Link: https://example.schoology.com/event/7000429
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0441@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20270102
+SUMMARY:Winter Break (Grades 7-12)
+URL;VALUE=URI:https://example.schoology.com/event/7000430
+DESCRIPTION: - Link: https://example.schoology.com/event/7000430
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0442@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;VALUE=DATE:20270322
+DTEND;VALUE=DATE:20270327
+SUMMARY:Spring Break (Grades K-6)
+URL;VALUE=URI:https://example.schoology.com/event/7000431
+DESCRIPTION: - Link: https://example.schoology.com/event/7000431
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0443@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/New_York:20270415T080000
+DTEND;TZID=America/New_York:20270417T150000
+SUMMARY:Senior Retreat (this week only)
+URL;VALUE=URI:https://example.schoology.com/event/7000432
+DESCRIPTION: - Link: https://example.schoology.com/event/7000432
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0444@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270521T130000Z
+SUMMARY:Field Day (FT Students)
+URL;VALUE=URI:https://example.schoology.com/event/7000433
+DESCRIPTION: - Link: https://example.schoology.com/event/7000433
+CATEGORIES:FT Students
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0445@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270210T150000Z
+SUMMARY:Assembly moved (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000434
+DESCRIPTION: - Link: https://example.schoology.com/event/7000434
+STATUS:CANCELLED
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0446@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260825T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000435
+DESCRIPTION: - Link: https://example.schoology.com/event/7000435
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0447@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260908T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000436
+DESCRIPTION: - Link: https://example.schoology.com/event/7000436
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0448@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260922T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000437
+DESCRIPTION: - Link: https://example.schoology.com/event/7000437
+CATEGORIES:FT Students Only
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0449@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261006T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000438
+DESCRIPTION: - Link: https://example.schoology.com/event/7000438
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0450@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261020T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000439
+DESCRIPTION: - Link: https://example.schoology.com/event/7000439
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0451@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261103T170000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000440
+DESCRIPTION: - Link: https://example.schoology.com/event/7000440
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0452@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261117T170000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000441
+DESCRIPTION: - Link: https://example.schoology.com/event/7000441
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0453@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261208T170000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000442
+DESCRIPTION: - Link: https://example.schoology.com/event/7000442
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0454@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270105T170000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000443
+DESCRIPTION: - Link: https://example.schoology.com/event/7000443
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0455@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270119T170000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000444
+DESCRIPTION: - Link: https://example.schoology.com/event/7000444
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0456@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270202T170000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000445
+DESCRIPTION: - Link: https://example.schoology.com/event/7000445
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0457@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270216T170000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000446
+DESCRIPTION: - Link: https://example.schoology.com/event/7000446
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0458@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270302T170000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000447
+DESCRIPTION: - Link: https://example.schoology.com/event/7000447
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0459@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270316T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000448
+DESCRIPTION: - Link: https://example.schoology.com/event/7000448
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0460@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270406T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000449
+DESCRIPTION: - Link: https://example.schoology.com/event/7000449
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0461@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270420T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000450
+DESCRIPTION: - Link: https://example.schoology.com/event/7000450
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0462@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270504T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000451
+DESCRIPTION: - Link: https://example.schoology.com/event/7000451
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0463@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270518T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000452
+DESCRIPTION: - Link: https://example.schoology.com/event/7000452
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0464@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270601T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000453
+DESCRIPTION: - Link: https://example.schoology.com/event/7000453
+CATEGORIES:FT Students Only
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-chapel@example.invalid
+DTSTART;TZID=America/New_York:20260826T100000
+DTEND;TZID=America/New_York:20260826T104500
+RRULE:FREQ=WEEKLY;BYDAY=WE;UNTIL=20270602T235959Z
+EXDATE;TZID=America/New_York:20261125T100000
+EXDATE;TZID=America/New_York:20261223T100000
+EXDATE;TZID=America/New_York:20261230T100000
+EXDATE;TZID=America/New_York:20270324T100000
+SUMMARY:Chapel (Grades 7-12)
+URL;VALUE=URI:https://example.schoology.com/event/7000454
+CATEGORIES:Grades 7-12
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-chapel@example.invalid
+RECURRENCE-ID;TZID=America/New_York:20270210T100000
+DTSTART;TZID=America/New_York:20270211T090000
+SUMMARY:Chapel (Grades 7-12) - moved
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-advisory@example.invalid
+DTSTART:20260904T130000
+RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=FR;COUNT=12
+SUMMARY:Advisory (FT Students)
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-spirit@example.invalid
+DTSTART;VALUE=DATE:20261005
+DTEND;VALUE=DATE:20261006
+RRULE:FREQ=DAILY;COUNT=5
+SUMMARY:Spirit Week (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000455
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0008@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260827T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 2
+URL;VALUE=URI:https://example.schoology.com/assignment/7000007
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000007
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0049@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20260922T035900Z
+SUMMARY:Omnibus Primary HW Upload Day 9
+URL;VALUE=URI:https://example.schoology.com/assignment/7000048
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000048
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0090@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261016T035900Z
+SUMMARY:ALG2 Homework 32
+URL;VALUE=URI:https://example.schoology.com/assignment/7000087
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000087
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0131@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20261111T045900Z
+SUMMARY:ALG2 Homework 46
+URL;VALUE=URI:https://example.schoology.com/assignment/7000127
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000127
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0172@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART;TZID=America/Chicago:20261211T225900
+SUMMARY:ALG2 Quiz 8
+URL;VALUE=URI:https://example.schoology.com/assessment/7000165
+DESCRIPTION: - Link: https://example.schoology.com/assessment/7000165
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0213@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270121T045900Z
+SUMMARY:ALG2 Homework 75
+URL;VALUE=URI:https://example.schoology.com/assignment/7000206
+DESCRIPTION:Show all work\, then upload a photo. - Link: https://example.sc
+ hoology.com/assignment/7000206
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0254@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270216T045900Z
+SUMMARY:ALG2 Homework 89
+URL;VALUE=URI:https://example.schoology.com/assignment/7000246
+DESCRIPTION:Read §2.3 — answer 1–12 (odds). - Link: https://example.sc
+ hoology.com/assignment/7000246
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0295@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270310T235900
+SUMMARY:Spanish 1 Activities (3rd ed.) Exercise 03-26
+URL;VALUE=URI:https://example.schoology.com/assignment/7000286
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000286
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0336@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270413T035900Z
+SUMMARY:Spanish I Quiz 59
+URL;VALUE=URI:https://example.schoology.com/assignment/7000326
+DESCRIPTION: - Link: https://example.schoology.com/assignment/7000326
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0377@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270507T035900Z
+SUMMARY:ALG2 Homework 132
+URL;VALUE=URI:https://example.schoology.com/assignment/7000366
+DESCRIPTION:Use the "notes" template\; cite page numbers\, please. - Link: 
+ https://example.schoology.com/assignment/7000366
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0418@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270602T035900Z
+SUMMARY:ALG2 Homework 146
+URL;VALUE=URI:https://example.schoology.com/assignment/7000407
+DESCRIPTION:Café-style seminar prep: bring 2 questions\, 1 quote. - Link: 
+ https://example.schoology.com/assignment/7000407
+END:VEVENT
+BEGIN:VEVENT
+UID:sb-year-0459@example.invalid
+DTSTAMP:20260801T120000Z
+DTSTART:20270316T160000Z
+SUMMARY:Lunch Duty (FT Students Only)
+URL;VALUE=URI:https://example.schoology.com/event/7000448
+DESCRIPTION: - Link: https://example.schoology.com/event/7000448
+CATEGORIES:FT Students Only
+END:VEVENT
+END:VCALENDAR
