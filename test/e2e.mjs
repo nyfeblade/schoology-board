@@ -22,7 +22,7 @@ const browser = await chromium.launch();
 const errors = [];
 function watch(page, tag) {
   page.on('pageerror', (e) => errors.push(`${tag}: ${e.message}`));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(`${tag} console: ${m.text()}`); });
+  page.on('console', (m) => { if (m.type() === 'error' && !(tag === 'link' && /status of 422/.test(m.text()))) errors.push(`${tag} console: ${m.text()}`); }); // the 422 is the deliberate bad-link probe
   page.on('dialog', (d) => d.accept());
 }
 const state = (page) => page.evaluate(() => window.SchoologyBoard.state());
@@ -196,9 +196,10 @@ await page.screenshot({ path: join(SHOTS, 'board-after-flow.png') });
 
 // ---------- 7. live link import through the proxy ----------
 if (LIVE_LINK) {
-  const lp = await ctx.newPage(); watch(lp, 'link');
+  // separate context so the main board's storage is untouched
+  const lctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const lp = await lctx.newPage(); watch(lp, 'link');
   await lp.goto(BASE + '/');
-  await lp.evaluate(() => localStorage.clear()); await lp.reload();
   await lp.fill('#imp-url', BASE.replace(/^https:/, 'webcal:') + '/sample/schoology-sample.ics');
   await lp.click('#imp-go');
   await lp.waitForSelector('#sb-board .card', { timeout: 20000 });
@@ -206,9 +207,7 @@ if (LIVE_LINK) {
   ok('paste-a-link import works through the serverless proxy (webcal:// link)', n === 19, `${n} events`);
   const bad = await lp.evaluate(async () => (await fetch('/api/feed', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://example.com/' }) })).status);
   ok('proxy refuses non-calendar responses', bad === 422, `status ${bad}`);
-  await lp.close();
-  // restore main page storage (lp cleared it): put the main page state back
-  await page.evaluate((s) => localStorage.setItem('schoology-board:v1', JSON.stringify(s)), st);
+  await lctx.close();
 }
 
 // ---------- 8. offline download ----------
