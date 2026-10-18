@@ -329,6 +329,13 @@
    * Order: title prefix matches a known class > distinctive words learned from examples >
    *        a prefix shared by 2+ assignments > null (Unsorted).
    */
+  // From Friday 6 PM (local) through Sunday, "this week" means the coming Monday-Sunday.
+  function weekendMode(now) { var d = now.getDay(); return d === 6 || d === 0 || (d === 5 && now.getHours() >= 18); }
+  function defaultWeekStart(now) {
+    var m = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    m.setDate(m.getDate() - ((m.getDay() + 6) % 7) + (weekendMode(now) ? 7 : 0));
+    return m;
+  }
   function buildClassifier(known, examples, titles) {
     known = (known || []).filter(Boolean);
     var kTok = known.map(courseTokens);
@@ -433,7 +440,8 @@
     unfold: unfold, decodeBytes: decodeBytes, unescapeText: unescapeText, parseLine: parseLine, parseComponents: parseComponents,
     parseDate: parseDate, splitDescription: splitDescription, kindFromUrl: kindFromUrl,
     parseIcs: parseIcs, zonedToUtc: zonedToUtc, hash: hash,
-    expandRule: expandRule, isAudienceTag: isAudienceTag, isWork: isWork, courseTokens: courseTokens, courseKey: courseKey, titlePrefix: titlePrefix, buildClassifier: buildClassifier
+    expandRule: expandRule, isAudienceTag: isAudienceTag, isWork: isWork, courseTokens: courseTokens, courseKey: courseKey, titlePrefix: titlePrefix, buildClassifier: buildClassifier,
+    weekendMode: weekendMode, defaultWeekStart: defaultWeekStart
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.SBics = api;

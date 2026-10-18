@@ -14,6 +14,9 @@
   var K = MODE === 'offline' ? 'schoology-board:offline:' + CFG.boardId : 'schoology-board:v1';
   var COLS = [['todo', 'Need to be done'], ['started', 'Started'], ['proctor', 'Needs to be proctored'], ['done', 'Completed']];
   var COL_IDS = COLS.map(function (c) { return c[0]; });
+  // "Needs to be proctored" is optional; with it off, its cards show in Need to be done (their status is kept).
+  function cols() { return S && S.proctorCol ? COLS : COLS.filter(function (c) { return c[0] !== 'proctor'; }); }
+  function colIds() { return cols().map(function (c) { return c[0]; }); }
   var UNSORTED = 'Unsorted';
   var ics = window.SBics, cas = window.SBcas;
   var S, app;
@@ -68,13 +71,14 @@
     return {
       v: 1, boardId: rid(), updated: 0, ics: {}, cas: {}, custom: {}, cats: [], order: [], rename: {},
       ov: {}, hidden: {}, status: {}, rules: [], lastImport: null, feedUrl: '', seenExport: null, createdAt: null,
+      proctorCol: false, classMap: {}, namingSeen: {}, lastFetch: null,
       prefs: { view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '' }
     };
   }
   function normalizeState(st) {
     st = Object.assign(blank(), st || {});
     st.prefs = Object.assign(blank().prefs, st.prefs || {});
-    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
+    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
     ['cats', 'order', 'rules'].forEach(function (k) { if (!Array.isArray(st[k])) st[k] = []; });
     return st;
   }
@@ -84,12 +88,16 @@
     var baked = MODE === 'offline' ? readJson('sb-data') : null;
     var st = saved;
     if (baked && (!saved || (saved.seenExport !== baked.exportedAt && (baked.updated || 0) > (saved.updated || 0)))) st = baked;
+    var hadProctorFlag = st && typeof st.proctorCol === 'boolean';
     st = normalizeState(st);
-    // Every visit opens on this week; the range dates are remembered.
+    // Every visit opens on the default week (next week from Friday 6 PM). "range" no longer exists.
     st.prefs.view = 'week'; st.prefs.weekOffset = 0; st.prefs.q = '';
+    if (!hadProctorFlag) st._needsProctorCheck = true;
     if (baked) st.seenExport = baked.exportedAt;
     // Boards from before "board created" existed start counting from the first load after the update.
     if (!st.createdAt && Object.keys(st.ics).length + Object.keys(st.cas).length + Object.keys(st.custom).length) { st.createdAt = Date.now(); st._migrated = true; }
+    // The cutoff is the start of the creation day (local), so work due later that day still shows.
+    if (st.createdAt) { var mid = sod(new Date(st.createdAt)).getTime(); if (mid !== st.createdAt) { st.createdAt = mid; st._migrated = true; } }
     return st;
   }
   function save() {
@@ -145,6 +153,7 @@
 
   // ---------- items ----------
   var OV_FIELDS = ['title', 'course', 'due', 'url', 'note', 'allDay'];
+  var preItems = [];
   function allItems() {
     var out = [];
     Object.keys(S.ics).forEach(function (id) { if (!S.hidden[id]) out.push(Object.assign({}, S.ics[id], { id: id, source: 'ics' })); });
@@ -156,6 +165,7 @@
       // Audience tags ("Grades 7-12", "FT Students Only") are never classes, even in boards saved before this rule.
       if (it.source === 'ics' && it.course && !(ov && ov.course) && ics.isAudienceTag(it.course)) it.course = null;
       if (!it.course && it.source === 'ics') { var rc = ruleCourse(it.title); if (rc) it.course = rc; }
+      if (!it.course && it.source === 'ics') { var pf = ics.titlePrefix(it.title); if (pf && S.classMap[pf.key]) { it.course = S.classMap[pf.key]; it.mapped = pf.key; } }
       it.explicitCourse = !!it.course;
     });
     // Hide CAS cards that duplicate a calendar item; the calendar item borrows the class.
@@ -182,9 +192,12 @@
       it.d = toDate(it.due);
       it.col = S.status[it.id] || it.inheritStatus || (/\bproctor/i.test(it.title) ? 'proctor' : 'todo');
       if (COL_IDS.indexOf(it.col) < 0) it.col = 'todo';
+      it.rawCol = it.col;
+      if (it.col === 'proctor' && !S.proctorCol) it.col = 'todo';
       // Imported work due before the board existed counts as already handled: hidden, not overdue, not Completed.
       it.pre = isPre(it);
     });
+    preItems = result.filter(function (it) { return it.pre; });
     return S.prefs.showPre ? result : result.filter(function (it) { return !it.pre; });
   }
   function classifier(out) {
@@ -194,6 +207,7 @@
       if (it.source === 'cas') { add(it.course); examples.push({ title: it.title, course: alias(it.course) }); }
     });
     S.cats.forEach(add);
+    Object.keys(S.classMap).forEach(function (k) { add(S.classMap[k]); });
     out.forEach(function (it) {
       if (it.source === 'custom' && it.course) { add(it.course); examples.push({ title: it.title, course: alias(it.course) }); }
       if (it.source === 'ics' && it.explicitCourse) { add(it.course); if (S.ov[it.id] && S.ov[it.id].course) examples.push({ title: it.title, course: alias(it.course) }); }
@@ -201,7 +215,7 @@
     return ics.buildClassifier(known, examples, out.filter(function (i) { return i.source === 'ics'; }));
   }
   function isPre(it) { return !!S.createdAt && it.source !== 'custom' && it.d.getTime() < S.createdAt; }
-  function markCreated(at) { if (!S.createdAt) S.createdAt = at || Date.now(); }
+  function markCreated(at) { if (!S.createdAt) S.createdAt = sod(new Date(at || Date.now())).getTime(); }
   function categories(items) {
     var names = {};
     (items || allItems()).forEach(function (i) { names[i.course] = (names[i.course] || 0) + 1; });
@@ -222,15 +236,16 @@
     var p = S.prefs, today = sod(new Date());
     if (p.view === 'today') return { from: today, to: addDays(today, 1), label: 'Today' }; // today's local date only
     if (p.view === 'week') {
-      var m = addDays(monday(today), 7 * (p.weekOffset || 0)), e = addDays(m, 6);
-      return { from: m, to: addDays(m, 7), label: fmtShort(m) + '\u2013' + (e.getMonth() === m.getMonth() ? e.getDate() : fmtShort(e)) };
-    }
-    if (p.view === 'range' && (p.from || p.to)) {
-      var f = p.from ? parseDay(p.from) : new Date(-8.64e15), t = p.to ? addDays(parseDay(p.to), 1) : new Date(8.64e15);
-      return { from: f, to: t, label: (p.from ? fmtShort(f) : '\u2026') + '\u2013' + (p.to ? fmtShort(parseDay(p.to)) : '\u2026') };
+      var base = defaultMonday(), m = addDays(base, 7 * (p.weekOffset || 0)), e = addDays(m, 6);
+      var range = fmtShort(m) + '\u2013' + (e.getMonth() === m.getMonth() ? e.getDate() : fmtShort(e));
+      var rel = Math.round((m - monday(today)) / (7 * 864e5));
+      return { from: m, to: addDays(m, 7), label: range, nav: (rel === 1 ? 'Next week \u00b7 ' : rel === 0 ? 'This week \u00b7 ' : '') + range, rel: rel };
     }
     return { from: null, to: null, label: 'All' };
   }
+  // From Friday 6 PM through Sunday the default week is the coming Monday-Sunday.
+  function weekendMode(now) { return ics.weekendMode(now || new Date()); }
+  function defaultMonday() { return ics.defaultWeekStart(new Date()); }
   function inView(it, r) {
     var today = sod(new Date());
     if (S.prefs.hidePast && it.d < today) return false;
@@ -331,22 +346,22 @@
     closeMenu(false);
     app.innerHTML =
       '<header class="sb-head"><h1><span class="name">Schoology Board</span> <span id="sb-label"></span></h1>' +
-      '<div class="prog"><span id="sb-prog"></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div>' +
+      '<div class="prog"><span class="prog-t"><span id="sb-prog"></span><span id="sb-sync" class="sync" aria-live="polite"></span></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div>' +
       '<div class="acts">' +
       '<button class="btn primary" id="sb-add" title="Add a task (N)" aria-label="Add a task">' + ICON.plus + '<span class="lbl">Add</span></button>' +
       '<button class="btn hide-m" id="sb-import" title="Import (I)">' + ICON.imp + '<span class="lbl">Import</span></button>' +
       '<button class="btn icon" id="sb-more" title="More" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">' + ICON.more + '</button>' +
       '</div></header>' +
       '<div class="sb-tools" id="sb-tools"><div class="tl">' +
-      '<div class="seg" role="group" aria-label="View"><button data-view="today">Due today</button><button data-view="week">Week</button><button data-view="all">All</button><button data-view="range">Range</button></div>' +
+      '<div class="seg" role="group" aria-label="View"><button data-view="today">Due today</button><button data-view="week">Week</button><button data-view="all">All</button></div>' +
       '<span class="weeknav" id="sb-weeknav"><button class="btn ghost icon" id="sb-prev" aria-label="Previous week" title="Previous week ([)">' + ICON.left + '</button><b id="sb-week"></b><button class="btn ghost icon" id="sb-next" aria-label="Next week" title="Next week (])">' + ICON.right + '</button><button class="btn ghost small" id="sb-thisweek">This week</button></span>' +
-      '<span class="range" id="sb-range"><input type="date" id="sb-from" aria-label="From"><span>to</span><input type="date" id="sb-to" aria-label="To"></span>' +
       '</div><div class="tr">' +
       '<div class="search"><button class="btn icon search-btn" id="sb-search-btn" aria-label="Search" title="Search (/)">' + ICON.search + '</button>' +
       '<span class="sfield">' + ICON.search + '<input type="search" id="sb-search" placeholder="Search" aria-label="Search tasks"><kbd class="kbd-only">/</kbd></span></div>' +
       '<button class="btn" id="sb-filter" aria-haspopup="menu" aria-expanded="false" title="Filter">' + ICON.filter + '<span class="lbl">Filter</span><i class="dot" aria-hidden="true"></i></button>' +
       '</div></div>' +
       '<div class="chips-wrap"><div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div></div>' +
+      '<p class="sb-note" id="sb-note" hidden></p>' +
       '<nav class="colnav" id="sb-colnav" aria-label="Jump to column"></nav>' +
       '<main class="board" id="sb-board" aria-label="Board"></main>' +
       '<div class="foot">' + (MODE === 'offline' ? 'Offline copy \u00b7 progress is saved in this browser' + (CFG.home ? ' \u00b7 <a href="' + esc(CFG.home) + '" target="_blank" rel="noopener">open the website</a>' : '') :
@@ -355,11 +370,7 @@
     $('#sb-import').onclick = openImport;
     $('#sb-add').onclick = function () { openEditor(null); };
     $('#sb-more').onclick = function () { moreMenu(this); };
-    $('#sb-filter').onclick = function () {
-      var items = [{ check: true, id: 'sb-hidepast', label: 'Hide past', kbd: 'H', checked: !!S.prefs.hidePast, onChange: function (v) { S.prefs.hidePast = v; save(); renderBoard(); } }];
-      if (S.createdAt) items.push({ sep: true }, { check: true, id: 'sb-showpre', label: 'Show items from before this board was created (' + new Date(S.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ')', checked: !!S.prefs.showPre, onChange: function (v) { S.prefs.showPre = v; save(); renderBoard(); } });
-      menu(this, items, { title: 'Filter', label: 'Filter' });
-    };
+    $('#sb-filter').onclick = function () { filterMenu(this); };
     $('#sb-reset').onclick = function (e) {
       e.preventDefault();
       if (confirm('Reset the board? This clears imported tasks, progress and categories in this browser.')) {
@@ -372,8 +383,6 @@
     $('#sb-prev').onclick = function () { S.prefs.weekOffset--; save(); renderBoard(); };
     $('#sb-next').onclick = function () { S.prefs.weekOffset++; save(); renderBoard(); };
     $('#sb-thisweek').onclick = function () { S.prefs.weekOffset = 0; save(); renderBoard(); };
-    $('#sb-from').onchange = function () { S.prefs.from = this.value; save(); renderBoard(); };
-    $('#sb-to').onchange = function () { S.prefs.to = this.value; save(); renderBoard(); };
     var sIn = $('#sb-search'), tools = $('#sb-tools');
     sIn.oninput = function () { S.prefs.q = this.value; renderBoard(); };
     sIn.onblur = function () { if (!sIn.value) tools.classList.remove('searching'); };
@@ -382,12 +391,28 @@
     var board = $('#sb-board'), raf = 0;
     board.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; syncColnav(); }); }, { passive: true });
   }
+  function filterMenu(anchor) {
+    var items = [{ heading: 'Show' },
+      { check: true, id: 'sb-hidepast', label: 'Hide past', kbd: 'H', checked: !!S.prefs.hidePast, onChange: function (v) { S.prefs.hidePast = v; save(); renderBoard(); } }];
+    if (S.createdAt) items.push({ check: true, id: 'sb-showpre', label: 'Show items from before this board was created', checked: !!S.prefs.showPre, onChange: function (v) { S.prefs.showPre = v; save(); renderBoard(); } });
+    items.push({ sep: true }, { heading: 'Columns' },
+      { check: true, id: 'sb-proctorcol', label: '\u201cNeeds to be proctored\u201d column', checked: !!S.proctorCol, onChange: function (v) { setProctorCol(v); } });
+    menu(anchor, items, { title: 'Filter & settings', label: 'Filter and settings' });
+  }
+  function setProctorCol(on) {
+    S.proctorCol = !!on; save(); renderBoard();
+    if (!on) {
+      var n = allItems().filter(function (i) { return i.rawCol === 'proctor'; }).length;
+      if (n) toast(n + ' card' + (n === 1 ? '' : 's') + ' moved to Need to be done. Turn the column back on to restore ' + (n === 1 ? 'it' : 'them') + '.', 'Undo', function () { setProctorCol(true); });
+    }
+  }
   function moreMenu(anchor) {
     var items = [
       { label: 'Import\u2026', icon: ICON.imp, kbd: 'I', cls: 'm-only', onClick: openImport },
       S.feedUrl ? { label: 'Refresh from calendar link', icon: ICON.refresh, id: 'sb-refresh', onClick: function () { toast('Refreshing your calendar\u2026'); importLink(S.feedUrl, true); } } : null,
-      { label: 'Categories', icon: ICON.tag, id: 'sb-cats', onClick: openCategories },
-      { label: 'Download for offline', icon: ICON.dl, id: 'sb-offline', onClick: downloadOffline },
+      { label: 'Categories', icon: ICON.edit, id: 'sb-cats', onClick: openCategories },
+      { label: 'Name your classes', icon: ICON.tag, id: 'sb-naming', onClick: function () { openNaming(true); } },
+      { label: 'Save a backup', icon: ICON.dl, id: 'sb-backup', onClick: downloadOffline },
       { label: 'Keyboard shortcuts', icon: ICON.key, kbd: '?', id: 'sb-keys', cls: 'kbd-only', onClick: openKeys }
     ].filter(Boolean);
     menu(anchor, items, { label: 'More actions' });
@@ -401,7 +426,6 @@
   }
   function setView(v) {
     S.prefs.view = v;
-    if (v === 'range' && !S.prefs.from && !S.prefs.to) { var m = monday(new Date()); S.prefs.from = dayKey(m); S.prefs.to = dayKey(addDays(m, 13)); }
     save(); renderBoard();
   }
 
@@ -424,7 +448,7 @@
     var id = el.dataset.id, it = itemById(id); if (!it) return;
     var url = safeUrl(it.url);
     var items = [{ heading: 'Move to\u2026' }];
-    COLS.forEach(function (c, i) { if (c[0] !== it.col) items.push({ label: c[1], icon: ICON.arrow, kbd: String(i + 1), cls: 'move', onClick: function () { setStatus(id, c[0]); } }); });
+    cols().forEach(function (c, i) { if (c[0] !== it.col) items.push({ label: c[1], icon: ICON.arrow, kbd: String(i + 1), cls: 'move', onClick: function () { setStatus(id, c[0]); } }); });
     items.push({ sep: true },
       { label: it.col === 'done' ? 'Mark not done' : 'Mark done', icon: ICON.check, kbd: 'X', onClick: function () { toggleDone(id); } },
       { label: 'Edit\u2026', icon: ICON.edit, kbd: 'E', onClick: function () { openEditor(id); } });
@@ -442,11 +466,11 @@
     $('#sb-label').textContent = r.label;
     $$('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === p.view)); });
     $('#sb-weeknav').style.display = p.view === 'week' ? '' : 'none';
-    $('#sb-week').textContent = r.label;
+    $('#sb-week').textContent = r.nav || r.label;
     $('#sb-thisweek').style.display = p.weekOffset ? '' : 'none';
-    $('#sb-range').style.display = p.view === 'range' ? '' : 'none';
-    $('#sb-from').value = p.from || ''; $('#sb-to').value = p.to || '';
+    $('#sb-thisweek').textContent = weekendMode() ? 'Next week' : 'This week';
     $('#sb-filter').classList.toggle('on', !!(p.hidePast || p.showPre));
+    renderSync();
     $('#sb-filter').setAttribute('aria-label', 'Filter' + (p.hidePast ? ' (hiding past)' : '') + (p.showPre ? ' (showing pre-board items)' : ''));
     if (document.activeElement !== $('#sb-search')) $('#sb-search').value = p.q || '';
     var counts = {};
@@ -462,7 +486,9 @@
     lastItems = shown;
     var q = (p.q || '').trim(), openShown = shown.filter(function (i) { return i.col !== 'done'; }).length;
     var html = '', nav = '', today = dayKey(now);
-    COLS.forEach(function (c) {
+    var visCols = cols();
+    $('#sb-board').classList.toggle('three', visCols.length === 3);
+    visCols.forEach(function (c) {
       var id = c[0], list = shown.filter(function (it) { return it.col === id; }).sort(function (a, b) { return a.d - b.d || a.title.localeCompare(b.title); });
       nav += '<button type="button" data-col="' + id + '">' + esc(SHORT[id]) + '<b>' + list.length + '</b></button>';
       html += '<section class="col' + (id === 'done' ? ' done' : '') + '" data-col="' + id + '" aria-label="' + esc(c[1]) + '"><h2>' + esc(c[1]) + '<span>' + list.length + '</span></h2>';
@@ -499,8 +525,18 @@
     if ($('#sb-clearq')) $('#sb-clearq').onclick = function () { S.prefs.q = ''; $('#sb-search').value = ''; $('#sb-tools').classList.remove('searching'); renderBoard(); };
     if ($('#sb-nextup')) $('#sb-nextup').onclick = function (e) {
       e.preventDefault();
-      S.prefs.view = 'week'; S.prefs.weekOffset = Math.round((monday(parseDay(this.dataset.d)) - monday(new Date())) / (7 * 864e5)); save(); renderBoard();
+      S.prefs.view = 'week'; S.prefs.weekOffset = Math.round((monday(parseDay(this.dataset.d)) - defaultMonday()) / (7 * 864e5)); save(); renderBoard();
     };
+    // Quiet note so nothing is hidden silently: earlier (pre-board) items that would be in this view.
+    var hidN = preItems.filter(function (it) { return inView(it, r) && matchesQ(it) && (!p.course || it.course === p.course); }).length;
+    var note = $('#sb-note');
+    if (!hidN) { note.hidden = true; note.innerHTML = ''; }
+    else {
+      note.hidden = false;
+      note.innerHTML = p.showPre ? 'Showing ' + hidN + ' item' + (hidN === 1 ? '' : 's') + ' from before this board \u00b7 <a href="#" id="sb-pre-toggle">Hide</a>'
+        : hidN + ' earlier item' + (hidN === 1 ? '' : 's') + ' hidden \u00b7 <a href="#" id="sb-pre-toggle">Show</a>';
+      $('#sb-pre-toggle').onclick = function (e) { e.preventDefault(); S.prefs.showPre = !S.prefs.showPre; save(); renderBoard(); };
+    }
     var done = shown.filter(function (i) { return i.col === 'done'; }).length;
     $('#sb-prog').textContent = done + ' of ' + shown.length + ' done';
     $('#sb-bar').style.width = (shown.length ? Math.round(100 * done / shown.length) : 0) + '%';
@@ -629,16 +665,16 @@
     var card = ae && ae.classList && ae.classList.contains('card') ? ae : null;
     var k = e.key;
     if (card) {
-      var id = card.dataset.id, col = card.closest('.col').dataset.col, ci = COL_IDS.indexOf(col);
+      var CI = colIds(), id = card.dataset.id, col = card.closest('.col').dataset.col, ci = CI.indexOf(col);
       if (k === 'Enter') { var a = card.querySelector('a.t'); if (a) a.click(); else openEditor(id); e.preventDefault(); return; }
       if (k === 'e' || k === 'E') { openEditor(id); e.preventDefault(); return; }
       if (k === 'm' || k === 'M' || (k === 'F10' && e.shiftKey) || k === 'ContextMenu') { cardMenu(card); e.preventDefault(); return; }
       if (k === 'x' || k === ' ') { toggleDone(id); e.preventDefault(); return; }
-      if (/^[1-4]$/.test(k)) { setStatus(id, COL_IDS[+k - 1]); e.preventDefault(); return; }
+      if (/^[1-4]$/.test(k) && CI[+k - 1]) { setStatus(id, CI[+k - 1]); e.preventDefault(); return; }
       if (k === 'Delete' || k === 'Backspace') { deleteItem(id); e.preventDefault(); return; }
       if ((k === 'ArrowLeft' || k === 'ArrowRight') && e.shiftKey) {
-        var ni = Math.max(0, Math.min(3, ci + (k === 'ArrowLeft' ? -1 : 1)));
-        if (ni !== ci) setStatus(id, COL_IDS[ni]);
+        var ni = Math.max(0, Math.min(CI.length - 1, ci + (k === 'ArrowLeft' ? -1 : 1)));
+        if (ni !== ci) setStatus(id, CI[ni]);
         e.preventDefault(); return;
       }
       if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'j' || k === 'k') {
@@ -647,8 +683,8 @@
       }
       if (k === 'ArrowLeft' || k === 'ArrowRight') {
         var top = card.getBoundingClientRect().top, step = k === 'ArrowLeft' ? -1 : 1;
-        for (var s = ci + step; s >= 0 && s < 4; s += step) {
-          var l2 = cardsInCol(COL_IDS[s]);
+        for (var s = ci + step; s >= 0 && s < CI.length; s += step) {
+          var l2 = cardsInCol(CI[s]);
           if (l2.length) {
             var best = l2[0], bd = Infinity;
             l2.forEach(function (c) { var dd = Math.abs(c.getBoundingClientRect().top - top); if (dd < bd) { bd = dd; best = c; } });
@@ -732,7 +768,7 @@
       '<label for="ed-date">Due</label><span class="two"><input type="date" id="ed-date" required value="' + dayKey(d0) + '"><input type="time" id="ed-time" value="' + timeStr + '" aria-label="Due time (optional)"></span>' +
       '<label for="ed-url">Link</label><input type="url" id="ed-url" placeholder="https://\u2026 (optional)" value="' + esc(it && it.url || '') + '">' +
       '<label for="ed-note">Note</label><input type="text" id="ed-note" placeholder="e.g. Before class (optional)" value="' + esc(it && it.note || '') + '">' +
-      (it ? '' : '<label for="ed-col">Column</label><select id="ed-col">' + COLS.map(function (c) { return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('') + '</select>') +
+      (it ? '' : '<label for="ed-col">Column</label><select id="ed-col">' + cols().map(function (c) { return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('') + '</select>') +
       '<button type="submit" hidden></button></form>' + note;
     var foot = (it ? '<button class="btn danger" id="ed-del">Delete</button>' + (it.source !== 'custom' && S.ov[id] ? '<button class="btn ghost" id="ed-revert">Reset to original</button>' : '') : '') +
       '<span class="r"><button class="btn" data-close>Cancel</button><button class="btn primary" id="ed-save">' + (it ? 'Save' : 'Add task') + '</button></span>';
@@ -914,30 +950,130 @@
     if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
     return u;
   }
+  // ---------- calendar link (fetched through the relay; the link lives only in this browser) ----------
+  var syncing = false;
+  function relayFetch(url) {
+    var proxy = MODE === 'web' ? (CFG.proxy || '/api/feed') : CFG.proxy;
+    return fetch(proxy, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }), cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || ('Could not fetch the calendar (' + r.status + ').')); });
+        return r.arrayBuffer();
+      });
+  }
   function importLink(url, remember, root, onDone) {
     url = normalizeFeedUrl(url);
     var errEl = root ? $('#imp-err', root) : null;
     if (errEl) errEl.textContent = '';
     busy(root, true, 'Fetching your calendar\u2026');
-    var proxy = MODE === 'web' ? (CFG.proxy || '/api/feed') : CFG.proxy;
-    fetch(proxy, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }), cache: 'no-store' })
-      .then(function (r) {
-        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || ('Could not fetch the calendar (' + r.status + ').')); });
-        return r.arrayBuffer();
-      })
+    relayFetch(url)
       .then(function (buf) {
         var text = ics.decodeBytes(buf);
         var had = !!S.feedUrl;
         S.feedUrl = remember ? url : '';
+        S.lastFetch = remember ? { at: Date.now(), ok: true } : null;
         applyIcs(text, 'link');
         if (had !== !!S.feedUrl) { renderShell(); renderBoard(); }
         if (onDone) onDone();
+        maybeNaming();
       })
       .catch(function (e) {
         var msg = e && e.message && !/Failed to fetch|NetworkError|Load failed/i.test(e.message) ? e.message : 'Network error. Check your connection and try again.';
         if (errEl) errEl.textContent = msg; else toastErr(msg);
       })
       .then(function () { busy(root, false); });
+  }
+  // Refresh on open: quietly re-fetch the saved link and merge like a re-import; keep the cached board on failure.
+  function refreshFeed() {
+    if (MODE !== 'web' || !S.feedUrl || syncing) return;
+    syncing = true; renderSync();
+    relayFetch(S.feedUrl)
+      .then(function (buf) { applyIcs(ics.decodeBytes(buf), 'refresh', { quiet: true }); S.lastFetch = { at: Date.now(), ok: true }; save(); })
+      .catch(function () { S.lastFetch = { at: (S.lastFetch && S.lastFetch.at) || null, ok: false, failedAt: Date.now() }; save(); })
+      .then(function () { syncing = false; renderSync(); });
+  }
+  function ago(t) {
+    var m = Math.floor((Date.now() - t) / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + 'm ago';
+    if (m < 24 * 60) return Math.floor(m / 60) + 'h ago';
+    return 'on ' + fmtShort(new Date(t));
+  }
+  function renderSync() {
+    var el = $('#sb-sync'); if (!el) return;
+    var html = '';
+    if (MODE === 'offline') html = 'Offline copy';
+    else if (S.feedUrl) {
+      var f = S.lastFetch;
+      if (syncing) html = '<span class="spinner sm" aria-hidden="true"></span>Refreshing\u2026';
+      else if (f && f.ok === false) html = 'Couldn\u2019t refresh \u00b7 <a href="#" id="sb-retry">Retry</a>';
+      else if (f && f.at) html = 'Updated ' + ago(f.at);
+    }
+    el.innerHTML = html ? '<span class="sep" aria-hidden="true">\u00b7</span>' + html : '';
+    var rt = $('#sb-retry'); if (rt) rt.onclick = function (e) { e.preventDefault(); refreshFeed(); };
+  }
+
+  // ---------- name your classes ----------
+  function namingData() {
+    var items = allItems(), groups = {}, order = [], unsorted = [];
+    items.forEach(function (it) {
+      if (it.source !== 'ics' || (S.ov[it.id] && S.ov[it.id].course)) return;
+      var pf = (it.mapped || it.autoCourse === 'cluster' || it.autoCourse === 'prefix') && ics.titlePrefix(it.title);
+      if (pf) {
+        var g = groups[pf.key];
+        if (!g) { g = groups[pf.key] = { key: pf.key, raws: {}, n: 0, course: it.course, sample: it.title }; order.push(pf.key); }
+        g.n++; g.raws[pf.raw] = (g.raws[pf.raw] || 0) + 1;
+        return;
+      }
+      if (it.course === UNSORTED && ics.isWork(it)) unsorted.push(it);
+    });
+    var list = order.map(function (k) { var g = groups[k]; g.raw = Object.keys(g.raws).sort(function (a, b) { return g.raws[b] - g.raws[a]; })[0]; return g; })
+      .sort(function (a, b) { return b.n - a.n; });
+    var t0 = sod(new Date());
+    unsorted.sort(function (a, b) { return ((a.d < t0) - (b.d < t0)) || (a.d - b.d); });
+    return { groups: list, unsorted: unsorted.slice(0, 40), unsortedAll: unsorted, unsortedTotal: unsorted.length };
+  }
+  function maybeNaming() {
+    var nd = namingData();
+    var fresh = nd.groups.some(function (g) { return !S.namingSeen[g.key]; }) || nd.unsortedAll.some(function (i) { return !S.namingSeen[i.id]; });
+    if (fresh && !document.querySelector('dialog[open]')) setTimeout(function () { openNaming(false); }, 60);
+  }
+  function openNaming(fromMenu) {
+    var nd = namingData();
+    var sugg = [], seen = {};
+    function addS(c) { if (c && c !== UNSORTED && !seen[c]) { seen[c] = 1; sugg.push(c); } }
+    Object.keys(S.cas).forEach(function (k) { addS(alias(S.cas[k].course)); });
+    categories().forEach(addS);
+    nd.groups.forEach(function (g) { addS(g.course); });
+    if (!nd.groups.length && !nd.unsorted.length) {
+      dialog('Name your classes', '<p class="nm-empty">Every assignment already has a class. Nothing to name right now.</p>', '<span class="r"><button class="btn primary" data-close>Done</button></span>');
+      return;
+    }
+    var body = '<p class="nm-intro">Schoology doesn\u2019t say which class each assignment is for. We grouped them by how their titles start. Fix any names; we\u2019ll remember them for every refresh.</p>' +
+      (sugg.length ? '<div class="nm-sugg" aria-label="Your classes"><span class="dim">Your classes</span>' + sugg.map(function (c) { return '<button type="button" class="chip" data-s="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '') +
+      (nd.groups.length ? '<h4 class="nm-h">Detected from titles</h4><div class="nm-list">' + nd.groups.map(function (g) {
+        var val = S.classMap[g.key] || g.course || g.raw;
+        return '<div class="nm-row" data-k="' + esc(g.key) + '"><div class="nm-l"><b>' + esc(g.raw) + '</b><span class="dim"> \u00b7 ' + g.n + ' item' + (g.n === 1 ? '' : 's') + '</span><div class="nm-s">' + esc(g.sample) + '</div></div>' +
+          '<input type="text" class="nm-in" list="nm-cats" value="' + esc(val) + '" aria-label="Class name for ' + esc(g.raw) + '"></div>';
+      }).join('') + '</div>' : '') +
+      (nd.unsorted.length ? '<h4 class="nm-h">Not sorted yet <span class="dim">' + nd.unsortedTotal + '</span></h4><div class="nm-list">' + nd.unsorted.map(function (it) {
+        return '<div class="nm-row" data-id="' + esc(it.id) + '"><div class="nm-l"><span class="nm-t">' + esc(it.title) + '</span><div class="nm-s">' + esc(it.d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })) + '</div></div>' +
+          '<input type="text" class="nm-in" list="nm-cats" placeholder="Unsorted" aria-label="Class for ' + esc(it.title) + '"></div>';
+      }).join('') + (nd.unsortedTotal > nd.unsorted.length ? '<p class="hint">Showing the first ' + nd.unsorted.length + '. You can sort the rest from each card\u2019s \u22ef menu.</p>' : '') + '</div>' : '') +
+      '<datalist id="nm-cats">' + sugg.map(function (c) { return '<option value="' + esc(c) + '">'; }).join('') + '</datalist>';
+    var d = dialog('Name your classes', body, '<button class="btn ghost" id="nm-skip">' + (fromMenu ? 'Cancel' : 'Skip') + '</button><span class="r"><button class="btn primary" id="nm-done">Done</button></span>', true);
+    d.classList.add('naming');
+    var lastIn = null;
+    $$('.nm-in', d).forEach(function (inp) { inp.addEventListener('focus', function () { lastIn = inp; }); });
+    $$('.nm-sugg .chip', d).forEach(function (b) { b.onclick = function () { var t = lastIn || $('.nm-in', d); if (t) { t.value = b.dataset.s; t.focus(); } }; });
+    function markSeen() { nd.groups.forEach(function (g) { S.namingSeen[g.key] = 1; }); nd.unsortedAll.forEach(function (i) { S.namingSeen[i.id] = 1; }); }
+    $('#nm-skip', d).onclick = function () { if (!fromMenu) { markSeen(); save(); } d.close(); };
+    $('#nm-done', d).onclick = function () {
+      var n = 0;
+      $$('.nm-row[data-k]', d).forEach(function (row) { var v = $('.nm-in', row).value.trim(); if (v && v !== UNSORTED) { S.classMap[row.dataset.k] = v; n++; } else delete S.classMap[row.dataset.k]; });
+      $$('.nm-row[data-id]', d).forEach(function (row) { var v = $('.nm-in', row).value.trim(); if (v && v !== UNSORTED) { S.ov[row.dataset.id] = Object.assign(S.ov[row.dataset.id] || {}, { course: v }); n++; } });
+      markSeen(); save(); d.close(); renderBoard();
+      toast(n ? 'Saved. Future refreshes use these class names.' : 'Saved.');
+    };
   }
 
   function applyIcs(text, source, opts) {
@@ -955,7 +1091,7 @@
     save();
     if (!$('#sb-board')) renderShell();
     renderBoard();
-    toast('Imported ' + items.length + ' calendar item' + (items.length === 1 ? '' : 's') + (Object.keys(before).length ? ' (' + fresh + ' new)' : '') + '.');
+    if (!(opts && opts.quiet)) toast('Imported ' + items.length + ' calendar item' + (items.length === 1 ? '' : 's') + (Object.keys(before).length ? ' (' + fresh + ' new)' : '') + '.');
   }
 
   function readFile(f, asText) {
@@ -981,7 +1117,7 @@
         if (onDone) onDone();
         openCasPreview(results);
       });
-    } else chain = chain.then(function () { if (onDone) onDone(); });
+    } else chain = chain.then(function () { if (onDone) onDone(); if (icsFiles.length) maybeNaming(); });
     chain.catch(function (e) { var m = (e && e.message) || 'Could not read that file.'; if (errEl) errEl.textContent = m; else toastErr(m); });
   }
 
@@ -1110,14 +1246,13 @@
       var text = ics.decodeBytes(buf);
       // Slide the sample so its first week is this week.
       var items = ics.parseIcs(text), first = items.reduce(function (m, i) { var dd = toDate(i.due); return dd < m ? dd : m; }, new Date(8.64e15));
-      var today = new Date(), wkend = today.getDay() === 0 || today.getDay() === 6;
-      var target = addDays(monday(today), wkend ? 7 : 0); // on weekends the sample shows the coming week
+      var target = defaultMonday(); // the week the board opens on
       var weeks = Math.round((target - monday(first)) / (7 * 864e5));
       S.rules = SAMPLE_RULES.slice();
       S.order = ['Biology', 'World History', 'Geometry', 'English 10', 'Spanish II'];
       var st = { 'sb-sample-001@example.invalid': 'done', 'sb-sample-003@example.invalid': 'done', 'sb-sample-010@example.invalid': 'started', 'sb-sample-014@example.invalid': 'proctor' };
       Object.keys(st).forEach(function (k) { S.status[k] = st[k]; });
-      S.prefs.view = 'week'; S.prefs.weekOffset = wkend ? 1 : 0;
+      S.prefs.view = 'week'; S.prefs.weekOffset = 0; S.proctorCol = true; // the demo shows every column
       markCreated(addDays(target, -7).getTime()); // the made-up board "started" a week before the sample week
       applyIcs(text, 'sample', { shiftMs: weeks * 7 * 864e5 });
     }).catch(function (e) { toastErr(e.message); if (btn) { btn.disabled = false; btn.innerHTML = 'Try the sample board ' + ICON.arrow; } });
@@ -1151,7 +1286,7 @@
       };
       var j = function (o) { return JSON.stringify(o).replace(/</g, '\\u003c'); };
       return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-        '<title>Schoology Board (offline)</title><meta name="color-scheme" content="dark"><style id="sb-css">' + files.css.replace(/<\/style/gi, '<\\/style') + '</style></head><body>' +
+        '<title>Schoology Board (backup)</title><meta name="color-scheme" content="dark"><style id="sb-css">' + files.css.replace(/<\/style/gi, '<\\/style') + '</style></head><body>' +
         '<div id="app"><div class="loading">Loading your board\u2026</div></div>\n' +
         '<script id="sb-config" type="application/json">' + j(cfg) + '</script>\n' +
         '<script id="sb-data" type="application/json">' + j(snap) + '</script>\n' +
@@ -1165,15 +1300,15 @@
   function downloadOffline() {
     if (packing) return;
     packing = true;
-    toast('Packing your offline copy\u2026', null, null, 1500);
+    toast('Saving a backup\u2026', null, null, 1500);
     buildOfflineHtml().then(function (html) {
       var a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-      a.download = 'schoology-board-' + dayKey(new Date()) + '.html';
+      a.download = 'schoology-board-backup-' + dayKey(new Date()) + '.html';
       document.body.appendChild(a); a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-      toast('Saved. Open the file from your Downloads; progress there stays in that browser.', null, null, 5000);
-    }).catch(function (e) { toastErr('Could not build the offline file: ' + e.message); })
+      toast('Backup saved. Open it from your Downloads; it works without internet.', null, null, 5000);
+    }).catch(function (e) { toastErr('Could not save the backup: ' + e.message); })
       .then(function () { packing = false; });
   }
 
@@ -1183,11 +1318,19 @@
     if (!app) return;
     S = load();
     var migrated = S._migrated; delete S._migrated;
+    if (S._needsProctorCheck) { // boards from before the column was optional keep it if they use it
+      delete S._needsProctorCheck;
+      S.proctorCol = Object.keys(S.status).some(function (k) { return S.status[k] === 'proctor'; }) ||
+        [S.ics, S.cas, S.custom].some(function (m) { return Object.keys(m).some(function (k) { return /\bproctor/i.test(m[k].title || ''); }); });
+      migrated = true;
+    }
     if (MODE === 'offline' || migrated) save();
     render();
+    refreshFeed();
+    setInterval(renderSync, 30000);
     setInterval(function () { if (!drag && !document.querySelector('dialog[open]') && $('#sb-board') && !(document.activeElement && document.activeElement.classList.contains('card'))) renderBoard(); }, 60000);
-    window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; render(); } });
+    window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; delete S._needsProctorCheck; render(); } });
   }
-  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, version: '1.1.0' };
+  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, version: '1.2.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

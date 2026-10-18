@@ -1,6 +1,6 @@
 # Schoology Board
 
-**Your Schoology assignments on one drag-and-drop board.** Paste your Schoology calendar link (or drop an `.ics` file and your Course Assignment Sheet PDFs) and get a kanban board: **Need to be done → Started → Needs to be proctored → Completed**. It works offline, and nothing is stored on a server.
+**Your Schoology assignments on one drag-and-drop board.** Paste your Schoology calendar link (or drop an `.ics` file and your Course Assignment Sheet PDFs) and get a kanban board: **Need to be done → Started → Completed** (plus an optional **Needs to be proctored** column). It works offline, and nothing is stored on a server.
 
 **Live: https://schoology-board.vercel.app** · [Try the sample board](https://schoology-board.vercel.app) (no sign-in, made-up data)
 
@@ -9,8 +9,9 @@
 ## What it does
 
 - **Setup in under a minute.** Paste your calendar link, or drop files. Not ready yet? Use **Try the sample board** (made-up classes).
-- **Four columns.** Drag cards with a mouse, or long-press and drag on a phone. Double-click a card to mark it done. Every card's **⋯** menu has **Move to…**, Mark done, Edit, Open in Schoology and Delete. On a phone it opens as a bottom sheet.
-- **Opens on this week.** Views: **Due today** (only things due on today's date), **Week** (Monday to Sunday, use ‹ › to step), **All**, or a date **Range**. **Filter** holds *Hide past*. Search with `/`.
+- **Three columns, four if you need them.** Turn on *Needs to be proctored* in **Filter**. Boards that already use it keep it. Turning it off moves those cards back to *Need to be done* without losing anything; turn it on again and they return. Drag cards with a mouse, or long-press and drag on a phone. Double-click a card to mark it done. Every card's **⋯** menu has **Move to…**, Mark done, Edit, Open in Schoology and Delete. On a phone it opens as a bottom sheet.
+- **Opens on this week.** Views: **Due today** (only things due on today's date), **Week** (Monday to Sunday, use ‹ › to step) and **All**. From **Friday 6 PM through Sunday**, Week opens on the coming week, labelled *Next week · Oct 26–Nov 1*. **Filter** holds *Hide past* and the column settings. Search with `/`.
+- **Always fresh.** If you saved your calendar link, the board re-fetches it every time you open it and merges the changes like a re-import (your progress stays). The header says *Updated 3m ago*. If Schoology doesn't answer you get a quiet *Couldn't refresh · Retry* and your saved board stays put.
 - **Grouped the way you think.** To-do columns are grouped by class, then by day. Completed is one flat list. Every card links to its Schoology page. Anything due within 36 hours, or overdue, gets a red edge.
 - **Classes, even though Schoology doesn't send them.** The feed has no course field, so the board works it out:
   1. your own choices;
@@ -18,18 +19,22 @@
   3. the title's prefix ("ALG2 Homework 10", "Apologia Chem - Module 03 Quiz", "Spanish I Quiz 2" / "Spanish 1 Activities…" are the same class);
   4. words it learned from your sheets.
 
+  After an import, a quick **Name your classes** step lists each detected prefix group ("ALG2 · 12 items") with an editable name, plus anything still Unsorted. Your names are remembered and used on every refresh, re-import and backup. Reopen it any time from **⋯ → Name your classes**.
+
   School-event audience tags like "(Grades 7-12)" or "FT Students Only" are never treated as classes.
-- **A clean start.** Imported work due **before you created the board** counts as already handled. It's hidden, not shown as overdue, and re-imports never bring it back. You can bring it back with **Filter → Show items from before this board was created**.
+- **A clean start.** Imported work due **before the day you created the board** counts as already handled. It's hidden, not shown as overdue, and re-imports never bring it back. Work due later on the creation day still shows. A quiet note under the class chips says how many are hidden (*12 earlier items hidden · Show*); **Show** (or **Filter → Show items from before this board was created**) brings them back.
 - **Course Assignment Sheets (CAS).** Drop CAS PDFs. They're read **in your browser** with pdf.js and become dated cards under that class: readings, homework and submissions. Learning objectives are skipped. A preview lets you check, edit or untick items first. Items already on your Schoology calendar are flagged *Already on calendar* and skipped.
 - **Your own stuff.** Add tasks (title, category, due date/time, link, note) and your own categories. You can rename, reorder or delete them; everything survives re-imports.
-- **Download for offline** (in the **⋯** menu). You get one self-contained `.html` file with your board baked in. It runs the exact same code as the website: it works with no internet, saves progress in that browser, and can re-import an `.ics` or CAS PDFs.
-- **Keyboard-friendly.** `N` add · `I` import · `/` search · `T`/`W`/`A` views · `[` `]` weeks · `H` hide past · arrows move focus · `1`–`4` move a card · `M` card menu · `X` done · `E` edit · `?` all shortcuts.
+- **Save a backup** (in the **⋯** menu). You get one self-contained `.html` file with your board baked in, including your class names and column settings. It runs the exact same code as the website: it works with no internet, saves progress in that browser, and can re-import an `.ics` or CAS PDFs. It says *Offline copy* and never refreshes on its own, because it doesn't contain your calendar link.
+- **Keyboard-friendly.** `N` add · `I` import · `/` search · `T`/`W`/`A` views · `[` `]` weeks · `H` hide past · arrows move focus · `1`–`4` move a card to a column · `M` card menu · `X` done · `E` edit · `?` all shortcuts.
 
 | Board | First run |
 |---|---|
 | ![Board with the sample data](docs/board.png) | ![First-run screen](docs/first-run.png) |
 | **Course Assignment Sheet preview** | **A full (made-up) school year, mid-February** |
 | ![CAS import preview](docs/cas-preview.png) | ![This week from a 517-item feed](docs/year-this-week.png) |
+| **Name your classes (after an import)** | **Friday evening: Week shows next week** |
+| ![Name your classes step](docs/class-naming.png) | ![Next week view on a Friday evening](docs/weekend-week.png) |
 
 | Phone | Card menu on a phone |
 |---|---|
@@ -49,10 +54,10 @@ Notes from the same docs: the setting only works if your personal calendar has a
 
 ## Privacy
 
-- **Nothing is stored on a server.** Your board, progress, custom tasks and categories live in your browser's `localStorage` (or inside your offline file).
+- **Nothing is stored on a server.** Your board, progress, custom tasks and categories live in your browser's `localStorage` (or inside your backup file). The saved calendar link stays in this browser's `localStorage` and is only ever sent, in a POST body, to the relay.
 - **The calendar proxy only relays.** Browsers can't read Schoology's feed directly (it has no CORS headers), so a tiny serverless route ([`app/api/feed/route.js`](app/api/feed/route.js)) fetches it and streams the bytes back. The link is sent in a POST body, so it never appears in a URL or request log. The route doesn't log, cache or store the link or the calendar. It refuses private network addresses and anything that isn't a calendar.
 - **CAS PDFs never leave your device.** They're parsed in the browser.
-- The calendar link is kept only if you tick *Remember the link on this device*. It is **never** put into the offline file.
+- The calendar link is kept only if you tick *Remember the link on this device*. It is **never** put into a backup file.
 - No analytics, no accounts, no cookies.
 
 ## What's in a Schoology calendar feed (and how it's parsed)
@@ -84,7 +89,7 @@ Deploy to Vercel as a standard Next.js project; no environment variables are nee
 
 ### How it's built
 
-- `public/board/board.js`, `board.css`: the whole board UI, framework-free. The website (`public/index.html`) and the offline download run **the same files**. The offline file inlines them along with pdf.js.
+- `public/board/board.js`, `board.css`: the whole board UI, framework-free. The website (`public/index.html`) and the backup file run **the same files**. The backup inlines them along with pdf.js.
 - `public/board/ics.js`: the iCal parser (no dependencies; runs in the browser and Node).
 - `public/board/cas.js`: the CAS parser. It works on pdf.js text positions: it finds the *Class Dates* and *Assignments* columns, assigns each task to its class day (including rows that run onto the next page), and pulls out explicit due dates like "Due Saturday 09/12/26 at 12:00 pm ET" or "by midnight the evening prior to class".
 - `app/api/feed/route.js`: the calendar relay (Next.js route handler).

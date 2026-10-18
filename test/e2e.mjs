@@ -1,8 +1,9 @@
 // End-to-end check in headless Chromium.
 //   BASE_URL=https://your-deploy.vercel.app SHOTS=./shots node test/e2e.mjs
 // Covers: first run, sample board, .ics import + re-import, drag/keyboard/double-click,
-// custom categories + tasks, CAS PDF preview + dedupe, offline download opened from
-// file:// (render, persistence across reload, .ics re-import, CAS import).
+// custom categories + tasks, CAS PDF preview + dedupe, backup opened from file://,
+// a 517-item year frozen at several moments (creation day, weekday, Friday 5/7 PM, Sunday),
+// class naming, optional proctor column, migrations, refresh on open with a stub relay.
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -27,13 +28,16 @@ const browser = await chromium.launch();
 const errors = [];
 function watch(page, tag) {
   page.on('pageerror', (e) => errors.push(`${tag}: ${e.message}`));
-  page.on('console', (m) => { if (m.type() === 'error' && !(tag === 'link' && /status of 422/.test(m.text()))) errors.push(`${tag} console: ${m.text()}`); }); // the 422 is the deliberate bad-link probe
+  page.on('console', (m) => { if (m.type() === 'error' && !(tag === 'link' && /status of 422/.test(m.text())) && !(tag === 'refresh' && /status of 502/.test(m.text()))) errors.push(`${tag} console: ${m.text()}`); }); // the 422 is the deliberate bad-link probe
   page.on('dialog', (d) => d.accept());
 }
 const state = (page) => page.evaluate(() => window.SchoologyBoard.state());
 const more = async (page, id) => { await page.click('#sb-more'); await page.click(id); };
 const newCtx = async (opts = {}) => { const c = await browser.newContext({ timezoneId: 'America/New_York', acceptDownloads: true, viewport: { width: 1440, height: 900 }, ...opts }); await c.clock.setFixedTime(opts.now || NOW); return c; };
 const cardByTitle = (page, t) => page.locator('.card', { hasText: t }).first();
+// The "Name your classes" step opens after a user import; skip it when a test isn't about it.
+const skipNaming = async (page, wait = 1200) => { try { await page.waitForSelector('dialog.naming', { timeout: wait }); await page.click('#nm-skip'); await page.waitForTimeout(150); return true; } catch { return false; } };
+const sod = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
 async function dragTo(page, card, col) {
   const a = await card.boundingBox(), b = await page.locator(`.col[data-col="${col}"]`).boundingBox();
   await page.mouse.move(a.x + 30, a.y + 12);
@@ -106,7 +110,7 @@ await mpage.screenshot({ path: join(SHOTS, 'mobile-board.png') });
   await mpage.locator('#sb-colnav button[data-col="todo"]').tap(); await mpage.waitForTimeout(700);
   await mpage.locator('#sb-more').tap(); await mpage.waitForSelector('.menu.sheet');
   const sheetText = await mpage.locator('.menu.sheet').innerText();
-  ok('mobile: ⋯ opens a bottom sheet with Import, Categories and Download', /Import/.test(sheetText) && /Categories/.test(sheetText) && /Download for offline/.test(sheetText) && !/Keyboard/.test(sheetText));
+  ok('mobile: ⋯ opens a bottom sheet with Import, Categories and Save a backup', /Import/.test(sheetText) && /Categories/.test(sheetText) && /Save a backup/.test(sheetText) && !/Download for offline/.test(sheetText) && !/Keyboard/.test(sheetText));
   await mpage.locator('.scrim').tap({ position: { x: 20, y: 20 } }); await mpage.waitForTimeout(200);
   const card = mpage.locator('.col[data-col="todo"] .card').first(); const cid = await card.getAttribute('data-id');
   await card.locator('.more').tap(); await mpage.waitForSelector('.menu.sheet');
@@ -122,8 +126,13 @@ await page.evaluate(() => localStorage.clear());
 await page.goto(BASE + '/'); await page.waitForSelector('#imp-file', { state: 'attached' });
 await page.setInputFiles('#imp-file', ICS);
 await page.waitForSelector('#sb-board .card');
+ok('first import offers the "Name your classes" step (skippable)', await skipNaming(page, 3000));
 let st = await state(page);
 ok('.ics upload imports all 19 events', Object.keys(st.ics).length === 19);
+ok('new boards start without the proctor column (3 columns)', st.proctorCol === false && (await page.locator('.col').count()) === 3 && await page.locator('.col[data-col="todo"] .card', { hasText: 'Proctor Note' }).count() === 1);
+ok('no Range view any more', await page.locator('.seg button').allInnerTexts().then((t) => t.join('|') === 'Due today|Week|All'));
+await page.click('#sb-filter'); await page.check('#sb-proctorcol'); await page.keyboard.press('Escape');
+ok('Filter & settings turns the proctor column on', (await page.locator('.col').count()) === 4 && (await state(page)).proctorCol === true);
 await page.click('.seg button[data-view="all"]');
 // drag + double-click + keyboard
 let card = cardByTitle(page, 'DBQ: Causes');
@@ -208,11 +217,6 @@ ok('delete category removes it', !st.cats.includes('Temp category'));
 // filters
 await page.click('.seg button[data-view="today"]');
 ok('Due today view shows the task due within 10h or overdue items', await page.locator('.card', { hasText: 'Animal Farm' }).count() === (new Date(soon).toDateString() === new Date().toDateString() ? 1 : 0));
-await page.click('.seg button[data-view="range"]');
-await page.fill('#sb-from', '2026-10-21'); await page.dispatchEvent('#sb-from', 'change');
-await page.fill('#sb-to', '2026-10-21'); await page.dispatchEvent('#sb-to', 'change');
-const rangeTitles = await page.locator('#sb-board .card .t').allInnerTexts();
-ok('date range filter limits cards to that range', rangeTitles.length > 0 && rangeTitles.every((t) => !/Picture Day|Unit 3 Test/.test(t)), rangeTitles.length + ' cards');
 await page.click('.seg button[data-view="all"]');
 await page.click('#sb-filter'); await page.check('#sb-hidepast');
 const hp = await page.locator('#sb-board .card').count();
@@ -225,8 +229,8 @@ await page.click('#sb-clearq');
 ok('Clear search restores the board', await page.locator('#sb-board .card').count() === hp || await page.locator('#sb-board .card').count() > 0);
 // desktop menu + toast placement
 await page.click('#sb-more');
-ok('desktop ⋯ menu holds Categories, Download for offline and Keyboard shortcuts', /Categories[\s\S]*Download for offline[\s\S]*Keyboard shortcuts/.test(await page.locator('.menu').innerText()));
-ok('"Download for offline" is not red', await page.locator('#sb-offline').evaluate((e) => !/255, 62, 81/.test(getComputedStyle(e).backgroundColor + getComputedStyle(e).color)));
+ok('desktop ⋯ menu holds Categories, Name your classes, Save a backup and Keyboard shortcuts', /Categories[\s\S]*Name your classes[\s\S]*Save a backup[\s\S]*Keyboard shortcuts/.test(await page.locator('.menu').innerText()));
+ok('"Save a backup" is not red', await page.locator('#sb-backup').evaluate((e) => !/255, 62, 81/.test(getComputedStyle(e).backgroundColor + getComputedStyle(e).color)));
 await page.keyboard.press('Escape');
 ok('only one red button in the header (Add)', await page.locator('.sb-head .btn').evaluateAll((els) => els.filter((e) => /255, 62, 81/.test(getComputedStyle(e).backgroundColor)).map((e) => e.id).join()) === 'sb-add');
 await page.screenshot({ path: join(SHOTS, 'board-after-flow.png') });
@@ -248,7 +252,7 @@ if (LIVE_LINK) {
 }
 
 // ---------- 8. offline download ----------
-const [dl] = await Promise.all([page.waitForEvent('download'), more(page, '#sb-offline')]);
+const [dl] = await Promise.all([page.waitForEvent('download'), more(page, '#sb-backup')]);
 const offlinePath = join(SHOTS, 'schoology-board-offline.html');
 await dl.saveAs(offlinePath);
 ok('offline file downloads', !!offlinePath);
@@ -266,6 +270,7 @@ ok('offline file carries custom category + task', ost.cats.includes('Reading') &
 ok('offline file carries CAS tasks', Object.keys(ost.cas).length === casTitles.length);
 ok('offline file carries progress', ost.status[id] === 'started');
 ok('offline file does not contain the calendar link', !JSON.stringify(ost).includes('feedUrl":"http'));
+ok('backup says "Offline copy" and does not try to refresh', (await op.locator('#sb-sync').innerText()).includes('Offline copy'));
 await op.screenshot({ path: join(SHOTS, 'offline-board.png') });
 const oc = cardByTitle(op, 'Two-Column Proof'); const ocid = await oc.getAttribute('data-id');
 await dragTo(op, oc, 'done');
@@ -284,71 +289,209 @@ const cyan2 = await noCyan(op);
 ok('no cyan/teal colors in the offline file', cyan2.length === 0, cyan2.slice(0, 3).join('; '));
 await octx.close();
 
-// ---------- 9. a full school year (517 items) with a frozen mid-year date ----------
+// ---------- 9. a full school year (517 items), frozen at several moments ----------
 {
-  const created = new Date('2027-01-04T09:00:00-05:00'), today = new Date('2027-02-10T10:00:00-05:00');
+  // Created late on Jan 4: three assignments were due at 23:59 earlier that day and must still show.
+  const created = new Date('2027-01-04T23:59:30-05:00'), cutoff = sod(created);
+  const weekday = new Date('2027-02-10T10:00:00-05:00'), fri5 = new Date('2027-02-12T17:00:00-05:00'), fri7 = new Date('2027-02-12T19:00:00-05:00'), sun = new Date('2027-02-14T15:00:00-05:00');
   const yctx = await newCtx({ now: created });
   const yp = await yctx.newPage(); watch(yp, 'year');
   await yp.goto(BASE + '/'); await yp.waitForSelector('#imp-file', { state: 'attached' });
   await yp.setInputFiles('#imp-file', YEAR); await yp.waitForFunction(() => window.SchoologyBoard.state().createdAt);
-  await yctx.clock.setFixedTime(today); await yp.reload(); await yp.waitForSelector('#sb-board');
-  // independent expectations from the generator's manifest
+  // the class-naming step
+  await yp.waitForSelector('dialog.naming', { timeout: 5000 });
+  const groups = await yp.locator('dialog.naming .nm-row[data-k] .nm-l b').allInnerTexts();
+  ok('naming step lists the detected title prefixes', ['ALG2', 'Spanish I', 'Omnibus Primary', 'Apologia Chem', 'Writing'].every((g) => groups.includes(g)), groups.join(', '));
+  ok('naming step lists Unsorted items to assign', await yp.locator('dialog.naming .nm-row[data-id]').count() > 0);
+  const alg = yp.locator('dialog.naming .nm-row', { has: yp.locator('b', { hasText: /^ALG2$/ }) });
+  ok('naming step shows the group size', /ALG2 · \d+ items/.test((await alg.innerText()).replace(/\s+/g, ' ')));
+  await alg.locator('input').fill('Algebra II');
+  await yp.waitForTimeout(300); await yp.screenshot({ path: join(SHOTS, 'class-naming.png') });
+  await yp.click('#nm-done'); await yp.waitForTimeout(200);
+  ok('naming: the prefix→class mapping is saved', (await state(yp)).classMap.alg2 === 'Algebra II' || Object.values((await state(yp)).classMap).includes('Algebra II'), JSON.stringify((await state(yp)).classMap));
+  const RN = { ALG2: 'Algebra II' };
   const inst = (e) => new Date(`${e.date}T${e.time}:00`).getTime();
-  const visible = YEAR_EXP.items.filter((e) => inst(e) >= created.getTime());
-  const counts = (list) => {
-    const col = { todo: 0, started: 0, proctor: 0, done: 0 }, cls = {};
-    list.forEach((e) => { col[e.proctor ? 'proctor' : 'todo']++; cls[e.cls] = (cls[e.cls] || 0) + 1; });
+  const visible = YEAR_EXP.items.filter((e) => inst(e) >= cutoff);
+  const hiddenTotal = YEAR_EXP.count - visible.length;
+  const counts = (list, proctorOn) => {
+    const col = proctorOn ? { todo: 0, started: 0, proctor: 0, done: 0 } : { todo: 0, started: 0, done: 0 }, cls = {};
+    list.forEach((e) => { col[e.proctor && proctorOn ? 'proctor' : 'todo']++; const c = RN[e.cls] || e.cls; cls[c] = (cls[c] || 0) + 1; });
     return { total: list.length, col, cls };
   };
   const readBoard = () => yp.evaluate(() => {
     const col = {}; document.querySelectorAll('.col').forEach((c) => (col[c.dataset.col] = +c.querySelector('h2 span').textContent));
     const cls = {}; let all = null;
-    document.querySelectorAll('#sb-chips .chip').forEach((c) => { const n = +c.querySelector('b').textContent, name = c.childNodes[0].textContent.trim(); if (c.dataset.c) cls[c.dataset.c] = n; else all = n; });
-    return { cards: document.querySelectorAll('#sb-board .card').length, col, cls, all };
+    document.querySelectorAll('#sb-chips .chip').forEach((c) => { const n = +c.querySelector('b').textContent; if (c.dataset.c) cls[c.dataset.c] = n; else all = n; });
+    const note = document.querySelector('#sb-note');
+    return { cards: document.querySelectorAll('#sb-board .card').length, col, cls, all, note: note.hidden ? '' : note.textContent, week: document.querySelector('#sb-week').textContent };
   });
   const same = (a, b) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
-  const check = async (label, list) => {
-    const want = counts(list), got = await readBoard();
+  const check = async (label, list, proctorOn = false) => {
+    const want = counts(list, proctorOn), got = await readBoard();
     ok(`${label}: ${want.total} cards`, got.cards === want.total, `board ${got.cards}`);
     ok(`${label}: column counts match`, same(got.col, want.col), JSON.stringify(got.col) + ' vs ' + JSON.stringify(want.col));
     ok(`${label}: class chips and counts match`, same(got.cls, want.cls) && got.all === want.total, JSON.stringify(got.cls) + ' vs ' + JSON.stringify(want.cls));
+    return got;
   };
-  ok('year: board opens on This week', await yp.locator('.seg button[aria-pressed="true"]').innerText() === 'Week');
-  await check('year This week (Feb 8-14)', visible.filter((e) => e.date >= '2027-02-08' && e.date <= '2027-02-14'));
+  const at = async (t) => { await yctx.clock.setFixedTime(t); await yp.reload(); await yp.waitForSelector('#sb-board'); };
+  // creation day
+  ok('year: cutoff is the start of the creation day', (await state(yp)).createdAt === cutoff);
+  await yp.click('.seg button[data-view="today"]');
+  let g = await check('creation day, Due today (3 due 23:59, before the board existed)', visible.filter((e) => e.date === '2027-01-04'));
+  ok('creation day: no note when nothing is hidden in view', g.note === '');
+  await yp.click('.seg button[data-view="all"]');
+  g = await readBoard();
+  ok(`creation day: All shows the note "${hiddenTotal} earlier items hidden · Show"`, g.note.replace(/\s+/g, ' ') === `${hiddenTotal} earlier items hidden · Show`, g.note);
+  const ncs = await yp.locator('#sb-note').evaluate((e) => ({ fs: getComputedStyle(e).fontSize, c: getComputedStyle(e).color }));
+  ok('hidden note is quiet: 13px #6E6E76', ncs.fs === '13px' && ncs.c === 'rgb(110, 110, 118)', JSON.stringify(ncs));
+  // a weekday
+  await at(weekday);
+  ok('year: board opens on Week', await yp.locator('.seg button[aria-pressed="true"]').innerText() === 'Week');
+  g = await check('weekday Wed Feb 10, Week (Feb 8-14)', visible.filter((e) => e.date >= '2027-02-08' && e.date <= '2027-02-14'));
+  ok('weekday: label "This week · Feb 8–14", no note', g.week === 'This week · Feb 8–14' && g.note === '', g.week + ' / ' + g.note);
   await yp.screenshot({ path: join(SHOTS, 'year-this-week.png') });
   await yp.click('.seg button[data-view="today"]');
-  await check('year Due today (Feb 10)', visible.filter((e) => e.date === '2027-02-10'));
+  await check('weekday Due today (Feb 10)', visible.filter((e) => e.date === '2027-02-10'));
   await yp.screenshot({ path: join(SHOTS, 'year-due-today.png') });
   await yp.click('.seg button[data-view="all"]');
-  await check('year All (since the board was created)', visible);
-  ok('year: items due before the board was created are hidden (not overdue, not Completed)', (await readBoard()).col.done === 0 && visible.length < YEAR_EXP.count, `${YEAR_EXP.count - visible.length} hidden`);
-  await yp.click('#sb-filter'); await yp.check('#sb-showpre'); await yp.keyboard.press('Escape');
-  ok('year: "Show items from before this board was created" brings them back', (await readBoard()).cards === YEAR_EXP.count);
-  await yp.click('#sb-filter'); await yp.uncheck('#sb-showpre'); await yp.keyboard.press('Escape');
+  await check('weekday All (since the creation day)', visible);
+  ok('year: hidden items are not overdue or Completed', (await readBoard()).col.done === 0);
+  await yp.click('#sb-note a');
+  g = await readBoard();
+  ok('note "Show" turns on earlier items', g.cards === YEAR_EXP.count && (await state(yp)).prefs.showPre === true && /^Showing \d+ items from before this board · Hide$/.test(g.note.replace(/\s+/g, ' ')), g.note);
+  await yp.click('#sb-note a');
+  ok('note "Hide" hides them again', (await readBoard()).cards === visible.length);
+  // proctor column toggle
+  await yp.click('#sb-filter'); await yp.waitForSelector('#sb-proctorcol'); await yp.waitForTimeout(350);
+  await yp.screenshot({ path: join(SHOTS, 'settings-proctor-toggle.png') });
+  await yp.check('#sb-proctorcol'); await yp.keyboard.press('Escape'); await yp.waitForTimeout(100);
+  await check('All with the proctor column on', visible, true);
+  await yp.click('#sb-filter'); await yp.uncheck('#sb-proctorcol'); await yp.keyboard.press('Escape'); await yp.waitForTimeout(100);
+  await check('All with the proctor column off again (lossless)', visible);
+  await yp.click('#sb-filter'); await yp.check('#sb-proctorcol'); await yp.keyboard.press('Escape');
+  // re-import keeps everything, including class names
   await yp.keyboard.press('i'); await yp.setInputFiles('dialog #imp-file', YEAR); await yp.waitForTimeout(600);
-  ok('year: re-import never brings pre-creation items back', (await readBoard()).cards === visible.length);
-  const ycreated = (await state(yp)).createdAt;
-  ok('year: board creation time is saved', ycreated === created.getTime());
-  const [ydl] = await Promise.all([yp.waitForEvent('download'), more(yp, '#sb-offline')]);
+  ok('re-import does not nag with the naming step again', await yp.locator('dialog.naming').count() === 0);
+  await check('All after re-import (class names + proctor kept, pre-creation still hidden)', visible, true);
+  // Friday 5 PM: still this week. Friday 7 PM and Sunday: next week.
+  await at(fri5);
+  ok('Friday 5 PM: Week is still this week', (await readBoard()).week === 'This week · Feb 8–14');
+  await at(fri7);
+  g = await check('Friday 7 PM, Week = next week (Feb 15-21)', visible.filter((e) => e.date >= '2027-02-15' && e.date <= '2027-02-21'), true);
+  ok('Friday 7 PM: label "Next week · Feb 15–21"', g.week === 'Next week · Feb 15–21', g.week);
+  await yp.screenshot({ path: join(SHOTS, 'weekend-week.png') });
+  await at(sun);
+  g = await check('Sunday, Week = next week (Feb 15-21)', visible.filter((e) => e.date >= '2027-02-15' && e.date <= '2027-02-21'), true);
+  await yp.click('#sb-prev');
+  g = await check('Sunday, ← goes to this week (Feb 8-14)', visible.filter((e) => e.date >= '2027-02-08' && e.date <= '2027-02-14'), true);
+  ok('Sunday: arrows navigate normally', g.week === 'This week · Feb 8–14', g.week);
+  await yp.click('#sb-thisweek');
+  ok('Sunday: the jump-back button returns to next week', (await readBoard()).week === 'Next week · Feb 15–21');
+  // reopen from the menu
+  await more(yp, '#sb-naming'); await yp.waitForSelector('dialog.naming');
+  ok('"Name your classes" reopens from ⋯ with the saved name', await yp.locator('dialog.naming input[value="Algebra II"]').count() === 1);
+  await yp.click('#nm-skip');
+  const ystate = await state(yp);
+  const [ydl] = await Promise.all([yp.waitForEvent('download'), more(yp, '#sb-backup')]);
+  ok('backup file is named schoology-board-backup-YYYY-MM-DD.html', /^schoology-board-backup-\d{4}-\d\d-\d\d\.html$/.test(ydl.suggestedFilename()), ydl.suggestedFilename());
   const yoff = join(SHOTS, 'year-offline.html'); await ydl.saveAs(yoff);
   await yctx.close();
-  const yo = await newCtx({ now: today }); const yop = await yo.newPage(); watch(yop, 'year-offline');
+  const yo = await newCtx({ now: weekday }); const yop = await yo.newPage(); watch(yop, 'year-offline');
   await yop.route('**/*', (r) => (/^(file|blob|data):/.test(r.request().url()) ? r.continue() : r.abort()));
   await yop.goto(pathToFileURL(yoff).href); await yop.waitForSelector('#sb-board');
   await yop.click('.seg button[data-view="all"]');
-  ok('year offline: creation time and hiding carry into the offline file', (await state(yop)).createdAt === ycreated && await yop.locator('#sb-board .card').count() === visible.length);
+  const os = await state(yop);
+  ok('backup: creation cutoff, hiding and proctor column carry over', os.createdAt === cutoff && os.proctorCol === true && await yop.locator('#sb-board .card').count() === visible.length);
+  ok('backup: class names carry over (mapping + chip)', JSON.stringify(os.classMap) === JSON.stringify(ystate.classMap) && await yop.locator('#sb-chips .chip[data-c="Algebra II"]').count() === 1);
+  ok('backup: hidden note works offline', ((await yop.locator('#sb-note').textContent()) || '').startsWith(hiddenTotal + ' earlier items hidden'));
+  await yop.click('#sb-import'); await yop.setInputFiles('dialog #imp-file', YEAR); await yop.waitForTimeout(600);
+  ok('backup: re-import there keeps the class names', await yop.locator('#sb-chips .chip[data-c="Algebra II"]').count() === 1 && await yop.locator('#sb-chips .chip[data-c="ALG2"]').count() === 0);
   await yo.close();
 }
-// ---------- 10. a board saved before "created" existed gets it on first load ----------
+// ---------- 10. migrations from older saved boards ----------
 {
   const c = await newCtx(); const pg = await c.newPage(); watch(pg, 'migrate');
   await pg.goto(BASE + '/');
-  await pg.evaluate(() => localStorage.setItem('schoology-board:v1', JSON.stringify({ v: 1, ics: { old: { uid: 'old', title: 'Old overdue thing', due: '2026-09-01T12:00', source: 'ics' }, fresh: { uid: 'fresh', title: 'Next week thing', due: '2026-10-21T12:00', source: 'ics' } }, prefs: { view: 'all' } })));
+  await pg.evaluate(() => localStorage.setItem('schoology-board:v1', JSON.stringify({ v: 1, ics: { old: { uid: 'old', title: 'Old overdue thing', due: '2026-09-01T12:00', source: 'ics' }, early: { uid: 'early', title: 'Due at 6am today', due: '2026-10-19T06:00', source: 'ics' }, fresh: { uid: 'fresh', title: 'Next week thing', due: '2026-10-21T12:00', source: 'ics' } }, prefs: { view: 'range', from: '2026-10-01', to: '2026-10-31' } })));
   await pg.reload(); await pg.waitForSelector('#sb-board');
   const s2 = await state(pg);
-  ok('older boards get a creation time on first load', s2.createdAt === NOW.getTime());
-  ok('older boards: old overdue items disappear, later ones stay', !(await pg.locator('.card', { hasText: 'Old overdue thing' }).count()) && (await pg.evaluate(() => window.SchoologyBoard.state().prefs.view)) === 'week');
+  ok('older boards get a creation cutoff at the start of today', s2.createdAt === sod(NOW));
+  ok('older boards: old items hide, work due earlier today stays', !(await pg.locator('.card', { hasText: 'Old overdue thing' }).count()) && await pg.locator('.card', { hasText: 'Due at 6am today' }).count() === 1);
+  ok('saved "range" view migrates to Week', s2.prefs.view === 'week' && (await pg.locator('.seg button[aria-pressed="true"]').innerText()) === 'Week');
+  ok('boards without proctor items get no proctor column', s2.proctorCol === false && await pg.locator('.col').count() === 3);
+  // a mid-day createdAt moves to that day's midnight; a board using the proctor column keeps it
+  await pg.evaluate(() => localStorage.setItem('schoology-board:v1', JSON.stringify({ v: 1, createdAt: new Date('2026-10-19T09:30:00-04:00').getTime(), ics: { a: { uid: 'a', title: 'Unit 2 Test (proctored)', due: '2026-10-20T12:00', source: 'ics' }, b: { uid: 'b', title: 'Morning quiz', due: '2026-10-19T08:00', source: 'ics' } } })));
+  await pg.reload(); await pg.waitForSelector('#sb-board');
+  const s3 = await state(pg);
+  ok('mid-day creation time migrates to local midnight', s3.createdAt === sod(NOW));
+  ok('existing board with a proctor item gets the column on', s3.proctorCol === true && await pg.locator('.col[data-col="proctor"] .card', { hasText: 'Unit 2 Test' }).count() === 1);
+  ok('creation-day item due before the creation time shows', await pg.locator('.card', { hasText: 'Morning quiz' }).count() === 1);
   await c.close();
+}
+// ---------- 11. refresh on open (stub relay whose feed changes between loads) ----------
+{
+  const A = readFileSync(ICS, 'utf8');
+  const B = A.replace(/BEGIN:VEVENT\r?\n(?:(?!END:VEVENT)[\s\S])*?SUMMARY:Picture Day[\s\S]*?END:VEVENT\r?\n/, '')
+    .replace('END:VCALENDAR', 'BEGIN:VEVENT\r\nUID:sb-sample-new@example.invalid\r\nDTSTAMP:20261020T120000Z\r\nDTSTART;VALUE=DATE-TIME:20261023T035900Z\r\nSUMMARY:Field Trip Permission Form\r\nEND:VEVENT\r\nEND:VCALENDAR');
+  const FEED = 'https://feed.example.invalid/calendar/sample.ics';
+  let mode = 'A', relayHits = 0, bodiesSeen = [];
+  const wed = new Date('2026-10-21T10:00:00-04:00');
+  const rctx = await newCtx({ now: wed });
+  await rctx.route('**/api/feed', async (r) => {
+    relayHits++; bodiesSeen.push(r.request().postData() || '');
+    if (mode === 'fail') return r.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ error: 'Schoology did not answer.' }) });
+    return r.fulfill({ status: 200, contentType: 'text/calendar', body: mode === 'A' ? A : B });
+  });
+  const rp = await rctx.newPage(); watch(rp, 'refresh');
+  await rp.goto(BASE + '/'); await rp.fill('#imp-url', FEED); await rp.click('#imp-go');
+  await rp.waitForSelector('#sb-board .card'); await skipNaming(rp, 3000);
+  let rs = await state(rp);
+  ok('link import remembers the link in this browser only', rs.feedUrl === FEED && rs.lastFetch && rs.lastFetch.ok === true && relayHits === 1);
+  ok('refresh: "Updated just now" after import', /Updated just now/.test(await rp.locator('#sb-sync').innerText()));
+  const wk = await rp.evaluate(() => document.querySelectorAll('#sb-board .card').length);
+  ok('creation-day cutoff: Week hides 4 earlier items and keeps the 8 AM item due today', (await rp.locator('#sb-note').innerText()).replace(/\s+/g, ' ') === '4 earlier items hidden · Show' && await rp.locator('.card', { hasText: 'Osmosis' }).count() === 1, await rp.locator('#sb-note').innerText());
+  await cardByTitle(rp, 'Osmosis').dblclick();
+  mode = 'B';
+  await rctx.clock.setFixedTime(new Date(wed.getTime() + 60e3));
+  await rp.reload(); await rp.waitForSelector('#sb-board .card'); await rp.waitForFunction(() => /Updated/.test(document.querySelector('#sb-sync').textContent));
+  rs = await state(rp);
+  ok('refresh on open re-fetches through the relay and merges', relayHits === 2 && !!rs.ics['sb-sample-new@example.invalid'] && !Object.values(rs.ics).some((e) => /Picture Day/.test(e.title)) && await rp.locator('.card', { hasText: 'Field Trip Permission Form' }).count() === 1);
+  ok('refresh keeps progress (status survives)', Object.entries(rs.status).some(([k, v]) => v === 'done' && /Osmosis/.test((rs.ics[k] || {}).title || '')));
+  ok('auto-refresh does not open the naming step or a toast', await rp.locator('dialog.naming').count() === 0 && await rp.locator('.toast', { hasText: 'Imported' }).count() === 0);
+  await rctx.clock.setFixedTime(new Date(wed.getTime() + 4 * 60e3));
+  await rp.click('.seg button[data-view="week"]');
+  ok('"Updated 3m ago" ticks with the clock', /Updated 3m ago/.test(await rp.locator('#sb-sync').innerText()), await rp.locator('#sb-sync').innerText());
+  const sc = await rp.locator('#sb-sync').evaluate((e) => getComputedStyle(e).color);
+  ok('sync status is neutral grey', /^rgb\((\d+), \1, \1\)$/.test(sc) || /rgb\((1[0-4]\d), (1[0-4]\d), (1[0-4]\d)\)/.test(sc), sc);
+  await rp.screenshot({ path: join(SHOTS, 'board-hidden-note-updated.png') });
+  mode = 'fail';
+  const before = await rp.locator('#sb-board .card').count();
+  await rp.reload(); await rp.waitForSelector('#sb-board .card'); await rp.waitForFunction(() => /Couldn/.test(document.querySelector('#sb-sync').textContent));
+  ok('failed refresh: quiet "Couldn\'t refresh · Retry", cached board kept', (await rp.locator('#sb-sync').innerText()).replace(/\s+/g, ' ').includes('Couldn’t refresh · Retry') && await rp.locator('#sb-board .card').count() === before && await rp.locator('.toast').count() === 0);
+  mode = 'B';
+  await rp.click('#sb-retry'); await rp.waitForFunction(() => /Updated/.test(document.querySelector('#sb-sync').textContent));
+  ok('Retry recovers', /Updated just now/.test(await rp.locator('#sb-sync').innerText()));
+  ok('the link only travels in the relay request body', bodiesSeen.every((b) => JSON.parse(b).url === FEED));
+  // phone width
+  const pctx = await newCtx({ now: new Date(wed.getTime() + 4 * 60e3), viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await pctx.route('**/api/feed', (r) => r.fulfill({ status: 200, contentType: 'text/calendar', body: B }));
+  await pctx.addInitScript((st) => { if (!localStorage.getItem('schoology-board:v1')) localStorage.setItem('schoology-board:v1', st); }, JSON.stringify({ ...rs, lastFetch: { at: wed.getTime() + 60e3, ok: true } }));
+  const pp = await pctx.newPage(); watch(pp, 'phone');
+  await pp.goto(BASE + '/'); await pp.waitForSelector('#sb-board .card'); await pp.waitForFunction(() => /Updated/.test(document.querySelector('#sb-sync').textContent)); await pp.waitForTimeout(400);
+  ok('phone: note and status fit without horizontal overflow', await pp.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await pp.screenshot({ path: join(SHOTS, 'phone-board.png') });
+  await pctx.close();
+  // backup from a linked board: no link inside, "Offline copy", no refresh
+  const [rdl] = await Promise.all([rp.waitForEvent('download'), more(rp, '#sb-backup')]);
+  const rpath = join(SHOTS, 'refresh-backup.html'); await rdl.saveAs(rpath);
+  const html = readFileSync(rpath, 'utf8');
+  ok('backup file never contains the calendar link', !html.includes('feed.example.invalid'));
+  await rctx.close();
+  const bo = await newCtx({ now: wed }); const bop = await bo.newPage(); watch(bop, 'refresh-backup');
+  let net = 0; await bop.route('**/*', (r) => (/^(file|blob|data):/.test(r.request().url()) ? r.continue() : (net++, r.abort())));
+  await bop.goto(pathToFileURL(rpath).href); await bop.waitForSelector('#sb-board .card'); await bop.waitForTimeout(500);
+  ok('backup opened from disk: "Offline copy", no refresh attempt', (await bop.locator('#sb-sync').innerText()).includes('Offline copy') && net === 0 && (await state(bop)).feedUrl === '');
+  await bo.close();
 }
 
 await browser.close();

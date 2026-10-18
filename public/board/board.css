@@ -37,7 +37,7 @@ input[type=text],input[type=url],input[type=date],input[type=time],input[type=se
 textarea{height:auto;padding:8px 12px}
 input::placeholder{color:var(--t3)}
 input:focus,select:focus,textarea:focus{border-color:var(--red);box-shadow:var(--ring)}
-input[type=checkbox]{accent-color:var(--red);width:16px;height:16px;margin:0;flex:none}
+input[type=checkbox]{accent-color:var(--red);width:18px;height:18px;margin:0;flex:none}
 input[type=search]::-webkit-search-cancel-button{filter:grayscale(1)}
 
 /* header */
@@ -58,7 +58,6 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1)}
 .seg button[aria-pressed=true]{background:#26262C;color:var(--t1)}
 .weeknav{display:inline-flex;align-items:center;gap:4px}
 .weeknav b{min-width:88px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
-.range{display:inline-flex;gap:8px;align-items:center;color:var(--t2);font-size:13px}
 .search{display:flex}
 .sfield{position:relative;display:flex;align-items:center}
 .sfield svg{position:absolute;left:10px;color:var(--t3);pointer-events:none}
@@ -82,6 +81,7 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1)}
 /* board */
 .colnav{display:none}
 .board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:20px 24px 96px;align-items:start}
+.board.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .col{background:var(--s1);border:1px solid var(--b1);border-radius:12px;min-height:70vh;padding:12px;transition:border-color .12s,background .12s}
 .col h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);margin:4px 4px 12px;display:flex;justify-content:space-between;align-items:center}
 .col h2 span{color:var(--t3);font-variant-numeric:tabular-nums}
@@ -243,8 +243,6 @@ dialog::backdrop{background:rgba(0,0,0,.72)}
  .seg{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);height:40px}
  .seg button{padding:0 4px}
  .weeknav b{min-width:0;flex:1}
- .range{flex-wrap:wrap}
- .range input{width:136px}
  .tr{grid-column:2;gap:8px;flex-wrap:nowrap}
  .sfield{display:none}
  .search-btn{display:inline-flex!important}
@@ -280,3 +278,39 @@ dialog::backdrop{background:rgba(0,0,0,.72)}
  #sb-toast{left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));align-items:center}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* sync status + quiet notes */
+.prog-t{display:inline-flex;align-items:center;min-width:0}
+.sync{color:var(--t3);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.sync .sep{color:var(--t3);margin:0 2px}
+.nm-in::-webkit-calendar-picker-indicator{opacity:.35}
+.sync a,.sb-note a{color:var(--t2);text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--b2)}
+.sync a:hover,.sb-note a:hover{color:var(--t1);text-decoration-color:var(--t2)}
+.spinner.sm{width:10px;height:10px;border-width:1.5px}
+.sb-note{margin:0;padding:0 24px 0;font-size:13px;line-height:20px;color:#6E6E76}
+.sb-note[hidden]{display:none}
+/* name your classes */
+dialog.naming{max-width:620px}
+.nm-intro{margin:0 0 14px;color:var(--t2);font-size:14px;line-height:1.5}
+.nm-sugg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 16px}
+.nm-sugg .dim{font-size:12px;color:var(--t3);margin-right:4px}
+.nm-sugg .chip{height:28px;font-size:12px}
+.nm-h{margin:16px 0 6px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--t3)}
+.nm-h .dim{color:var(--t3);font-weight:500;margin-left:4px}
+.nm-list{display:flex;flex-direction:column;border:1px solid var(--b1);border-radius:10px;overflow:hidden}
+.nm-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--b1);background:var(--s1)}
+.nm-row:first-child{border-top:0}
+.nm-l{flex:1;min-width:0;font-size:14px;color:var(--t1)}
+.nm-l .dim{color:var(--t3)}
+.nm-t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nm-s{font-size:12px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.nm-in{flex:0 0 200px;width:200px;height:36px}
+.nm-empty{color:var(--t2);margin:0}
+@media (max-width:900px){
+ .sb-note{padding:0 20px}
+ .nm-row{flex-wrap:wrap}
+ .nm-in{flex:1 1 100%;width:100%}
+}
+.hero .btn,.hero input[type=url]{height:40px}
+.hero details.how summary{padding:10px 0}
+.sync:not(:empty){margin-left:6px}
