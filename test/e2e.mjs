@@ -5,6 +5,8 @@
 // a 517-item year frozen at several moments (creation day, weekday, Friday 5/7 PM, Sunday),
 // class naming, optional proctor column, migrations, refresh on open with a stub relay.
 import { chromium } from 'playwright';
+import jsQR from 'jsqr';
+import { PNG } from 'pngjs';
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -492,6 +494,129 @@ await octx.close();
   await bop.goto(pathToFileURL(rpath).href); await bop.waitForSelector('#sb-board .card'); await bop.waitForTimeout(500);
   ok('backup opened from disk: "Offline copy", no refresh attempt', (await bop.locator('#sb-sync').innerText()).includes('Offline copy') && net === 0 && (await state(bop)).feedUrl === '');
   await bo.close();
+}
+
+// ---------- 12. Move to phone (state in the #fragment) + Import a backup ----------
+{
+  const YEARTXT = readFileSync(YEAR, 'utf8');
+  const FEED = 'https://feed.example.invalid/calendar/year.ics';
+  const when = new Date('2027-02-10T10:00:00-05:00');
+  const phoneOpts = { now: when, viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
+  const stub = (c, body, log) => c.route('**/api/feed', (r) => { if (log) log.push(r.request().postData() || ''); return r.fulfill({ status: 200, contentType: 'text/calendar', body }); });
+  const dctx = await newCtx({ now: new Date('2027-01-04T09:00:00-05:00') }); await stub(dctx, YEARTXT);
+  const dp = await dctx.newPage(); watch(dp, 'move-desktop');
+  await dp.goto(BASE + '/'); await dp.fill('#imp-url', FEED); await dp.click('#imp-go');
+  await dp.waitForSelector('dialog.naming', { timeout: 8000 });
+  await dp.locator('dialog.naming .nm-row', { has: dp.locator('b', { hasText: /^ALG2$/ }) }).locator('input').fill('Algebra II');
+  await dp.click('#nm-done');
+  await dctx.clock.setFixedTime(when); await dp.reload(); await dp.waitForSelector('#sb-board .card'); await dp.waitForFunction(() => /Updated/.test(document.querySelector('#sb-sync').textContent));
+  await dp.click('#sb-filter'); await dp.check('#sb-proctorcol'); await dp.keyboard.press('Escape');
+  await dp.locator('.col[data-col="todo"] .card').nth(0).dblclick();
+  await dp.locator('.col[data-col="todo"] .card').nth(0).focus(); await dp.keyboard.press('2');
+  await dp.locator('.col[data-col="todo"] .card').nth(1).focus(); await dp.keyboard.press('3');
+  await more(dp, '#sb-cats'); await dp.fill('#cat-new', 'Piano'); await dp.press('#cat-new', 'Enter'); await dp.click('dialog [data-close]');
+  await dp.keyboard.press('n'); await dp.fill('#ed-title', 'Practice scales'); await dp.selectOption('#ed-cat', 'Piano'); await dp.fill('#ed-date', '2027-02-11'); await dp.click('#ed-save');
+  const ds = await state(dp);
+  await more(dp, '#sb-move'); await dp.waitForSelector('dialog.move #mv-qr'); await dp.waitForTimeout(300);
+  const link = await dp.inputValue('#mv-url');
+  ok('Move to phone: link carries the board in the #fragment', link.startsWith(BASE + '/#move=z'), link.length + ' chars');
+  ok('Move to phone: payload stays small with a calendar link (UID hashes, no events)', link.length <= 1200, link.length + ' chars');
+  const png = PNG.sync.read(await dp.locator('#mv-qr').screenshot());
+  const qr = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
+  ok('QR code decodes to exactly the link', !!qr && qr.data === link, qr ? qr.data.length + ' chars decoded' : 'no decode');
+  const qcols = await dp.locator('#mv-qr').evaluate((c) => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 4) set.add(d[i] + ',' + d[i + 1] + ',' + d[i + 2]); return [...set]; });
+  ok('QR is pure black on white (high contrast)', qcols.length === 2 && qcols.includes('0,0,0') && qcols.includes('255,255,255'), qcols.join(' '));
+  ok('privacy note: treat it like a password', /treat it like a password/.test(await dp.locator('dialog.move .mv-note').innerText()));
+  await dp.screenshot({ path: join(SHOTS, 'move-to-phone.png') });
+  const mcy = await noCyan(dp); ok('no cyan/teal in the Move to phone dialog', mcy.length === 0, mcy.slice(0, 2).join('; '));
+  await dp.click('dialog.move [data-close]');
+  // phone, fresh: open the link
+  const fragment = link.split('#')[1];
+  const pc = await newCtx(phoneOpts); const relayBodies = []; await stub(pc, YEARTXT, relayBodies);
+  const seen = []; pc.on('request', (r) => seen.push(r.url() + ' ' + (r.postData() || '')));
+  const pp = await pc.newPage(); watch(pp, 'move-phone');
+  await pp.goto(link); await pp.waitForSelector('dialog #mv-replace');
+  ok('phone: confirm step before anything changes', /Move this board here\?/.test(await pp.locator('dialog h3').innerText()) && Object.keys((await state(pp)).ics).length === 0);
+  ok('phone: fragment stripped from the address bar immediately', !(await pp.evaluate(() => location.href)).includes('#'));
+  await pp.click('#mv-replace');
+  await pp.waitForFunction(() => /Updated/.test((document.querySelector('#sb-sync') || {}).textContent || ''), null, { timeout: 15000 });
+  await pp.waitForTimeout(3500);
+  const ps = await state(pp);
+  const pick = (x) => ({ status: x.status, custom: x.custom, cats: x.cats, classMap: x.classMap, proctorCol: x.proctorCol, createdAt: x.createdAt, feedUrl: x.feedUrl, ov: x.ov, hidden: x.hidden, rules: x.rules });
+  ok('phone: state matches the desktop (progress by UID, tasks, categories, class names, columns, created, link)', JSON.stringify(pick(ps)) === JSON.stringify(pick(ds)), JSON.stringify(pick(ps)).slice(0, 160));
+  ok('phone: refetched the events from the calendar link', Object.keys(ps.ics).length === Object.keys(ds.ics).length && !ps.pending);
+  ok('phone: board shows the same progress', await pp.locator('.col[data-col="done"] .card').count() === await dp.locator('.col[data-col="done"] .card').count() && await pp.locator('#sb-chips .chip[data-c="Algebra II"]').count() === 1);
+  ok('the fragment never reaches any server request', seen.length > 0 && seen.every((u) => !u.includes(fragment.slice(0, 40)) && !u.includes('move=')), seen.length + ' requests');
+  ok('the relay only ever receives {url}', relayBodies.length >= 1 && relayBodies.every((b) => JSON.stringify(Object.keys(JSON.parse(b))) === '["url"]'));
+  await pp.screenshot({ path: join(SHOTS, 'phone-after-move.png') });
+  await pc.close();
+  // phone with a board already: Replace / Merge
+  const mc = await newCtx(phoneOpts); await stub(mc, YEARTXT);
+  const mp = await mc.newPage(); watch(mp, 'move-merge');
+  await mp.goto(BASE + '/'); await mp.click('#imp-sample'); await mp.waitForSelector('#sb-board .card');
+  const before = await state(mp);
+  await mp.goto(link); await mp.waitForSelector('dialog #mv-merge');
+  ok('phone with a board: asks "Replace this board?" with a Merge option', /Replace this board\?/.test(await mp.locator('dialog h3').innerText()));
+  await mp.screenshot({ path: join(SHOTS, 'phone-move-confirm.png') });
+  await mp.click('#mv-merge'); await mp.waitForFunction(() => !window.SchoologyBoard.state().pending, null, { timeout: 15000 });
+  const ms = await state(mp);
+  ok('merge keeps the old board and adds the moved one', Object.keys(before.status).every((k) => ms.status[k] === before.status[k]) && Object.keys(ds.status).every((k) => ms.status[k] === ds.status[k]) && ms.cats.includes('Piano') && ms.feedUrl === FEED);
+  await mc.close();
+  // damaged link
+  const bc = await newCtx(phoneOpts); const bp = await bc.newPage(); watch(bp, 'move-bad');
+  await bp.goto(BASE + '/#move=zAAAAbrokenbroken'); await bp.waitForSelector('.toast');
+  ok('damaged link: friendly error, fragment stripped', /damaged/.test(await bp.locator('.toast').innerText()) && !(await bp.evaluate(() => location.href)).includes('#'));
+  await bc.close();
+  // no calendar link: minimal events travel; too big for a QR -> link only
+  const nc = await newCtx(); const np = await nc.newPage(); watch(np, 'move-nolink');
+  await np.goto(BASE + '/'); await np.setInputFiles('#imp-file', ICS); await np.waitForSelector('#sb-board .card'); await skipNaming(np);
+  await np.locator('.card').first().dblclick();
+  const ns = await state(np);
+  await more(np, '#sb-move'); await np.waitForSelector('dialog.move');
+  const smallLink = await np.inputValue('#mv-url');
+  const npng = await np.locator('#mv-qr').count() ? PNG.sync.read(await np.locator('#mv-qr').screenshot()) : null;
+  const nqr = npng && jsQR(new Uint8ClampedArray(npng.data), npng.width, npng.height);
+  ok('no calendar link: small board still gets a scannable QR', !!nqr && nqr.data === smallLink, smallLink.length + ' chars');
+  await np.click('dialog.move [data-close]');
+  await np.keyboard.press('i'); await np.setInputFiles('dialog #imp-file', YEAR); await np.waitForTimeout(800); await skipNaming(np, 800);
+  await more(np, '#sb-move'); await np.waitForSelector('dialog.move');
+  const bigLink = await np.inputValue('#mv-url');
+  ok('too big for a reliable QR: link only, with Copy (and Share where supported)', await np.locator('#mv-qr').count() === 0 && /too big for a QR code/.test(await np.locator('dialog.move').innerText()) && await np.locator('#mv-copy').count() === 1, bigLink.length + ' chars');
+  await np.screenshot({ path: join(SHOTS, 'move-link-only.png') });
+  const nps = await state(np); const evCount = await np.evaluate(() => window.SchoologyBoard.movePayload().ev.length);
+  await nc.close();
+  const rc = await newCtx({ ...phoneOpts, now: NOW }); const rq = []; rc.on('request', (r) => rq.push(r.url()));
+  const rp2 = await rc.newPage(); watch(rp2, 'move-nolink-phone');
+  await rp2.goto(bigLink); await rp2.click('#mv-replace'); await rp2.waitForSelector('#sb-board .card');
+  const r2 = await state(rp2);
+  ok('no-link move carries the events still in play and progress', Object.keys(r2.ics).length === evCount && evCount < Object.keys(nps.ics).length && Object.keys(nps.status).every((k) => r2.status[k] === nps.status[k]) && r2.feedUrl === '', evCount + ' of ' + Object.keys(nps.ics).length + ' events');
+  ok('no-link move: no relay request at all', !rq.some((u) => /api\/feed/.test(u)));
+  await rc.close();
+  // Import a backup: the .html from "Save a backup" into a fresh web board
+  const yoff = join(SHOTS, 'year-offline.html');
+  const baked = JSON.parse(readFileSync(yoff, 'utf8').match(/<script id="sb-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
+  const ic = await newCtx({ now: when }); const ip = await ic.newPage(); watch(ip, 'restore');
+  await ip.goto(BASE + '/'); await ip.click('#imp-sample'); await ip.waitForSelector('#sb-board .card');
+  const [fc] = await Promise.all([ip.waitForEvent('filechooser'), more(ip, '#sb-restore')]);
+  await fc.setFiles(yoff); await ip.waitForSelector('dialog #mv-replace');
+  ok('Import a backup: confirm step names the file', /year-offline\.html/.test(await ip.locator('dialog').innerText()) && /Replace this board\?/.test(await ip.locator('dialog h3').innerText()));
+  await ip.click('#mv-replace'); await ip.waitForTimeout(300);
+  const is = await state(ip);
+  ok('Import a backup (.html): state restored exactly', JSON.stringify(pick({ ...is, feedUrl: '' })) === JSON.stringify(pick({ ...baked, feedUrl: '' })) && Object.keys(is.ics).length === Object.keys(baked.ics).length && await ip.locator('#sb-chips .chip[data-c="Algebra II"]').count() === 1);
+  await ic.close();
+  // ... and a .json export into the backup file opened from disk (merge)
+  const jpath = join(SHOTS, 'board-export.json'); writeFileSync(jpath, JSON.stringify({ state: { ...ds, feedUrl: '' } }));
+  const oc2 = await newCtx(); const op2 = await oc2.newPage(); watch(op2, 'restore-offline');
+  await op2.route('**/*', (r) => (/^(file|blob|data):/.test(r.request().url()) ? r.continue() : r.abort()));
+  await op2.goto(pathToFileURL(join(SHOTS, 'schoology-board-offline.html')).href); await op2.waitForSelector('#sb-board .card');
+  const ob = await state(op2);
+  const [fc2] = await Promise.all([op2.waitForEvent('filechooser'), more(op2, '#sb-restore')]);
+  await fc2.setFiles(jpath); await op2.waitForSelector('dialog #mv-merge'); await op2.click('#mv-merge'); await op2.waitForTimeout(300);
+  const os2 = await state(op2);
+  ok('backup file: Import a backup (.json) merges, keeps its own items, no link', os2.cats.includes('Piano') && os2.cats.includes('Reading') && Object.keys(ob.custom).every((k) => os2.custom[k]) && os2.classMap && Object.values(os2.classMap).includes('Algebra II') && os2.feedUrl === '');
+  await op2.reload(); await op2.waitForSelector('#sb-board .card');
+  ok('backup file: the restore persists across reload', (await state(op2)).cats.includes('Piano'));
+  await oc2.close();
 }
 
 await browser.close();

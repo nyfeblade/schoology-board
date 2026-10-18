@@ -46,6 +46,9 @@
     dl: svg('<path d="M12 3v12M6 11l6 6 6-6M4 21h16"/>'),
     tag: svg('<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>'),
     refresh: svg('<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>'),
+    phone: svg('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>'),
+    up: svg('<path d="M12 21V9M6 13l6-6 6 6M4 3h16"/>'),
+    lock: svg('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
     key: svg('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>'),
     left: svg('<path d="m15 18-6-6 6-6"/>'),
     right: svg('<path d="m9 18 6-6-6-6"/>'),
@@ -71,7 +74,7 @@
     return {
       v: 1, boardId: rid(), updated: 0, ics: {}, cas: {}, custom: {}, cats: [], order: [], rename: {},
       ov: {}, hidden: {}, status: {}, rules: [], lastImport: null, feedUrl: '', seenExport: null, createdAt: null,
-      proctorCol: false, classMap: {}, namingSeen: {}, lastFetch: null,
+      proctorCol: false, classMap: {}, namingSeen: {}, lastFetch: null, pending: null,
       prefs: { view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '' }
     };
   }
@@ -411,8 +414,10 @@
       { label: 'Import\u2026', icon: ICON.imp, kbd: 'I', cls: 'm-only', onClick: openImport },
       S.feedUrl ? { label: 'Refresh from calendar link', icon: ICON.refresh, id: 'sb-refresh', onClick: function () { toast('Refreshing your calendar\u2026'); importLink(S.feedUrl, true); } } : null,
       { label: 'Categories', icon: ICON.edit, id: 'sb-cats', onClick: openCategories },
+      { label: 'Move to phone', icon: ICON.phone, id: 'sb-move', onClick: openMove },
       { label: 'Name your classes', icon: ICON.tag, id: 'sb-naming', onClick: function () { openNaming(true); } },
       { label: 'Save a backup', icon: ICON.dl, id: 'sb-backup', onClick: downloadOffline },
+      { label: 'Import a backup', icon: ICON.up, id: 'sb-restore', onClick: pickBackup },
       { label: 'Keyboard shortcuts', icon: ICON.key, kbd: '?', id: 'sb-keys', cls: 'kbd-only', onClick: openKeys }
     ].filter(Boolean);
     menu(anchor, items, { label: 'More actions' });
@@ -986,8 +991,9 @@
   function refreshFeed() {
     if (MODE !== 'web' || !S.feedUrl || syncing) return;
     syncing = true; renderSync();
-    relayFetch(S.feedUrl)
-      .then(function (buf) { applyIcs(ics.decodeBytes(buf), 'refresh', { quiet: true }); S.lastFetch = { at: Date.now(), ok: true }; save(); })
+    var url = S.feedUrl;
+    relayFetch(url)
+      .then(function (buf) { if (S.feedUrl !== url) return; applyIcs(ics.decodeBytes(buf), 'refresh', { quiet: true }); S.lastFetch = { at: Date.now(), ok: true }; save(); })
       .catch(function () { S.lastFetch = { at: (S.lastFetch && S.lastFetch.at) || null, ok: false, failedAt: Date.now() }; save(); })
       .then(function () { syncing = false; renderSync(); });
   }
@@ -1010,6 +1016,223 @@
     }
     el.innerHTML = html ? '<span class="sep" aria-hidden="true">\u00b7</span>' + html : '';
     var rt = $('#sb-retry'); if (rt) rt.onclick = function (e) { e.preventDefault(); refreshFeed(); };
+  }
+
+
+  // ---------- move to phone: the board travels in the link's #fragment, which browsers never send to a server ----------
+  var MOVE_KEY = '#move=', QR_MAX = 1200;
+  function b64u(bytes) {
+    var bin = '';
+    for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function unb64u(str) {
+    str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '=';
+    var bin = atob(str), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function pipeBytes(bytes, t) { return new Response(new Blob([bytes]).stream().pipeThrough(t)).arrayBuffer().then(function (b) { return new Uint8Array(b); }); }
+  function encodeMove(obj) {
+    var raw = new TextEncoder().encode(JSON.stringify(obj));
+    if (!window.CompressionStream) return Promise.resolve('r' + b64u(raw));
+    return pipeBytes(raw, new CompressionStream('deflate-raw')).then(function (z) { return 'z' + b64u(z); });
+  }
+  function decodeMove(code) {
+    return Promise.resolve().then(function () {
+      var bytes = unb64u(code.slice(1));
+      if (code[0] === 'r') return new TextDecoder().decode(bytes);
+      if (code[0] !== 'z' || !window.DecompressionStream) throw new Error('bad');
+      return pipeBytes(bytes, new DecompressionStream('deflate-raw')).then(function (b) { return new TextDecoder().decode(b); });
+    }).then(function (t) { var p = JSON.parse(t); if (!p || p.v !== 1) throw new Error('bad'); return p; });
+  }
+  function prune(o) { Object.keys(o).forEach(function (k) { var v = o[k]; if (v == null || v === '' || (typeof v === 'object' && !Object.keys(v).length)) delete o[k]; }); return o; }
+  function movePayload() {
+    var feed = MODE === 'web' ? S.feedUrl : '';
+    // With a calendar link the phone refetches the events, so only short hashes of their UIDs travel.
+    var key = function (id) { return feed && S.ics[id] ? '~' + ics.hash(id) : id; };
+    var remap = function (m) { var o = {}; Object.keys(m).forEach(function (k) { o[key(k)] = m[k]; }); return o; };
+    var p = prune({
+      f: feed, c: S.createdAt, pc: S.proctorCol ? 1 : 0, st: remap(S.status), ov: remap(S.ov), hd: remap(S.hidden),
+      cu: S.custom, ca: S.cats, or: S.order, rn: S.rename, ru: S.rules, cm: S.classMap, cas: S.cas,
+      pr: prune({ hp: S.prefs.hidePast ? 1 : 0, sp: S.prefs.showPre ? 1 : 0 })
+    });
+    if (S.pending) ['st', 'ov', 'hd'].forEach(function (k) { if (S.pending[k]) p[k] = Object.assign({}, S.pending[k], p[k] || {}); });
+    if (!feed) { // no link to refetch from: send the events still in play, minimal fields only
+      p.ev = Object.keys(S.ics).filter(function (id) {
+        var it = S.ics[id];
+        return S.status[id] || S.ov[id] || !S.createdAt || toDate(it.due).getTime() >= S.createdAt;
+      }).map(function (id) { var it = S.ics[id]; return [id, it.title, it.due, it.allDay ? 1 : 0, it.url || '', it.kind || '', it.course || 0]; });
+    }
+    p.v = 1;
+    return p;
+  }
+  function moveBase() { return MODE === 'web' ? location.origin + location.pathname : (CFG.home || 'https://schoology-board.vercel.app') + '/'; }
+  function drawQr(canvas, text) {
+    if (!window.qrcode) return false;
+    var q;
+    try { q = window.qrcode(0, 'M'); q.addData(text, 'Byte'); q.make(); } catch (e) { return false; }
+    // Whole pixels per module keep the code crisp for phone cameras.
+    var n = q.getModuleCount(), quiet = 4, cells = n + quiet * 2;
+    var target = Math.min(280, Math.floor(window.innerWidth * 0.72)), k = Math.max(2, Math.floor(target / cells));
+    var dpr = Math.max(1, Math.round(window.devicePixelRatio || 1)), scale = k * dpr, size = cells * scale, ctx = canvas.getContext('2d');
+    canvas.width = canvas.height = size;
+    canvas.style.width = canvas.style.height = cells * k + 'px';
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+    canvas.dataset.modules = n;
+    return true;
+  }
+  function openMove() {
+    var p = movePayload();
+    encodeMove(p).then(function (code) {
+      var url = moveBase() + MOVE_KEY + code, fits = url.length <= QR_MAX;
+      var what = 'progress, your own tasks and categories, class names and settings';
+      var body = '<p class="mv-intro">' + (fits ? 'Scan this with your phone\u2019s camera, or send yourself the link.' : 'This board is too big for a QR code that phones read reliably. Copy or share the link to your phone instead.') +
+        ' Your phone gets this board: ' + what + '.</p>' +
+        (fits ? '<div class="mv-qr"><canvas id="mv-qr" role="img" aria-label="QR code with the move link"></canvas></div>' : '') +
+        '<div class="mv-link"><input type="text" id="mv-url" readonly value="' + esc(url) + '" aria-label="Move link"><button class="btn" id="mv-copy">Copy link</button>' +
+        (navigator.share ? '<button class="btn" id="mv-share">Share</button>' : '') + '</div>' +
+        '<p class="mv-note">' + ICON.lock + '<span>' + (p.f ? 'The link contains your calendar link, so treat it like a password. ' : 'The link contains your board, so only send it to yourself. ') +
+        'Everything sits after the \u201c#\u201d, which your browser never sends to any server. Nothing is uploaded.' +
+        (p.f ? '' : ' Your phone won\u2019t refresh from Schoology until you add your calendar link there.') + '</span></p>';
+      var d = dialog('Move to phone', body, '<span class="r"><button class="btn primary" data-close>Done</button></span>');
+      d.classList.add('move');
+      if (fits && !drawQr($('#mv-qr', d), url)) { var w = $('.mv-qr', d); if (w) w.remove(); }
+      $('#mv-copy', d).onclick = function () {
+        var inp = $('#mv-url', d), btn = this;
+        var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy link'; }, 1600); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { inp.select(); document.execCommand('copy'); done(); });
+        else { inp.select(); document.execCommand('copy'); done(); }
+      };
+      var sh = $('#mv-share', d); if (sh) sh.onclick = function () { navigator.share({ title: 'Schoology Board', url: url }).catch(function () { }); };
+      $('#mv-url', d).onfocus = function () { this.select(); };
+    }, function () { toastErr('Could not make the link in this browser.'); });
+  }
+  // Turn a move payload into board state. Hashed calendar UIDs wait in S.pending until the feed arrives.
+  function stateFromMove(p) {
+    var st = { status: {}, ov: {}, hidden: {}, pending: null, ics: {} };
+    [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden']].forEach(function (pair) {
+      var m = p[pair[0]] || {};
+      Object.keys(m).forEach(function (k) {
+        if (k[0] === '~') { st.pending = st.pending || {}; (st.pending[pair[0]] = st.pending[pair[0]] || {})[k] = m[k]; }
+        else st[pair[1]][k] = m[k];
+      });
+    });
+    (p.ev || []).forEach(function (e) { st.ics[e[0]] = { uid: e[0], title: e[1], course: e[6] || null, due: e[2], allDay: !!e[3], url: e[4], desc: '', kind: e[5] || 'assignment', source: 'ics' }; });
+    st.custom = p.cu || {}; st.cats = p.ca || []; st.order = p.or || []; st.rename = p.rn || {}; st.rules = p.ru || [];
+    st.classMap = p.cm || {}; st.cas = p.cas || {}; st.proctorCol = !!p.pc; st.createdAt = p.c || null; st.feedUrl = p.f || '';
+    st.prefs = { hidePast: !!(p.pr && p.pr.hp), showPre: !!(p.pr && p.pr.sp) };
+    return st;
+  }
+  function resolvePending() {
+    if (!S.pending) return;
+    var byHash = {};
+    Object.keys(S.ics).forEach(function (id) { byHash['~' + ics.hash(id)] = id; });
+    [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden']].forEach(function (pair) {
+      var m = S.pending[pair[0]]; if (!m) return;
+      Object.keys(m).forEach(function (h) { if (byHash[h]) { S[pair[1]][byHash[h]] = m[h]; delete m[h]; } });
+      if (!Object.keys(m).length) delete S.pending[pair[0]];
+    });
+    if (!Object.keys(S.pending).length) S.pending = null;
+  }
+  function hasBoard() { return !!(Object.keys(S.ics).length + Object.keys(S.cas).length + Object.keys(S.custom).length); }
+  // Apply incoming state (from a move link or a backup) by replacing or merging. The incoming side wins conflicts.
+  function adoptState(inc, how) {
+    var keepId = S.boardId, keepFeed = S.feedUrl, cur = S;
+    if (how === 'replace') {
+      var base = blank();
+      Object.keys(inc).forEach(function (k) { if (k !== 'prefs') base[k] = inc[k]; });
+      base.prefs = Object.assign(base.prefs, inc.prefs || {});
+      S = normalizeState(base);
+      if (!S.feedUrl && MODE === 'web') S.feedUrl = keepFeed; // a backup never carries the link; keep this device's
+    } else {
+      ['status', 'ov', 'hidden', 'custom', 'cas', 'rename', 'classMap', 'ics', 'namingSeen'].forEach(function (k) { if (inc[k]) cur[k] = Object.assign({}, cur[k], inc[k]); });
+      (inc.cats || []).forEach(function (c) { if (cur.cats.indexOf(c) < 0) cur.cats.push(c); });
+      (inc.order || []).forEach(function (c) { if (cur.order.indexOf(c) < 0) cur.order.push(c); });
+      var seenR = {}; cur.rules = (cur.rules || []).concat(inc.rules || []).filter(function (r) { var j = JSON.stringify(r); if (seenR[j]) return false; seenR[j] = 1; return true; });
+      if (inc.createdAt) cur.createdAt = cur.createdAt ? Math.min(cur.createdAt, inc.createdAt) : inc.createdAt;
+      cur.proctorCol = !!(cur.proctorCol || inc.proctorCol);
+      if (inc.feedUrl && MODE === 'web') cur.feedUrl = inc.feedUrl;
+      if (inc.pending) { cur.pending = cur.pending || {}; Object.keys(inc.pending).forEach(function (k) { cur.pending[k] = Object.assign({}, cur.pending[k], inc.pending[k]); }); }
+      S = normalizeState(cur);
+    }
+    if (MODE !== 'web') S.feedUrl = '';
+    S.boardId = keepId;
+    if (S.createdAt) S.createdAt = sod(new Date(S.createdAt)).getTime();
+    resolvePending();
+    // Everything already on the board counts as named; don't pop the naming step for it.
+    namingData().groups.forEach(function (g) { S.namingSeen[g.key] = 1; });
+    save(); render();
+  }
+  function confirmAdopt(title, summary, inc, okLabel, onDone) {
+    var existing = hasBoard();
+    var body = '<p class="mv-intro">' + summary + '</p>' +
+      (existing ? '<p class="hint">This browser already has a board. <b>Replace</b> swaps it for the incoming one. <b>Merge</b> keeps both; where they disagree, the incoming one wins.</p>' : '');
+    var d = dialog(existing ? title.replace : title.fresh, body,
+      '<button class="btn ghost" data-close id="mv-cancel">Cancel</button><span class="r">' + (existing ? '<button class="btn" id="mv-merge">Merge</button>' : '') +
+      '<button class="btn primary" id="mv-replace">' + (existing ? 'Replace' : okLabel) + '</button></span>');
+    var go = function (how) { d.close(); adoptState(inc, how); if (onDone) onDone(how); };
+    $('#mv-replace', d).onclick = function () { go('replace'); };
+    var mg = $('#mv-merge', d); if (mg) mg.onclick = function () { go('merge'); };
+  }
+  function countSummary(inc, nEvents) {
+    var done = Object.keys(inc.status || {}).filter(function (k) { return inc.status[k] === 'done'; }).length;
+    var pend = inc.pending && inc.pending.st ? Object.keys(inc.pending.st).filter(function (k) { return inc.pending.st[k] === 'done'; }).length : 0;
+    var parts = [];
+    if (nEvents) parts.push(nEvents + ' calendar item' + (nEvents === 1 ? '' : 's'));
+    parts.push((done + pend) + ' done');
+    var cu = Object.keys(inc.custom || {}).length; if (cu) parts.push(cu + ' of your own task' + (cu === 1 ? '' : 's'));
+    var cas = Object.keys(inc.cas || {}).length; if (cas) parts.push(cas + ' from Course Assignment Sheets');
+    var cm = Object.keys(inc.classMap || {}).length; if (cm) parts.push(cm + ' class name' + (cm === 1 ? '' : 's'));
+    return parts.join(' \u00b7 ');
+  }
+  function takeMoveFromUrl() {
+    if (location.hash.indexOf(MOVE_KEY) !== 0) return;
+    var code = location.hash.slice(MOVE_KEY.length);
+    // Strip the fragment right away, whatever the user decides.
+    history.replaceState(null, '', location.pathname + location.search);
+    decodeMove(code).then(function (p) {
+      var inc = stateFromMove(p);
+      var sum = countSummary(inc, (p.ev || []).length) + '.' + (inc.feedUrl ? ' Your calendar link is included, so this device will fetch your assignments right after.' : '');
+      confirmAdopt({ fresh: 'Move this board here?', replace: 'Replace this board?' }, sum, inc, 'Move here', function () {
+        if (S.feedUrl && MODE === 'web') { S.lastFetch = null; refreshFeed(); }
+        toast('Board moved to this device.');
+      });
+    }, function () { toastErr('That move link is damaged or cut off. Make a new one on the other device.'); });
+  }
+  // ---------- import a backup (.html from "Save a backup", or a .json export) ----------
+  function parseBackup(text) {
+    var t = text.replace(/^\uFEFF/, '').trim(), data = null;
+    if (t[0] === '{') data = JSON.parse(t);
+    else {
+      var doc = new DOMParser().parseFromString(text, 'text/html'), el = doc.getElementById('sb-data');
+      if (el) data = JSON.parse(el.textContent);
+    }
+    if (data && data.state && typeof data.state === 'object') data = data.state;
+    if (!data || typeof data !== 'object' || !(data.ics || data.custom || data.status || data.cas)) throw new Error('That file isn\u2019t a Schoology Board backup.');
+    delete data.boardId; delete data.seenExport;
+    return data;
+  }
+  function pickBackup() {
+    var old = $('#sb-restore-file'); if (old) old.remove();
+    var inp = document.createElement('input');
+    inp.type = 'file'; inp.id = 'sb-restore-file'; inp.hidden = true; inp.accept = '.html,.htm,.json,text/html,application/json';
+    document.body.appendChild(inp);
+    inp.onchange = function () {
+      var f = inp.files[0]; inp.remove(); if (!f) return;
+      readFile(f, true).then(function (text) {
+        var data = parseBackup(text);
+        var n = Object.keys(data.ics || {}).length;
+        var when = data.exportedAt ? ' saved ' + new Date(data.exportedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+        confirmAdopt({ fresh: 'Restore this backup?', replace: 'Replace this board?' }, '<b>' + esc(f.name) + '</b>' + esc(when) + '. ' + countSummary(data, n) + '.', data, 'Restore', function () {
+          toast('Backup restored.');
+          if (S.feedUrl && MODE === 'web') refreshFeed();
+        });
+      }).catch(function (e) { toastErr((e && e.message && !/JSON|Unexpected/.test(e.message)) ? e.message : 'That file isn\u2019t a Schoology Board backup.'); });
+    };
+    inp.click();
   }
 
   // ---------- name your classes ----------
@@ -1087,6 +1310,7 @@
     var before = S.ics, map = {}, fresh = 0;
     items.forEach(function (it) { if (!before[it.uid]) fresh++; map[it.uid] = it; });
     S.ics = map;
+    resolvePending();
     S.lastImport = { at: Date.now(), source: source, count: items.length };
     save();
     if (!$('#sb-board')) renderShell();
@@ -1272,6 +1496,7 @@
       getSrc('ics.js', 'sb-src-ics').then(function (t) { files.ics = t; }),
       getSrc('cas.js', 'sb-src-cas').then(function (t) { files.cas = t; }),
       getSrc('board.js', 'sb-src-board').then(function (t) { files.board = t; }),
+      getSrc('vendor/qrcode.js', 'sb-src-qr').then(function (t) { files.qr = t; }, function () { }),
       getSrc('vendor/pdf.min.mjs', 'sb-pdfjs').then(function (t) { files.pdf = t; }, function () { }),
       getSrc('vendor/pdf.worker.min.mjs', 'sb-pdfworker').then(function (t) { files.worker = t; }, function () { })
     ]).then(function () {
@@ -1291,6 +1516,7 @@
         '<script id="sb-config" type="application/json">' + j(cfg) + '</script>\n' +
         '<script id="sb-data" type="application/json">' + j(snap) + '</script>\n' +
         (files.pdf && files.worker ? '<script id="sb-pdfjs" type="text/plain">' + scriptSafe(files.pdf) + '</script>\n<script id="sb-pdfworker" type="text/plain">' + scriptSafe(files.worker) + '</script>\n' : '') +
+        (files.qr ? '<script id="sb-src-qr">' + scriptSafe(files.qr) + '</script>\n' : '') +
         '<script id="sb-src-ics">' + scriptSafe(files.ics) + '</script>\n' +
         '<script id="sb-src-cas">' + scriptSafe(files.cas) + '</script>\n' +
         '<script id="sb-src-board">' + scriptSafe(files.board) + '</script>\n</body></html>\n';
@@ -1326,11 +1552,13 @@
     }
     if (MODE === 'offline' || migrated) save();
     render();
-    refreshFeed();
+    var moving = MODE === 'web' && location.hash.indexOf(MOVE_KEY) === 0;
+    if (moving) takeMoveFromUrl(); else refreshFeed();
+    window.addEventListener('hashchange', function () { if (MODE === 'web') takeMoveFromUrl(); });
     setInterval(renderSync, 30000);
     setInterval(function () { if (!drag && !document.querySelector('dialog[open]') && $('#sb-board') && !(document.activeElement && document.activeElement.classList.contains('card'))) renderBoard(); }, 60000);
     window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; delete S._needsProctorCheck; render(); } });
   }
-  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, version: '1.2.0' };
+  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, version: '1.3.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

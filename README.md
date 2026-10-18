@@ -26,6 +26,8 @@
 - **Course Assignment Sheets (CAS).** Drop CAS PDFs. They're read **in your browser** with pdf.js and become dated cards under that class: readings, homework and submissions. Learning objectives are skipped. A preview lets you check, edit or untick items first. Items already on your Schoology calendar are flagged *Already on calendar* and skipped.
 - **Your own stuff.** Add tasks (title, category, due date/time, link, note) and your own categories. You can rename, reorder or delete them; everything survives re-imports.
 - **Save a backup** (in the **⋯** menu). You get one self-contained `.html` file with your board baked in, including your class names and column settings. It runs the exact same code as the website: it works with no internet, saves progress in that browser, and can re-import an `.ics` or CAS PDFs. It says *Offline copy* and never refreshes on its own, because it doesn't contain your calendar link.
+- **Move to phone** (in the **⋯** menu). Shows a QR code and a link that carry your board to another device: progress, your own tasks and categories, class names, column settings, the creation date and your calendar link. There's no server in between: everything is compressed into the part of the link after `#`, which browsers never send to a server. With a calendar link it sends only short fingerprints of the assignments, and the phone fetches the assignments itself. Without one it sends the minimum event data. If the link gets too long for a QR code that phones read reliably, you get the link only, with Copy and Share buttons. The phone asks first (*Replace this board?*, or *Merge*), then removes the fragment from its address bar. **The link contains your calendar link, so treat it like a password.**
+- **Import a backup** (in the **⋯** menu, on the website and inside a backup file). Pick a *Save a backup* `.html` file or a `.json` export, check what's in it, then **Replace** or **Merge**.
 - **Keyboard-friendly.** `N` add · `I` import · `/` search · `T`/`W`/`A` views · `[` `]` weeks · `H` hide past · arrows move focus · `1`–`4` move a card to a column · `M` card menu · `X` done · `E` edit · `?` all shortcuts.
 
 | Board | First run |
@@ -35,6 +37,8 @@
 | ![CAS import preview](docs/cas-preview.png) | ![This week from a 517-item feed](docs/year-this-week.png) |
 | **Name your classes (after an import)** | **Friday evening: Week shows next week** |
 | ![Name your classes step](docs/class-naming.png) | ![Next week view on a Friday evening](docs/weekend-week.png) |
+| **Move to phone** | **The phone after scanning** |
+| ![Move to phone dialog with QR code](docs/move-to-phone.png) | <img src="docs/phone-after-move.png" width="300" alt="Phone after the move"> |
 
 | Phone | Card menu on a phone |
 |---|---|
@@ -58,6 +62,7 @@ Notes from the same docs: the setting only works if your personal calendar has a
 - **The calendar proxy only relays.** Browsers can't read Schoology's feed directly (it has no CORS headers), so a tiny serverless route ([`app/api/feed/route.js`](app/api/feed/route.js)) fetches it and streams the bytes back. The link is sent in a POST body, so it never appears in a URL or request log. The route doesn't log, cache or store the link or the calendar. It refuses private network addresses and anything that isn't a calendar.
 - **CAS PDFs never leave your device.** They're parsed in the browser.
 - The calendar link is kept only if you tick *Remember the link on this device*. It is **never** put into a backup file.
+- **Move to phone links never touch a server.** The board rides in the URL fragment (`#move=…`), which browsers don't include in requests. The receiving page strips it from the address bar straight away. The QR code is drawn in your browser ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), MIT); no QR service is called.
 - No analytics, no accounts, no cookies.
 
 ## What's in a Schoology calendar feed (and how it's parsed)

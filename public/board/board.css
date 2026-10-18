@@ -314,3 +314,13 @@ dialog.naming{max-width:620px}
 .hero .btn,.hero input[type=url]{height:40px}
 .hero details.how summary{padding:10px 0}
 .sync:not(:empty){margin-left:6px}
+/* move to phone */
+dialog.move{max-width:480px}
+.mv-intro{margin:0 0 16px;color:var(--t2);font-size:14px;line-height:1.5}
+.mv-qr{display:flex;justify-content:center;margin:0 0 16px}
+.mv-qr canvas{display:block;background:#FFFFFF;border-radius:8px;image-rendering:pixelated}
+.mv-link{display:flex;gap:8px}
+.mv-link input{flex:1;min-width:0;font-size:12px;color:var(--t2);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.mv-note{display:flex;gap:8px;align-items:flex-start;margin:14px 0 0;font-size:13px;line-height:1.45;color:var(--t2)}
+.mv-note svg{flex:none;margin-top:2px;color:var(--t2)}
+@media (max-width:900px){.mv-link{flex-wrap:wrap}.mv-link input{flex:1 1 100%}.mv-link .btn{flex:1}}
