@@ -18,7 +18,7 @@
   function cols() { return S && S.proctorCol ? COLS : COLS.filter(function (c) { return c[0] !== 'proctor'; }); }
   function colIds() { return cols().map(function (c) { return c[0]; }); }
   var UNSORTED = 'Unsorted';
-  var ics = window.SBics, cas = window.SBcas;
+  var ics = window.SBics, cas = window.SBcas, plan = window.SBplan;
   var S, app;
 
   function $(sel, el) { return (el || document).querySelector(sel); }
@@ -30,6 +30,7 @@
   function dayKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function parseDay(k) { var p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
   function sod(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function addMin(d, m) { return new Date(d.getTime() + m * 60000); }
   function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
   function monday(d) { var x = sod(d); var w = (x.getDay() + 6) % 7; return addDays(x, -w); }
   function toDate(due) { var d = new Date(due); return isNaN(d) ? new Date(8.64e15) : d; }
@@ -63,6 +64,12 @@
     trash: svg('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'),
     ext: svg('<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>'),
     arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+    clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    play: svg('<path d="M7 4v16l13-8z"/>'),
+    stop: svg('<rect x="6" y="6" width="12" height="12" rx="1.5"/>'),
+    tab_now: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    tab_board: svg('<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>'),
+    tab_ahead: svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
     star: svg('<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>')
   };
   var BIG_UPLOAD = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>';
@@ -75,13 +82,15 @@
       v: 1, boardId: rid(), updated: 0, ics: {}, cas: {}, custom: {}, cats: [], order: [], rename: {},
       ov: {}, hidden: {}, status: {}, rules: [], lastImport: null, feedUrl: '', seenExport: null, createdAt: null,
       proctorCol: false, classMap: {}, namingSeen: {}, lastFetch: null, pending: null,
-      prefs: { view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '' }
+      // planner: time estimates, one-tap type (e.g. test), timed minutes, finished study/start-early chunks per night
+      est: {}, ttype: {}, actual: {}, sdone: {}, timer: null, planStart: null,
+      prefs: { tab: 'now', view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '' }
     };
   }
   function normalizeState(st) {
     st = Object.assign(blank(), st || {});
     st.prefs = Object.assign(blank().prefs, st.prefs || {});
-    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
+    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen', 'est', 'ttype', 'actual', 'sdone'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
     ['cats', 'order', 'rules'].forEach(function (k) { if (!Array.isArray(st[k])) st[k] = []; });
     return st;
   }
@@ -95,6 +104,9 @@
     st = normalizeState(st);
     // Every visit opens on the default week (next week from Friday 6 PM). "range" no longer exists.
     st.prefs.view = 'week'; st.prefs.weekOffset = 0; st.prefs.q = '';
+    // Returning students open on Now ("what do I do next?"); ?view=board|ahead (e.g. from the installed app) picks another tab.
+    var qv = (location.search.match(/[?&]view=(now|board|ahead)\b/) || [])[1];
+    st.prefs.tab = qv || 'now';
     if (!hadProctorFlag) st._needsProctorCheck = true;
     if (baked) st.seenExport = baked.exportedAt;
     // Boards from before "board created" existed start counting from the first load after the update.
@@ -345,35 +357,28 @@
     renderBoard();
   }
 
+  var TABS = [['now', 'Now', 'Tonight\u2019s plan and what to do next'], ['board', 'Board', 'Every assignment by status'], ['ahead', 'Week ahead', 'Tests, the busiest day and what to start early']];
   function renderShell() {
     closeMenu(false);
     app.innerHTML =
       '<header class="sb-head"><h1><span class="name">Schoology Board</span> <span id="sb-label"></span></h1>' +
       '<div class="prog"><span class="prog-t"><span id="sb-prog"></span><span id="sb-sync" class="sync" aria-live="polite"></span></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div>' +
       '<div class="acts">' +
-      '<button class="btn primary" id="sb-add" title="Add a task (N)" aria-label="Add a task">' + ICON.plus + '<span class="lbl">Add</span></button>' +
-      '<button class="btn hide-m" id="sb-import" title="Import (I)">' + ICON.imp + '<span class="lbl">Import</span></button>' +
+      '<button class="btn" id="sb-add" title="Add a task (N)">' + ICON.plus + '<span class="lbl">Add task</span></button>' +
+      '<button class="btn hide-m" id="sb-import" title="Import from Schoology or a Course Assignment Sheet (I)">' + ICON.imp + '<span class="lbl">Import tasks</span></button>' +
       '<button class="btn icon" id="sb-more" title="More" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">' + ICON.more + '</button>' +
       '</div></header>' +
-      '<div class="sb-tools" id="sb-tools"><div class="tl">' +
-      '<div class="seg" role="group" aria-label="View"><button data-view="today">Due today</button><button data-view="week">Week</button><button data-view="all">All</button></div>' +
-      '<span class="weeknav" id="sb-weeknav"><button class="btn ghost icon" id="sb-prev" aria-label="Previous week" title="Previous week ([)">' + ICON.left + '</button><b id="sb-week"></b><button class="btn ghost icon" id="sb-next" aria-label="Next week" title="Next week (])">' + ICON.right + '</button><button class="btn ghost small" id="sb-thisweek">This week</button></span>' +
-      '</div><div class="tr">' +
-      '<div class="search"><button class="btn icon search-btn" id="sb-search-btn" aria-label="Search" title="Search (/)">' + ICON.search + '</button>' +
-      '<span class="sfield">' + ICON.search + '<input type="search" id="sb-search" placeholder="Search" aria-label="Search tasks"><kbd class="kbd-only">/</kbd></span></div>' +
-      '<button class="btn" id="sb-filter" aria-haspopup="menu" aria-expanded="false" title="Filter">' + ICON.filter + '<span class="lbl">Filter</span><i class="dot" aria-hidden="true"></i></button>' +
-      '</div></div>' +
-      '<div class="chips-wrap"><div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div></div>' +
-      '<p class="sb-note" id="sb-note" hidden></p>' +
-      '<nav class="colnav" id="sb-colnav" aria-label="Jump to column"></nav>' +
-      '<main class="board" id="sb-board" aria-label="Board"></main>' +
-      '<div class="foot">' + (MODE === 'offline' ? 'Offline copy \u00b7 progress is saved in this browser' + (CFG.home ? ' \u00b7 <a href="' + esc(CFG.home) + '" target="_blank" rel="noopener">open the website</a>' : '') :
+      '<nav class="tabs" id="sb-tabs" aria-label="Screens">' + TABS.map(function (t) {
+        return '<button type="button" data-tab="' + t[0] + '" title="' + esc(t[2]) + '">' + ICON['tab_' + t[0]] + '<span>' + esc(t[1]) + '</span></button>';
+      }).join('') + '</nav>' +
+      '<div id="sb-main"></div>' +
+      '<div class="foot">' + (MODE === 'offline' ? 'Offline copy \u00b7 progress is saved in this browser' + (CFG.home ? ' \u00b7 <a href="' + esc(CFG.home) + '" target="_blank" rel="noopener">Open the website</a>' : '') :
         'Everything stays in your browser \u00b7 <a href="' + REPO + '" target="_blank" rel="noopener">Open source</a>') +
-      ' \u00b7 <a href="#" id="sb-reset">Reset board</a></div>';
+      ' \u00b7 <a href="#" id="sb-reset">Reset this board</a></div>';
     $('#sb-import').onclick = openImport;
     $('#sb-add').onclick = function () { openEditor(null); };
     $('#sb-more').onclick = function () { moreMenu(this); };
-    $('#sb-filter').onclick = function () { filterMenu(this); };
+    $$('#sb-tabs button').forEach(function (b) { b.onclick = function () { setTab(b.dataset.tab); }; });
     $('#sb-reset').onclick = function (e) {
       e.preventDefault();
       if (confirm('Reset the board? This clears imported tasks, progress and categories in this browser.')) {
@@ -382,6 +387,30 @@
         save(); render();
       }
     };
+  }
+  function setTab(t) {
+    if (S.prefs.tab === t && $('#sb-main').firstChild) return;
+    S.prefs.tab = t; save();
+    $('#sb-main').innerHTML = '';
+    renderBoard();
+    window.scrollTo(0, 0);
+  }
+  // The Board tab: view switch, search, class chips and the columns.
+  function mountBoard() {
+    $('#sb-main').innerHTML =
+      '<div class="sb-tools" id="sb-tools"><div class="tl">' +
+      '<div class="seg" role="group" aria-label="Show"><button data-view="today">Due today</button><button data-view="week">Week</button><button data-view="all">All</button></div>' +
+      '<span class="weeknav" id="sb-weeknav"><button class="btn ghost icon" id="sb-prev" aria-label="Previous week" title="Previous week ([)">' + ICON.left + '</button><b id="sb-week"></b><button class="btn ghost icon" id="sb-next" aria-label="Next week" title="Next week (])">' + ICON.right + '</button><button class="btn ghost small" id="sb-thisweek">This week</button></span>' +
+      '</div><div class="tr">' +
+      '<div class="search"><button class="btn icon search-btn" id="sb-search-btn" aria-label="Search" title="Search (/)">' + ICON.search + '</button>' +
+      '<span class="sfield">' + ICON.search + '<input type="search" id="sb-search" placeholder="Search" aria-label="Search tasks"><kbd class="kbd-only">/</kbd></span></div>' +
+      '<button class="btn" id="sb-filter" aria-haspopup="menu" aria-expanded="false" title="Filter and settings">' + ICON.filter + '<span class="lbl">Filter</span><i class="dot" aria-hidden="true"></i></button>' +
+      '</div></div>' +
+      '<div class="chips-wrap"><div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div></div>' +
+      '<p class="sb-note" id="sb-note" hidden></p>' +
+      '<nav class="colnav" id="sb-colnav" aria-label="Jump to column"></nav>' +
+      '<main class="board" id="sb-board" aria-label="Board"></main>';
+    $('#sb-filter').onclick = function () { filterMenu(this); };
     $$('.seg button').forEach(function (b) { b.onclick = function () { setView(b.dataset.view); }; });
     $('#sb-prev').onclick = function () { S.prefs.weekOffset--; save(); renderBoard(); };
     $('#sb-next').onclick = function () { S.prefs.weekOffset++; save(); renderBoard(); };
@@ -411,14 +440,14 @@
   }
   function moreMenu(anchor) {
     var items = [
-      { label: 'Import\u2026', icon: ICON.imp, kbd: 'I', cls: 'm-only', onClick: openImport },
-      S.feedUrl ? { label: 'Refresh from calendar link', icon: ICON.refresh, id: 'sb-refresh', onClick: function () { toast('Refreshing your calendar\u2026'); importLink(S.feedUrl, true); } } : null,
-      { label: 'Categories', icon: ICON.edit, id: 'sb-cats', onClick: openCategories },
-      { label: 'Move to phone', icon: ICON.phone, id: 'sb-move', onClick: openMove },
+      { label: 'Import tasks\u2026', icon: ICON.imp, kbd: 'I', cls: 'm-only', onClick: openImport },
+      S.feedUrl ? { label: 'Refresh from Schoology now', icon: ICON.refresh, id: 'sb-refresh', onClick: function () { toast('Getting your latest assignments\u2026'); importLink(S.feedUrl, true); } } : null,
+      { label: 'Edit categories', icon: ICON.edit, id: 'sb-cats', onClick: openCategories },
       { label: 'Name your classes', icon: ICON.tag, id: 'sb-naming', onClick: function () { openNaming(true); } },
-      { label: 'Save a backup', icon: ICON.dl, id: 'sb-backup', onClick: downloadOffline },
-      { label: 'Import a backup', icon: ICON.up, id: 'sb-restore', onClick: pickBackup },
-      { label: 'Keyboard shortcuts', icon: ICON.key, kbd: '?', id: 'sb-keys', cls: 'kbd-only', onClick: openKeys }
+      { label: sheetMode() ? 'Send this board to another device' : 'Move this board to your phone', icon: ICON.phone, id: 'sb-move', onClick: openMove },
+      { label: 'Save a backup file', icon: ICON.dl, id: 'sb-backup', onClick: downloadOffline },
+      { label: 'Import a backup file', icon: ICON.up, id: 'sb-restore', onClick: pickBackup },
+      { label: 'Show keyboard shortcuts', icon: ICON.key, kbd: '?', id: 'sb-keys', cls: 'kbd-only', onClick: openKeys }
     ].filter(Boolean);
     menu(anchor, items, { label: 'More actions' });
   }
@@ -431,6 +460,7 @@
   }
   function setView(v) {
     S.prefs.view = v;
+    if (S.prefs.tab !== 'board') { S.prefs.tab = 'board'; save(); $('#sb-main').innerHTML = ''; }
     save(); renderBoard();
   }
 
@@ -447,7 +477,11 @@
     var when = it.allDay ? 'All day' : fmtT(it.d);
     if (done) when = it.d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + when;
     if (h < 0 && !done) when = 'Overdue \u00b7 ' + when;
-    var src = it.source === 'cas' ? '<span class="src" title="From a Course Assignment Sheet">CAS</span>' : it.source === 'custom' ? '<span class="src" title="Added by you">Mine</span>' : '';
+    var src = it.source === 'cas' ? '<span class="src" title="From a Course Assignment Sheet (CAS) PDF">Sheet</span>' : it.source === 'custom' ? '<span class="src" title="Added by you">Mine</span>' : '';
+    var fl = !done && cardFlags[it.id];
+    if (fl && fl.early) src += '<span class="flag early" title="About ' + esc(plan.fmtMin(fl.est.min)) + ' of work, due in a few days. Tonight\u2019s plan includes a first chunk.">Start early</span>';
+    else if (fl && fl.test) src += '<span class="flag test" title="Study sessions are planned on the nights before it">' + esc(plan.LABEL[fl.est.type]) + '</span>';
+    if (S.timer && S.timer.id === it.id) src += '<span class="flag run" title="Timer running">' + ICON.clock + '<span class="run-t">' + timerText() + '</span></span>';
     var label = it.title + ', ' + it.course + ', due ' + fmtDay(it.d) + ' ' + when + (done ? ', done' : '');
     return '<div class="card' + cls + '" tabindex="0" data-id="' + esc(it.id) + '" aria-label="' + esc(label) + '">' +
       (url ? '<a class="t" href="' + esc(url) + '" target="_blank" rel="noopener" draggable="false" tabindex="-1">' + esc(it.title) + '</a>' : '<span class="t">' + esc(it.title) + '</span>') +
@@ -462,16 +496,32 @@
     cols().forEach(function (c, i) { if (c[0] !== it.col) items.push({ label: c[1], icon: ICON.arrow, kbd: String(i + 1), cls: 'move', onClick: function () { setStatus(id, c[0]); } }); });
     items.push({ sep: true },
       { label: it.col === 'done' ? 'Mark not done' : 'Mark done', icon: ICON.check, kbd: 'X', onClick: function () { toggleDone(id); } },
-      { label: 'Edit\u2026', icon: ICON.edit, kbd: 'E', onClick: function () { openEditor(id); } });
+      { label: 'Edit\u2026', icon: ICON.edit, kbd: 'E', onClick: function () { openEditor(id); } },
+      { label: 'Set time estimate\u2026', icon: ICON.clock, onClick: function () { openEstimate(id); } },
+      S.timer && S.timer.id === id ? { label: 'Stop timer', icon: ICON.stop, onClick: function () { stopTimer(true); } } : { label: 'Start timer', icon: ICON.play, onClick: function () { startTimer(id); } });
     if (url) items.push({ label: 'Open in Schoology', icon: ICON.ext, onClick: function () { window.open(url, '_blank', 'noopener'); } });
     items.push({ label: 'Delete', icon: ICON.trash, kbd: 'Del', onClick: function () { deleteItem(id); } });
     menu(el.querySelector('.more'), items, { title: it.title, label: 'Card actions' });
   }
 
-  var lastItems = [];
+  var lastItems = [], cardFlags = {};
+  // Draw whichever tab is open. Everything that changes state calls this.
   function renderBoard() {
-    if (!$('#sb-board')) return render();
+    if (!$('#sb-main')) return render();
+    var tab = S.prefs.tab || 'now';
+    $$('#sb-tabs button').forEach(function (b) { b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'); });
+    $('#sb-add').classList.toggle('primary', tab === 'board');
+    document.body.dataset.tab = tab;
+    if (tab === 'now') { renderNow(); return mark(); }
+    if (tab === 'ahead') { renderAhead(); return mark(); }
+    if (!$('#sb-board')) mountBoard();
+    drawBoard();
+    mark();
+  }
+  function mark() { if (window.performance && performance.mark && !performance.getEntriesByName('sb-content').length) performance.mark('sb-content'); }
+  function drawBoard() {
     var items = allItems(), r = viewRange(), p = S.prefs, now = new Date();
+    cardFlags = plan.flags(items, pctx(), now);
     var viewItems = items.filter(function (it) { return inView(it, r) && matchesQ(it); });
     var cats = categories(items);
     $('#sb-label').textContent = r.label;
@@ -488,8 +538,8 @@
     viewItems.forEach(function (it) { if (it.col !== 'done') counts[it.course] = (counts[it.course] || 0) + 1; });
     var openTotal = viewItems.filter(function (i) { return i.col !== 'done'; }).length;
     if (p.course && cats.indexOf(p.course) < 0) p.course = null;
-    $('#sb-chips').innerHTML = '<button class="chip" data-c="" aria-pressed="' + (!p.course) + '">All classes <b>' + openTotal + '</b></button>' +
-      cats.filter(function (c) { return counts[c] || S.cats.indexOf(c) >= 0 || p.course === c; }).map(function (c) { return '<button class="chip" data-c="' + esc(c) + '" aria-pressed="' + (p.course === c) + '">' + esc(c) + ' <b>' + (counts[c] || 0) + '</b></button>'; }).join('');
+    $('#sb-chips').innerHTML = '<button class="chip" data-c="" aria-pressed="' + (!p.course) + '" title="' + openTotal + ' to do in this view">All classes <b>' + openTotal + '</b></button>' +
+      cats.filter(function (c) { return counts[c] || S.cats.indexOf(c) >= 0 || p.course === c; }).map(function (c) { return '<button class="chip" data-c="' + esc(c) + '" aria-pressed="' + (p.course === c) + '" title="' + (counts[c] || 0) + ' to do in this view">' + esc(c) + ' <b>' + (counts[c] || 0) + '</b></button>'; }).join('');
     $$('#sb-chips .chip').forEach(function (b) { b.onclick = function () { S.prefs.course = b.dataset.c || null; save(); renderBoard(); }; });
     var sel = $('#sb-chips .chip[aria-pressed="true"]'), cw = $('#sb-chips');
     if (sel && cw.scrollWidth > cw.clientWidth && (sel.offsetLeft < cw.scrollLeft || sel.offsetLeft + sel.offsetWidth > cw.scrollLeft + cw.clientWidth)) cw.scrollLeft = sel.offsetLeft - 16;
@@ -501,8 +551,8 @@
     $('#sb-board').classList.toggle('three', visCols.length === 3);
     visCols.forEach(function (c) {
       var id = c[0], list = shown.filter(function (it) { return it.col === id; }).sort(function (a, b) { return a.d - b.d || a.title.localeCompare(b.title); });
-      nav += '<button type="button" data-col="' + id + '">' + esc(SHORT[id]) + '<b>' + list.length + '</b></button>';
-      html += '<section class="col' + (id === 'done' ? ' done' : '') + '" data-col="' + id + '" aria-label="' + esc(c[1]) + '"><h2>' + esc(c[1]) + '<span>' + list.length + '</span></h2>';
+      nav += '<button type="button" data-col="' + id + '" title="' + list.length + ' card' + (list.length === 1 ? '' : 's') + '">' + esc(SHORT[id]) + '<b>' + list.length + '</b></button>';
+      html += '<section class="col' + (id === 'done' ? ' done' : '') + '" data-col="' + id + '" aria-label="' + esc(c[1]) + '"><h2>' + esc(c[1]) + '<span title="' + list.length + ' card' + (list.length === 1 ? '' : 's') + '">' + list.length + '</span></h2>';
       if (!list.length) {
         if (id === 'todo' && q && !shown.length) {
           html += '<div class="empty-state"><p class="es-t">No matches for \u201c' + esc(q) + '\u201d</p><button class="btn" id="sb-clearq" type="button">Clear search</button></div>';
@@ -517,7 +567,7 @@
       else cats.forEach(function (cl) {
         var g = list.filter(function (it) { return it.course === cl; });
         if (!g.length) return;
-        html += '<div class="cls">' + esc(cl) + '<span>' + g.length + '</span></div>';
+        html += '<div class="cls">' + esc(cl) + '<span title="' + g.length + ' card' + (g.length === 1 ? '' : 's') + '">' + g.length + '</span></div>';
         var last = '';
         g.forEach(function (it) {
           var dk = dayKey(it.d);
@@ -549,9 +599,332 @@
       $('#sb-pre-toggle').onclick = function (e) { e.preventDefault(); S.prefs.showPre = !S.prefs.showPre; save(); renderBoard(); };
     }
     var done = shown.filter(function (i) { return i.col === 'done'; }).length;
+    $('.prog', app).classList.remove('empty');
     $('#sb-prog').textContent = done + ' of ' + shown.length + ' done';
     $('#sb-bar').style.width = (shown.length ? Math.round(100 * done / shown.length) : 0) + '%';
     bindCards();
+  }
+
+  // ---------- planner: Now / Tonight, estimates, timer, Week ahead ----------
+  function pctx() {
+    return { est: S.est, ttype: S.ttype, actual: S.actual, sdone: S.sdone, timer: S.timer, isWork: function (it) { return ics.isWork(it); } };
+  }
+  var SRC_LABEL = { est: 'est.', learned: 'learned', set: 'yours' };
+  var SRC_TIP = { est: 'A typical time for this kind of work. Tap to change it.', learned: 'Your average from timing this kind of work in this class.', set: 'Your own estimate.' };
+  function fmtRange(a, b) {
+    var x = fmtT(a), y = fmtT(b), ap = / [AP]M$/;
+    if (x.slice(-2) === y.slice(-2)) x = x.replace(ap, '');
+    return x + '\u2013' + y;
+  }
+  // "today 11:59 PM", "tomorrow 8:00 AM", "Thu 8:00 AM", "Oct 30"
+  function dueWords(it, now) {
+    var dd = Math.round((sod(it.d) - sod(now)) / 864e5), t = it.allDay ? '' : ' ' + fmtT(it.d);
+    if (dd === 0) return 'today' + t;
+    if (dd === 1) return 'tomorrow' + t;
+    if (dd < 0) return (dd === -1 ? 'yesterday' : it.d.toLocaleDateString('en-US', { weekday: 'short' })) + t;
+    if (dd < 7) return it.d.toLocaleDateString('en-US', { weekday: 'long' }) + t;
+    return fmtShort(it.d) + t;
+  }
+  function estChip(id, min, src, extra) {
+    return '<button type="button" class="est-chip" data-est="' + esc(id) + '" title="' + esc(SRC_TIP[src] + ' Tap to change.') + '" aria-label="' + esc(plan.fmtMin(min) + ', ' + (src === 'learned' ? 'learned from your timing' : src === 'set' ? 'your estimate' : 'estimate') + '. Change the time estimate') + '">' +
+      ICON.clock + esc(plan.fmtMin(min)) + (extra || '') + ' <i>' + esc(SRC_LABEL[src]) + '</i></button>';
+  }
+  function kindFlag(task) {
+    if (task.kind === 'study') return '<span class="flag test" title="Study session for a quiz or test">Study for ' + esc(task.est.type) + '</span>';
+    if (task.kind === 'early') return '<span class="flag early" title="A big assignment due in a few days: tonight is a first chunk">Start early</span>';
+    if (task.overdue) return '<span class="flag late">Overdue</span>';
+    return '';
+  }
+  function timerText() {
+    if (!S.timer) return '';
+    var s = Math.max(0, Math.floor((Date.now() - S.timer.at) / 1000)), m = Math.floor(s / 60);
+    return (m >= 60 ? Math.floor(m / 60) + ':' + pad(m % 60) : m) + ':' + pad(s % 60);
+  }
+  var lastPlan = null;
+  function renderNow() {
+    var now = new Date(), items = allItems();
+    var ps = S.planStart && S.planStart.day === dayKey(now) ? S.planStart.t : null;
+    var P = plan.tonight(items, pctx(), now, { start: ps });
+    lastPlan = P;
+    var work = P.blocks.filter(function (b) { return b.kind !== 'break'; });
+    var running = S.timer && items.filter(function (i) { return i.id === S.timer.id; })[0];
+    if (S.timer && !running) { S.timer = null; save(); }
+    // Header: tonight's progress.
+    var wEnd = P.windowEnd, inWin = items.filter(function (i) { return plan.plannable(Object.assign({}, i, { col: 'todo' }), pctx()) && i.d >= sod(now) && i.d < wEnd && !plan.isTestType(plan.inferType(i, S.ttype)); });
+    var doneN = inWin.filter(function (i) { return i.col === 'done'; }).length;
+    $('#sb-label').textContent = 'Tonight \u00b7 ' + now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    var byDay = addDays(wEnd, -1), byWord = Math.round((byDay - sod(now)) / 864e5) === 1 ? 'tomorrow' : byDay.toLocaleDateString('en-US', { weekday: 'long' });
+    $('#sb-prog').textContent = inWin.length ? doneN + ' of ' + inWin.length + ' due by ' + byWord + ' done' : '';
+    $('.prog', app).classList.toggle('empty', !inWin.length);
+    $('#sb-bar').style.width = (inWin.length ? Math.round(100 * doneN / inWin.length) : 0) + '%';
+    renderSync();
+
+    // 1. The one thing to do right now.
+    var hero = '', first = work[0], focus = null;
+    if (running) {
+      var rt = P.tasks.filter(function (t) { return t.id === running.id; })[0];
+      focus = { item: running, task: rt || null, block: rt ? work.filter(function (b) { return b.task === rt; })[0] : null };
+    } else if (first) focus = { item: first.task.item, task: first.task, block: first };
+    if (focus) {
+      var it = focus.item, url = safeUrl(it.url), b = focus.block, tk = focus.task;
+      var est = tk ? tk.est : plan.estimate(it, pctx(), plan.learnedTable(items, pctx()));
+      var label = running ? 'Working on it' : b && b.start > addMin(now, 5) ? 'Next \u00b7 starts ' + fmtT(b.start) : 'Do this now';
+      var chunk = tk && (tk.kind === 'study' || tk.kind === 'early');
+      hero = '<section class="now-hero" aria-label="What to do now"><p class="now-k">' + esc(label) + '</p>' +
+        '<h2 class="now-t">' + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>' : esc(it.title)) + '</h2>' +
+        '<p class="now-m"><span class="tag" style="--ci:var(--class-' + classIndex(it.course) + ')">' + esc(it.course) + '</span>' +
+        '<span>Due ' + esc(dueWords(it, now)) + '</span>' +
+        (b ? '<span>' + esc(fmtRange(b.start, b.end)) + (b.parts > 1 ? ' \u00b7 part ' + b.part + ' of ' + b.parts : '') + '</span>' : '') +
+        (tk ? estChip(it.id, tk.min, est.src) : estChip(it.id, est.min, est.src)) + (tk ? kindFlag(tk) : '') + '</p>' +
+        '<div class="now-acts">' +
+        (running ? '<button class="btn primary big" id="now-stop">' + ICON.stop + 'Stop timer <span class="timer" id="now-timer">' + timerText() + '</span></button>'
+          : '<button class="btn primary big" id="now-start">' + ICON.play + 'Start timer</button>') +
+        '<button class="btn big" id="now-done">' + ICON.check + (chunk ? 'Done for tonight' : 'Mark done') + '</button>' +
+        (url ? '<a class="btn big ghost" href="' + esc(url) + '" target="_blank" rel="noopener">' + ICON.ext + 'Open in Schoology</a>' : '') +
+        '</div></section>';
+    } else {
+      var nxt = items.filter(function (i) { return i.col !== 'done' && plan.plannable(i, pctx()) && i.d >= now; }).sort(function (a, c) { return a.d - c.d; })[0];
+      hero = '<section class="now-hero calm" aria-label="What to do now"><p class="now-k">Tonight</p>' +
+        '<h2 class="now-t">' + (P.spill.length ? 'It\u2019s too late to start more tonight.' : 'You\u2019re all set for tonight.') + '</h2>' +
+        '<p class="now-s">' + (P.spill.length ? 'See what\u2019s left below.' : nxt ? 'Next up: <b>' + esc(nxt.title) + '</b>, due ' + esc(dueWords(nxt, now)) + '.' : 'Nothing else is coming up on your board.') + '</p>' +
+        '<div class="now-acts"><button class="btn primary big" id="now-ahead">' + ICON.tab_ahead + 'Look at the week ahead</button><button class="btn big" id="now-board">' + ICON.tab_board + 'Open the board</button></div></section>';
+    }
+
+    // 2. Tonight's plan.
+    var defStart = plan.defaultStart(now), startVal = pad(P.start.getHours()) + ':' + pad(P.start.getMinutes());
+    var sum = work.length ? P.tasks.length - P.spill.length + ' task' + (P.tasks.length - P.spill.length === 1 ? '' : 's') + ' \u00b7 ' + plan.fmtMin(P.workMin) + ' of work \u00b7 done by ' + fmtT(P.finish) : '';
+    var list = P.blocks.map(function (b) {
+      var t = '<span class="blk-time">' + esc(fmtRange(b.start, b.end)) + '</span>';
+      if (b.kind === 'break') return '<li class="blk brk">' + t + '<span class="blk-brk">Break \u00b7 ' + b.min + ' min</span></li>';
+      var it = b.task.item, url = safeUrl(it.url), isRun = S.timer && S.timer.id === it.id;
+      return '<li class="blk' + (isRun ? ' running' : '') + '" data-id="' + esc(it.id) + '" data-kind="' + b.task.kind + '">' + t +
+        '<div class="blk-b">' + (url ? '<a class="blk-title" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>' : '<span class="blk-title">' + esc(it.title) + '</span>') +
+        '<div class="blk-m"><span class="tag" style="--ci:var(--class-' + classIndex(it.course) + ')">' + esc(it.course) + '</span><span>Due ' + esc(dueWords(it, now)) + '</span>' +
+        estChip(it.id, b.min, b.task.est.src, b.parts > 1 ? ' \u00b7 ' + b.part + '/' + b.parts : '') + kindFlag(b.task) + (isRun ? '<span class="flag run">Timer running</span>' : '') + '</div></div>' +
+        (b.part === b.parts ? '<button type="button" class="blk-done" aria-label="' + esc((b.task.kind === 'work' ? 'Mark done: ' : 'Done for tonight: ') + it.title) + '" title="' + (b.task.kind === 'work' ? 'Mark done' : 'Done for tonight') + '">' + ICON.check + '</button>' : '<span class="blk-done-sp"></span>') + '</li>';
+    }).join('');
+    var spill = P.spill.length ? '<div class="spill" role="note"><p><b>Won\u2019t fit before ' + fmtT(P.endBy) + ':</b> ' + P.spill.length + ' task' + (P.spill.length === 1 ? '' : 's') + ', about ' + plan.fmtMin(P.spill.reduce(function (a, t) { return a + t.min; }, 0)) + '.</p><ul>' +
+      P.spill.map(function (t) { return '<li>' + esc(t.item.title) + ' <span class="dim">\u00b7 ' + esc(t.item.course) + ' \u00b7 due ' + esc(dueWords(t.item, now)) + ' \u00b7 ' + plan.fmtMin(t.min) + '</span></li>'; }).join('') +
+      '</ul><p class="dim">Start earlier, shorten an estimate, or ask your teacher about what won\u2019t fit.</p></div>' : '';
+    var tonightHtml = '<section class="tn" aria-labelledby="tn-h"><div class="sec-h"><h2 id="tn-h">Tonight\u2019s plan</h2>' +
+      '<label class="tn-start">Start at <input type="time" id="tn-start" value="' + startVal + '" step="300"></label>' +
+      (ps && P.picked && P.picked > defStart ? '<button class="btn ghost small" id="tn-now">Start now instead</button>' : '') + '</div>' +
+      (sum ? '<p class="tn-sum">' + esc(sum) + '</p>' : '') +
+      (list ? '<ol class="tn-list">' + list + '</ol>' : '<p class="empty-line">' + (P.spill.length ? 'Nothing fits before ' + fmtT(P.endBy) + '.' : 'Nothing is due tomorrow and there\u2019s nothing to study for tonight.') + '</p>') + spill + '</section>';
+
+    // 3. Coming up: the next few days, tests and start-early flags.
+    var flags = plan.flags(items, pctx(), now), learned = plan.learnedTable(items, pctx());
+    var days = '', d0 = sod(now);
+    for (var i = 0; i < 3; i++) {
+      var day = addDays(P.windowEnd, i), next = addDays(day, 1);
+      var due = items.filter(function (x) { return x.col !== 'done' && plan.plannable(x, pctx()) && x.d >= day && x.d < next; });
+      var mins = due.reduce(function (a, x) { var e = plan.estimate(x, pctx(), learned); return a + (plan.isTestType(e.type) ? 0 : e.min); }, 0);
+      days += '<li><b>' + esc(Math.round((day - d0) / 864e5) === 1 ? 'Tomorrow' : day.toLocaleDateString('en-US', { weekday: 'long' })) + '</b>' +
+        '<span class="cu-n">' + (due.length ? due.length + ' due' + (mins ? ' \u00b7 about ' + plan.fmtMin(mins) : '') : 'Nothing due') + '</span>' +
+        '<span class="cu-t">' + due.slice(0, 3).map(function (x) { return esc(x.title); }).join(' \u00b7 ') + (due.length > 3 ? ' \u00b7 ' + (due.length - 3) + ' more' : '') + '</span></li>';
+    }
+    var soonTests = items.filter(function (x) { return flags[x.id] && flags[x.id].test && x.d >= addDays(d0, 1) && x.d < addDays(d0, 8); }).sort(function (a, c) { return a.d - c.d; });
+    var earlies = items.filter(function (x) { return flags[x.id] && flags[x.id].early; }).sort(function (a, c) { return a.d - c.d; });
+    var extra = soonTests.map(function (x) {
+      var nights = plan.studyNights(x, flags[x.id].est, d0);
+      return '<li class="cu-f"><span class="flag test">' + esc(plan.LABEL[flags[x.id].est.type]) + '</span><span class="cu-ft">' + esc(x.title) + ' <span class="dim">\u00b7 ' + esc(dueWords(x, now)) + '</span></span>' +
+        '<span class="cu-n">' + (nights.length ? nights.length + ' study session' + (nights.length === 1 ? '' : 's') + ' planned' : 'No study nights left') + '</span></li>';
+    }).concat(earlies.map(function (x) {
+      return '<li class="cu-f"><span class="flag early">Start early</span><span class="cu-ft">' + esc(x.title) + ' <span class="dim">\u00b7 due ' + esc(dueWords(x, now)) + '</span></span><span class="cu-n">about ' + plan.fmtMin(flags[x.id].est.min) + '</span></li>';
+    })).join('');
+    var sunday = now.getDay() === 0 || (now.getDay() === 6 && now.getHours() >= 12);
+    var coming = '<section class="cu" aria-labelledby="cu-h"><div class="sec-h"><h2 id="cu-h">After that</h2><button class="btn ghost small" id="cu-ahead">See the week ahead ' + ICON.arrow + '</button></div>' +
+      (sunday ? '<p class="cu-sun">It\u2019s the weekend: <a href="#" id="cu-sun">plan your week</a> before it starts.</p>' : '') +
+      '<ul class="cu-days">' + days + '</ul>' + (extra ? '<ul class="cu-flags">' + extra + '</ul>' : '') + '</section>';
+
+    $('#sb-main').innerHTML = '<div class="now">' + hero + '<div class="now-cols">' + tonightHtml + coming + '</div></div>';
+    bindNow(focus);
+  }
+  function bindNow(focus) {
+    var m = $('#sb-main');
+    var st = $('#now-start', m); if (st) st.onclick = function () { startTimer(focus.item.id); };
+    var sp = $('#now-stop', m); if (sp) sp.onclick = function () { stopTimer(true); };
+    var dn = $('#now-done', m); if (dn) dn.onclick = function () { finishTask(focus.item.id, focus.task ? focus.task.kind : 'work'); };
+    [['#now-ahead', 'ahead'], ['#now-board', 'board'], ['#cu-ahead', 'ahead']].forEach(function (p) { var b = $(p[0], m); if (b) b.onclick = function () { setTab(p[1]); }; });
+    var sun = $('#cu-sun', m); if (sun) sun.onclick = function (e) { e.preventDefault(); setTab('ahead'); };
+    $$('.est-chip', m).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); openEstimate(b.dataset.est); }; });
+    $$('.blk-done', m).forEach(function (b) { b.onclick = function () { var li = b.closest('.blk'); finishTask(li.dataset.id, li.dataset.kind); }; });
+    var inp = $('#tn-start', m);
+    if (inp) inp.onchange = function () { if (!inp.value) return; S.planStart = { day: dayKey(new Date()), t: inp.value }; save(); renderBoard(); };
+    var tn = $('#tn-now', m); if (tn) tn.onclick = function () { S.planStart = null; save(); renderBoard(); };
+  }
+  // Done from the plan: a regular task moves to Completed; a study session or start-early chunk is done for tonight.
+  function finishTask(id, kind) {
+    if (S.timer && S.timer.id === id) stopTimer(false);
+    if (kind === 'study' || kind === 'early') {
+      var key = id + '@' + dayKey(new Date());
+      S.sdone[key] = 1; save(); renderBoard();
+      toast('Done for tonight', 'Undo', function () { delete S.sdone[key]; save(); renderBoard(); }, 5000);
+      return;
+    }
+    var prev = (itemById(id) || {}).col || 'todo';
+    S.status[id] = 'done'; save(); renderBoard();
+    toast('Marked done', 'Undo', function () { S.status[id] = prev; save(); renderBoard(); }, 5000);
+  }
+  function startTimer(id) {
+    if (S.timer && S.timer.id !== id) stopTimer(false);
+    S.timer = { id: id, at: Date.now() }; save(); renderBoard();
+  }
+  function stopTimer(announce) {
+    if (!S.timer) return;
+    var t = S.timer, mins = Math.max(1, Math.round((Date.now() - t.at) / 60000));
+    S.actual[t.id] = (S.actual[t.id] || 0) + mins; S.timer = null; save();
+    if (announce) {
+      var it = itemById(t.id);
+      toast('Timed ' + plan.fmtMin(mins) + (it ? ' on \u201c' + it.title.slice(0, 40) + '\u201d' : ''), 'Undo', function () { S.actual[t.id] = Math.max(0, (S.actual[t.id] || 0) - mins); if (!S.actual[t.id]) delete S.actual[t.id]; S.timer = t; save(); renderBoard(); }, 5000);
+      renderBoard();
+    }
+  }
+  function tickTimer() {
+    if (!S || !S.timer) return;
+    var el = $('#now-timer'); if (el) el.textContent = timerText();
+    var c = $('.card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(S.timer.id) : S.timer.id) + '"] .run-t'); if (c) c.textContent = timerText();
+  }
+
+  // One-tap estimate editor: quick chips, a custom number, and the kind of work (Quiz/Test get study sessions).
+  function openEstimate(id) {
+    var it = itemById(id); if (!it) return;
+    var items = allItems(), learned = plan.learnedTable(items, pctx());
+    var e = plan.estimate(it, pctx(), learned), auto = plan.inferType(it, null);
+    var curType = e.type, curMin = e.min;
+    var ctxNoSet = Object.assign(pctx(), { est: {} });
+    function body() {
+      var test = plan.isTestType(curType), def = plan.estimate(it, Object.assign({}, ctxNoSet, { ttype: Object.assign({}, S.ttype, (function () { var o = {}; o[id] = curType; return o; })()) }), learned);
+      return '<p class="est-for"><b>' + esc(it.title) + '</b><span class="dim"> \u00b7 ' + esc(it.course) + ' \u00b7 due ' + esc(dueWords(it, new Date())) + '</span></p>' +
+        '<p class="est-l" id="est-l1">' + (test ? 'Total study time' : 'How long will this take?') + '</p>' +
+        '<div class="est-chips" role="group" aria-labelledby="est-l1">' + [15, 30, 45, 60, 90, 120, 180].map(function (m) {
+          return '<button type="button" class="chip" data-m="' + m + '" aria-pressed="' + (curMin === m) + '">' + esc(plan.fmtMin(m)) + '</button>';
+        }).join('') + '<label class="est-custom">Other <input type="number" id="est-custom" min="5" max="600" step="5" inputmode="numeric" value="' + ([15, 30, 45, 60, 90, 120, 180].indexOf(curMin) < 0 ? curMin : '') + '" aria-label="Other time in minutes"> min</label></div>' +
+        '<p class="est-l" id="est-l2">What kind of work is it?</p>' +
+        '<div class="est-chips" role="group" aria-labelledby="est-l2">' + plan.TYPES.map(function (t) {
+          return '<button type="button" class="chip" data-t="' + t + '" aria-pressed="' + (curType === t) + '">' + esc(plan.LABEL[t]) + '</button>';
+        }).join('') + '</div>' +
+        '<p class="hint">' + (test ? 'Study time is split into ' + plan.studyCount(it, curType) + ' sessions on the nights before it. ' : '') +
+        'Typical for ' + esc(plan.LABEL[curType].toLowerCase()) + ': ' + esc(plan.fmtMin(def.min)) + (def.src === 'learned' ? ' (your average in ' + esc(it.course) + ')' : '') + '. ' +
+        (def.src === 'learned' ? '' : 'Time 2 or more of these in ' + esc(it.course) + ' with the timer and the board uses your own average.') +
+        (S.actual[id] ? ' Timed so far: ' + esc(plan.fmtMin(S.actual[id])) + '.' : '') + '</p>';
+    }
+    var d = dialog('Time estimate', '<div id="est-body">' + body() + '</div>',
+      (S.est[id] || S.ttype[id] ? '<button class="btn ghost" id="est-reset">Use the typical time</button>' : '') +
+      '<span class="r"><button class="btn" data-close>Cancel</button><button class="btn primary" id="est-save">Save estimate</button></span>');
+    d.classList.add('est');
+    function bind() {
+      $$('[data-m]', d).forEach(function (b) { b.onclick = function () { curMin = +b.dataset.m; $('#est-body', d).innerHTML = body(); bind(); }; });
+      $$('[data-t]', d).forEach(function (b) {
+        b.onclick = function () {
+          var wasDefault = !S.est[id] && curMin === plan.estimate(it, Object.assign({}, ctxNoSet, { ttype: (function () { var o = Object.assign({}, S.ttype); o[id] = curType; return o; })() }), learned).min;
+          curType = b.dataset.t;
+          if (wasDefault) curMin = plan.estimate(it, Object.assign({}, ctxNoSet, { ttype: (function () { var o = Object.assign({}, S.ttype); o[id] = curType; return o; })() }), learned).min;
+          $('#est-body', d).innerHTML = body(); bind();
+        };
+      });
+      var c = $('#est-custom', d); c.oninput = function () { var v = Math.round(+c.value); if (v >= 5 && v <= 600) { curMin = v; $$('[data-m]', d).forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.m === v)); }); } };
+    }
+    bind();
+    $('#est-save', d).onclick = function () {
+      if (curType === auto) delete S.ttype[id]; else S.ttype[id] = curType;
+      var def = plan.estimate(it, Object.assign({}, ctxNoSet, { ttype: S.ttype }), learned);
+      if (curMin === def.min) delete S.est[id]; else S.est[id] = curMin;
+      save(); d.close(); renderBoard();
+      toast('Estimate saved: ' + plan.fmtMin(curMin));
+    };
+    var rs = $('#est-reset', d); if (rs) rs.onclick = function () { delete S.est[id]; delete S.ttype[id]; save(); d.close(); renderBoard(); toast('Using the typical time again'); };
+  }
+
+  // ---------- Week ahead (made for Sunday) ----------
+  var lastWeek = null;
+  function renderAhead() {
+    var now = new Date(), items = allItems(), ws = ics.defaultWeekStart(now), we = addDays(ws, 6);
+    var W = plan.weekAhead(items, pctx(), ws, now);
+    var range = fmtShort(ws) + '\u2013' + (we.getMonth() === ws.getMonth() ? we.getDate() : fmtShort(we));
+    var rel = Math.round((ws - monday(now)) / (7 * 864e5));
+    lastWeek = { W: W, range: range, rel: rel };
+    $('#sb-label').textContent = 'Week ahead';
+    $('#sb-prog').textContent = ''; $('#sb-bar').style.width = '0%'; $('.prog', app).classList.add('empty');
+    renderSync();
+    var max = Math.max.apply(null, W.days.map(function (d) { return d.min; }).concat([1]));
+    var nItems = W.days.reduce(function (a, d) { return a + d.items.length; }, 0);
+    var head = nItems || W.tests.length ?
+      '<p class="wk-sum">' + (nItems ? '<b>' + nItems + ' assignment' + (nItems === 1 ? '' : 's') + '</b> due, about <b>' + plan.fmtMin(W.total) + '</b> of work' : 'No assignments due') +
+      (W.tests.length ? ' \u00b7 <b>' + W.tests.length + ' ' + (W.tests.length === 1 ? 'quiz or test' : 'quizzes and tests') + '</b>' : '') +
+      (W.heaviest && W.heaviest.min ? ' \u00b7 busiest day: <b>' + esc(W.heaviest.day.toLocaleDateString('en-US', { weekday: 'long' })) + '</b>' : '') + '</p>' :
+      '<p class="wk-sum">Nothing is due ' + (rel === 1 ? 'next' : 'this') + ' week yet.</p>';
+    var bars = '<ol class="wk-bars" aria-label="Estimated work due each day">' + W.days.map(function (d) {
+      var heavy = W.heaviest && W.heaviest.min && d === W.heaviest, past = d.day < sod(now);
+      return '<li class="' + (heavy ? 'heavy' : '') + (past ? ' past' : '') + '"><span class="wk-d">' + esc(d.day.toLocaleDateString('en-US', { weekday: 'short' })) + '</span>' +
+        '<span class="wk-bar"><i style="width:' + Math.round(100 * d.min / max) + '%"></i></span>' +
+        '<span class="wk-n">' + (d.items.length ? esc(plan.fmtMin(d.min)) + ' \u00b7 ' + d.items.length + ' due' : 'Nothing due') + '</span></li>';
+    }).join('') + '</ol>';
+    var tests = '<section class="wk-sec"><h2>Quizzes and tests</h2>' + (W.tests.length ? '<ul class="wk-list">' + W.tests.map(function (t) {
+      return '<li><span class="flag test">' + esc(plan.LABEL[t.est.type]) + '</span><span class="wk-t">' + esc(t.item.title) + '<span class="dim"> \u00b7 ' + esc(t.item.course) + ' \u00b7 ' + esc(dueWords(t.item, now)) + '</span></span>' +
+        '<span class="wk-n">' + (t.sessions ? t.sessions + ' study session' + (t.sessions === 1 ? '' : 's') + ' from ' + esc(t.studyFrom.toLocaleDateString('en-US', { weekday: 'short' })) : 'No study nights left') + '</span></li>';
+    }).join('') + '</ul>' : '<p class="empty-line">No quizzes or tests on your board this week. If one is missing, open its card and set its kind to Quiz or Test.</p>') + '</section>';
+    var early = '<section class="wk-sec"><h2>Start early</h2>' + (W.early.length ? '<ul class="wk-list">' + W.early.map(function (e) {
+      return '<li><span class="flag early">Start early</span><span class="wk-t">' + esc(e.item.title) + '<span class="dim"> \u00b7 ' + esc(e.item.course) + ' \u00b7 due ' + esc(dueWords(e.item, now)) + '</span></span>' +
+        '<span class="wk-n">about ' + esc(plan.fmtMin(e.est.min)) + ' \u00b7 start by ' + esc(sod(e.startBy) <= sod(now) ? 'today' : e.startBy.toLocaleDateString('en-US', { weekday: 'long' })) + '</span></li>';
+    }).join('') + '</ul>' : '<p class="empty-line">Nothing big (2 hours or more) is due this week.</p>') + '</section>';
+    $('#sb-main').innerHTML = '<div class="wk"><div class="wk-top"><div><h2 class="wk-h">' + (rel === 1 ? 'Next week' : 'This week') + ' \u00b7 ' + esc(range) + '</h2>' + head + '</div>' +
+      '<div class="wk-acts"><button class="btn primary" id="wk-tonight">' + ICON.tab_now + 'See tonight\u2019s plan</button><button class="btn" id="wk-img">' + ICON.dl + 'Save as image</button></div></div>' +
+      bars + '<div class="wk-cols">' + tests + early + '</div></div>';
+    $('#wk-tonight').onclick = function () { setTab('now'); };
+    $('#wk-img').onclick = shareWeek;
+  }
+  // A shareable picture of the week, drawn here with <canvas>. Nothing leaves the device unless you share it.
+  function weekCanvas() {
+    var L = lastWeek, W = L.W, c = document.createElement('canvas'), w = 1080, h = 1350, x = c.getContext('2d');
+    c.width = w; c.height = h;
+    var V = function (n, f) { return themeVar(n, f); }, font = V('--font-body', 'sans-serif'), disp = V('--font-display', font);
+    x.fillStyle = V('--bg', 'black'); x.fillRect(0, 0, w, h);
+    x.fillStyle = V('--surface-1', 'black'); x.fillRect(48, 48, w - 96, h - 96);
+    x.strokeStyle = V('--border-2', 'gray'); x.lineWidth = 2; x.strokeRect(48, 48, w - 96, h - 96);
+    var ink = V('--text-1', 'white'), dim = V('--text-2', 'gray'), acc = V('--accent', 'red');
+    function text(s, X, Y, size, color, weight, f) { x.fillStyle = color; x.font = (weight || 400) + ' ' + size + 'px ' + (f || font); x.fillText(s, X, Y); }
+    function fit(s, max, size, weight) { x.font = (weight || 400) + ' ' + size + 'px ' + font; if (x.measureText(s).width <= max) return s; while (s.length > 1 && x.measureText(s + '\u2026').width > max) s = s.slice(0, -1); return s + '\u2026'; }
+    text((L.rel === 1 ? 'Next week' : 'This week') + ' \u00b7 ' + L.range, 96, 150, 56, ink, 700, disp);
+    var sub = (W.total ? plan.fmtMin(W.total) + ' of work' : 'No assignments due') + (W.tests.length ? ' \u00b7 ' + W.tests.length + (W.tests.length === 1 ? ' quiz or test' : ' quizzes and tests') : '');
+    text(sub, 96, 210, 32, dim, 400);
+    var max = Math.max.apply(null, W.days.map(function (d) { return d.min; }).concat([1])), y = 290;
+    W.days.forEach(function (d) {
+      var heavy = W.heaviest && W.heaviest.min && d === W.heaviest;
+      text(d.day.toLocaleDateString('en-US', { weekday: 'short' }), 96, y + 30, 30, heavy ? ink : dim, heavy ? 700 : 400);
+      x.fillStyle = V('--surface-3', 'gray'); x.fillRect(210, y + 6, 560, 32);
+      x.fillStyle = heavy ? acc : V('--border-3', 'gray'); x.fillRect(210, y + 6, Math.max(d.min ? 8 : 0, Math.round(560 * d.min / max)), 32);
+      text(d.min ? plan.fmtMin(d.min) : '\u2013', 796, y + 32, 28, heavy ? ink : dim, heavy ? 700 : 400);
+      y += 62;
+    });
+    y += 40;
+    text('Quizzes and tests', 96, y, 34, ink, 700, disp); y += 52;
+    (W.tests.length ? W.tests.slice(0, 4) : [null]).forEach(function (t) {
+      text(t ? fit(t.item.d.toLocaleDateString('en-US', { weekday: 'short' }) + '  ' + t.item.title, 860, 30) : 'None this week', 96, y, 30, t ? ink : dim); y += 46;
+    });
+    y += 30;
+    text('Start early', 96, y, 34, ink, 700, disp); y += 52;
+    (W.early.length ? W.early.slice(0, 3) : [null]).forEach(function (e) {
+      text(e ? fit(e.item.title + ' \u00b7 ' + plan.fmtMin(e.est.min), 860, 30) : 'Nothing big this week', 96, y, 30, e ? ink : dim); y += 46;
+    });
+    text('Made with Schoology Board', 96, h - 96, 26, dim, 400);
+    return c;
+  }
+  function shareWeek() {
+    if (!lastWeek) return;
+    var c = weekCanvas(), name = 'week-ahead-' + dayKey(addDays(ics.defaultWeekStart(new Date()), 0)) + '.png';
+    c.toBlob(function (blob) {
+      if (!blob) { toastErr('Could not make the image in this browser.'); return; }
+      var file = window.File ? new File([blob], name, { type: 'image/png' }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] }) && sheetMode()) {
+        navigator.share({ files: [file], title: 'My week' }).catch(function () { });
+        return;
+      }
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      toast('Image saved to your downloads.');
+    }, 'image/png');
   }
 
   function itemById(id) {
@@ -745,7 +1118,7 @@
   }
 
   function openKeys() {
-    var rows = [['N', 'Add a task'], ['I', 'Import a calendar link, .ics or CAS PDF'], ['/', 'Search'], ['T W A', 'Due today, Week, All'], ['[ ]', 'Previous / next week'], ['H', 'Hide past'],
+    var rows = [['N', 'Add a task'], ['I', 'Import from Schoology or a Course Assignment Sheet'], ['/', 'Search'], ['T W A', 'Due today, Week, All'], ['[ ]', 'Previous / next week'], ['H', 'Hide past'],
       ['\u2191 \u2193 \u2190 \u2192', 'Move focus between cards'], ['1 2 3 4', 'Move the card to a column'], ['Shift+\u2190 Shift+\u2192', 'Move the card one column'], ['X Space', 'Toggle done (or double-click)'],
       ['E', 'Edit the card'], ['M', 'Card menu (move, done, edit, delete)'], ['Enter', 'Open it in Schoology'], ['Delete', 'Delete the card (with undo)'], ['?', 'This list']];
     dialog('Keyboard shortcuts', '<div class="keys">' + rows.map(function (r) {
@@ -779,8 +1152,8 @@
     var timeStr = it && !it.allDay ? pad(d0.getHours()) + ':' + pad(d0.getMinutes()) : '';
     var cats = categories();
     var defCourse = it ? it.course : (S.prefs.course || (cats[0] && cats[0] !== UNSORTED ? cats[0] : UNSORTED));
-    var note = it && it.source === 'ics' ? '<p class="hint">From your Schoology calendar. Your edits are kept when you re-import.</p>' :
-      it && it.source === 'cas' ? '<p class="hint">From a Course Assignment Sheet. Your edits are kept when you re-import your calendar.</p>' : '';
+    var note = it && it.source === 'ics' ? '<p class="hint">From your Schoology calendar. Your edits are kept when the board updates.</p>' :
+      it && it.source === 'cas' ? '<p class="hint">From a Course Assignment Sheet (CAS) PDF. Your edits are kept when the board updates from Schoology.</p>' : '';
     var body = '<form class="form" id="ed-form" autocomplete="off">' +
       '<label for="ed-title">Title</label><input type="text" id="ed-title" required value="' + esc(it ? it.title : '') + '" placeholder="e.g. Read chapter 4, pp 80-95">' +
       '<label for="ed-cat">Category</label><select id="ed-cat">' + catOptions(defCourse) + '</select>' +
@@ -790,7 +1163,7 @@
       (it ? '' : '<label for="ed-col">Column</label><select id="ed-col">' + cols().map(function (c) { return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('') + '</select>') +
       '<button type="submit" hidden></button></form>' + note;
     var foot = (it ? '<button class="btn danger" id="ed-del">Delete</button>' + (it.source !== 'custom' && S.ov[id] ? '<button class="btn ghost" id="ed-revert">Reset to original</button>' : '') : '') +
-      '<span class="r"><button class="btn" data-close>Cancel</button><button class="btn primary" id="ed-save">' + (it ? 'Save' : 'Add task') + '</button></span>';
+      '<span class="r"><button class="btn" data-close>Cancel</button><button class="btn primary" id="ed-save">' + (it ? 'Save changes' : 'Add task') + '</button></span>';
     var d = dialog(it ? 'Edit task' : 'Add a task', body, foot);
     bindNewCat($('#ed-cat', d));
     setTimeout(function () { $('#ed-title', d).focus(); }, 30);
@@ -848,12 +1221,12 @@
           '<span class="n">' + n + ' task' + (n === 1 ? '' : 's') + '</span>' +
           '<button class="btn ghost" data-up ' + (i === 0 || c === UNSORTED ? 'disabled' : '') + ' aria-label="Move up">' + ICON.up + '</button>' +
           '<button class="btn ghost" data-down ' + (i >= cats.length - 1 || c === UNSORTED || cats[i + 1] === UNSORTED ? 'disabled' : '') + ' aria-label="Move down">' + ICON.down + '</button>' +
-          (custom ? '<button class="btn ghost danger" data-del aria-label="Delete category ' + esc(c) + '">' + ICON.x + '</button>' : '<span style="width:38px;display:inline-block" title="Comes from your calendar or a CAS"></span>') + '</li>';
+          (custom ? '<button class="btn ghost danger" data-del aria-label="Delete category ' + esc(c) + '">' + ICON.x + '</button>' : '<span style="width:38px;display:inline-block" title="Comes from Schoology or a Course Assignment Sheet"></span>') + '</li>';
       }).join('') + '</ul>' +
         '<form class="row" id="cat-add" style="margin-top:14px"><input type="text" id="cat-new" placeholder="New category, e.g. Reading list or SAT prep" aria-label="New category name"><button class="btn primary">Add</button></form>' +
         '<p class="hint">Rename any category; renames survive re-imports. Categories you create can be deleted (their tasks move to Unsorted). Order here is the order on the board.</p></div>';
     }
-    var d = dialog('Categories', draw(), '<span class="r"><button class="btn primary" data-close>Done</button></span>');
+    var d = dialog('Edit categories', draw(), '<span class="r"><button class="btn primary" data-close>Done</button></span>');
     function bind() {
       var b = $('.dlg-b', d);
       $$('li', b).forEach(function (li) {
@@ -910,27 +1283,27 @@
     var canLink = MODE === 'web' || !!CFG.proxy;
     return '<div class="imp">' +
       '<form id="imp-form" novalidate><label class="imp-l" for="imp-url">Paste your Schoology calendar link</label>' +
-      '<div class="row"><input type="url" id="imp-url" placeholder="webcal://\u2026 or https://\u2026/calendar/feed/ical/\u2026" value="' + esc(S.feedUrl || '') + '"' + (canLink ? '' : ' disabled') + ' autocomplete="off" spellcheck="false">' +
-      '<button class="btn primary" id="imp-go"' + (canLink ? '' : ' disabled') + '>Build my board</button></div>' +
-      '<label class="remember"><input type="checkbox" id="imp-remember"' + (S.feedUrl || first ? ' checked' : '') + '> Remember the link on this device for one-click refresh</label>' +
+      '<div class="row"><input type="url" id="imp-url" placeholder="Paste the link from Schoology here" value="' + esc(S.feedUrl || '') + '"' + (canLink ? '' : ' disabled') + ' autocomplete="off" spellcheck="false">' +
+      '<button class="btn primary" id="imp-go"' + (canLink ? '' : ' disabled') + '>' + (hasBoard() ? 'Update my board' : 'Build my board') + '</button></div>' +
+      '<label class="remember"><input type="checkbox" id="imp-remember"' + (S.feedUrl || first ? ' checked' : '') + '> Remember the link on this device so the board keeps itself up to date</label>' +
       '<div class="err" id="imp-err" role="alert"></div>' +
-      (MODE === 'offline' ? '<p class="hint">Needs internet: the link is fetched through ' + esc(CFG.home || 'the website') + '. Offline, drop an .ics file instead.</p>' : '') +
+      (MODE === 'offline' ? '<p class="hint">Needs internet: the link is opened through ' + esc(CFG.home || 'the website') + '. Offline, drop a calendar file (.ics) instead.</p>' : '') +
       '<details class="how"' + (first ? ' open' : '') + '><summary>Where do I find this link?</summary><ol class="how-steps">' +
       '<li>In Schoology, open <b>Calendar</b>.</li>' +
       '<li>At the bottom of the month grid, click <b>Export</b>, then <b>Share Calendar</b>.</li>' +
-      '<li>Copy the <b>iCal link</b> and paste it above.</li></ol>' +
+      '<li>Copy the link in that box (Schoology labels it \u201ciCal\u201d) and paste it above.</li></ol>' +
       '<p class="small dim">Some schools turn calendar sharing off. Treat the link like a password.</p></details></form>' +
       '<div class="or">or</div>' +
       '<label class="drop" id="imp-drop" tabindex="0"><input type="file" id="imp-file" class="sr" tabindex="-1" multiple accept=".ics,.ical,.ifb,.pdf,text/calendar,application/pdf">' +
-      '<span class="drop-ic">' + BIG_UPLOAD + '</span><span class="drop-t">Drop a Schoology .ics or Course Assignment Sheet PDFs</span>' +
-      '<span class="drop-s">or click to choose \u00b7 PDFs are read here in your browser</span></label>' +
+      '<span class="drop-ic">' + BIG_UPLOAD + '</span><span class="drop-t">Drop a Schoology calendar file (.ics) or Course Assignment Sheet (CAS) PDFs</span>' +
+      '<span class="drop-s">or click to choose files \u00b7 PDFs are read here in your browser, never uploaded</span></label>' +
       '<div class="err" id="imp-ferr" role="alert"></div></div>';
   }
   function bindImport(root, onDone) {
     $('#imp-form', root).onsubmit = function (e) {
       e.preventDefault();
       var url = $('#imp-url', root).value.trim();
-      if (!url) { $('#imp-err', root).textContent = 'Paste your calendar link first.'; $('#imp-url', root).focus(); return; }
+      if (!url) { $('#imp-err', root).textContent = 'Paste your Schoology calendar link first.'; $('#imp-url', root).focus(); return; }
       importLink(url, $('#imp-remember', root).checked, root, onDone);
     };
     var drop = $('#imp-drop', root), file = $('#imp-file', root);
@@ -941,7 +1314,7 @@
     drop.addEventListener('drop', function (e) { importFiles(Array.prototype.slice.call(e.dataTransfer.files), root, onDone); });
   }
   function openImport() {
-    var d = dialog('Import', importPanel(false), '');
+    var d = dialog('Import tasks', importPanel(false), '');
     bindImport(d, function () { if (d.open) d.close(); });
   }
 
@@ -949,9 +1322,9 @@
     closeMenu(false);
     var two = !!CFG.preview;
     app.innerHTML = '<div class="hero' + (two ? ' two' : '') + '"><div class="hero-l">' +
-      '<h2>Your Schoology assignments, on one board.</h2>' +
-      '<p class="lead">Paste your calendar link or drop your files. Drag cards from <b>Need to be done</b> to <b>Completed</b>. Everything stays in your browser.</p>' +
-      (CFG.sampleUrl ? '<button class="btn" id="imp-sample">Try the sample board ' + ICON.arrow + '</button>' : '') +
+      '<h2>Know what to do tonight without opening Schoology.</h2>' +
+      '<p class="lead">Paste your Schoology calendar link and get tonight\u2019s plan: what to do first, how long it takes, and when you\u2019ll be done. Everything stays in your browser.</p>' +
+      (CFG.sampleUrl ? '<button class="btn" id="imp-sample">See a sample plan ' + ICON.arrow + '</button>' : '') +
       importPanel(true) + '</div>' +
       (two ? '<div class="hero-r" aria-hidden="true"><img src="' + esc(CFG.preview) + '" alt="" width="1200" height="750" decoding="async"></div>' : '') +
       '</div><footer class="foot fr"><span>' + (MODE === 'web' ? 'Free and open source. Not affiliated with Schoology or PowerSchool.' : 'Offline copy of Schoology Board.') + '</span>' +
@@ -962,7 +1335,7 @@
 
   function busy(root, on, msg) {
     var b = root && $('#imp-go', root);
-    if (b) { b.disabled = on; b.innerHTML = on ? '<span class="spinner"></span> ' + esc(msg || 'Loading\u2026') : 'Build my board'; }
+    if (b) { b.disabled = on; b.innerHTML = on ? '<span class="spinner"></span> ' + esc(msg || 'Loading\u2026') : (hasBoard() ? 'Update my board' : 'Build my board'); }
   }
   function normalizeFeedUrl(u) {
     u = u.trim().replace(/^webcals?:\/\//i, 'https://');
@@ -1002,14 +1375,26 @@
       .then(function () { busy(root, false); });
   }
   // Refresh on open: quietly re-fetch the saved link and merge like a re-import; keep the cached board on failure.
+  // Background refresh: every ~15 min while the tab is visible, and on return/focus when the last update is
+  // older than ~5 min. Failures back off (1, 2, 4 ... 60 min) and stay quiet.
+  var BG = { fails: 0, next: 0, tries: 0 };
   function refreshFeed() {
     if (MODE !== 'web' || !S.feedUrl || syncing) return;
-    syncing = true; renderSync();
+    syncing = true; BG.tries++; renderSync();
     var url = S.feedUrl;
     relayFetch(url)
-      .then(function (buf) { if (S.feedUrl !== url) return; applyIcs(ics.decodeBytes(buf), 'refresh', { quiet: true }); S.lastFetch = { at: Date.now(), ok: true }; save(); })
-      .catch(function () { S.lastFetch = { at: (S.lastFetch && S.lastFetch.at) || null, ok: false, failedAt: Date.now() }; save(); })
+      .then(function (buf) { if (S.feedUrl !== url) return; applyIcs(ics.decodeBytes(buf), 'refresh', { quiet: true }); S.lastFetch = { at: Date.now(), ok: true }; BG.fails = 0; BG.next = 0; save(); })
+      .catch(function () {
+        BG.fails++; BG.next = Date.now() + Math.min(60, Math.pow(2, BG.fails - 1)) * 60000;
+        S.lastFetch = { at: (S.lastFetch && S.lastFetch.at) || null, ok: false, failedAt: Date.now() }; save();
+      })
       .then(function () { syncing = false; renderSync(); });
+  }
+  function maybeRefresh(minAgeMs) {
+    if (MODE !== 'web' || !S || !S.feedUrl || syncing || document.hidden) return;
+    var now = Date.now(), last = S.lastFetch ? Math.max(S.lastFetch.at || 0, S.lastFetch.failedAt || 0) : 0;
+    if (now < BG.next || now - last < minAgeMs) return;
+    refreshFeed();
   }
   function ago(t) {
     var m = Math.floor((Date.now() - t) / 60000);
@@ -1024,8 +1409,9 @@
     if (MODE === 'offline') html = 'Offline copy';
     else if (S.feedUrl) {
       var f = S.lastFetch;
-      if (syncing) html = '<span class="spinner sm" aria-hidden="true"></span>Refreshing\u2026';
-      else if (f && f.ok === false) html = 'Couldn\u2019t refresh \u00b7 <a href="#" id="sb-retry">Retry</a>';
+      if (syncing) html = '<span class="spinner sm" aria-hidden="true"></span>Updating\u2026';
+      // A failed background try stays quiet while the last good update is recent.
+      else if (f && f.ok === false && (!f.at || Date.now() - f.at > 30 * 60000)) html = 'Couldn\u2019t reach Schoology' + (f.at ? ' \u00b7 updated ' + ago(f.at) : '') + ' \u00b7 <a href="#" id="sb-retry">Try again</a>';
       else if (f && f.at) html = 'Updated ' + ago(f.at);
     }
     el.innerHTML = html ? '<span class="sep" aria-hidden="true">\u00b7</span>' + html : '';
@@ -1035,6 +1421,8 @@
 
   // ---------- move to phone: the board travels in the link's #fragment, which browsers never send to a server ----------
   var MOVE_KEY = '#move=', QR_MAX = 1200;
+  // Payload key -> state map. Keys may be hashed calendar ids ('~...'; sdone keys end in '@YYYY-MM-DD').
+  var MOVE_MAPS = [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden'], ['es', 'est'], ['ty', 'ttype'], ['ac', 'actual'], ['sd', 'sdone']];
   function b64u(bytes) {
     var bin = '';
     for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
@@ -1066,12 +1454,14 @@
     // With a calendar link the phone refetches the events, so only short hashes of their UIDs travel.
     var key = function (id) { return feed && S.ics[id] ? '~' + ics.hash(id) : id; };
     var remap = function (m) { var o = {}; Object.keys(m).forEach(function (k) { o[key(k)] = m[k]; }); return o; };
+    var remapDay = function (m) { var o = {}; Object.keys(m).forEach(function (k) { var at = k.lastIndexOf('@'); o[key(k.slice(0, at)) + k.slice(at)] = m[k]; }); return o; };
     var p = prune({
       f: feed, c: S.createdAt, pc: S.proctorCol ? 1 : 0, st: remap(S.status), ov: remap(S.ov), hd: remap(S.hidden),
       cu: S.custom, ca: S.cats, or: S.order, rn: S.rename, ru: S.rules, cm: S.classMap, cas: S.cas,
+      es: remap(S.est), ty: remap(S.ttype), ac: remap(S.actual), sd: remapDay(S.sdone),
       pr: prune({ hp: S.prefs.hidePast ? 1 : 0, sp: S.prefs.showPre ? 1 : 0 })
     });
-    if (S.pending) ['st', 'ov', 'hd'].forEach(function (k) { if (S.pending[k]) p[k] = Object.assign({}, S.pending[k], p[k] || {}); });
+    if (S.pending) MOVE_MAPS.map(function (x) { return x[0]; }).forEach(function (k) { if (S.pending[k]) p[k] = Object.assign({}, S.pending[k], p[k] || {}); });
     if (!feed) { // no link to refetch from: send the events still in play, minimal fields only
       p.ev = Object.keys(S.ics).filter(function (id) {
         var it = S.ics[id];
@@ -1103,15 +1493,16 @@
     encodeMove(p).then(function (code) {
       var url = moveBase() + MOVE_KEY + code, fits = url.length <= QR_MAX;
       var what = 'progress, your own tasks and categories, class names and settings';
-      var body = '<p class="mv-intro">' + (fits ? 'Scan this with your phone\u2019s camera, or send yourself the link.' : 'This board is too big for a QR code that phones read reliably. Copy or share the link to your phone instead.') +
-        ' Your phone gets this board: ' + what + '.</p>' +
+      var other = sheetMode() ? 'the other device' : 'your phone';
+      var body = '<p class="mv-intro">' + (fits ? (sheetMode() ? 'Scan this with the other device\u2019s camera, or send yourself the link.' : 'Scan this with your phone\u2019s camera, or send yourself the link.') : 'This board is too big for a QR code that phones read reliably. Copy or share the link to ' + other + ' instead.') +
+        ' ' + (sheetMode() ? 'The other device' : 'Your phone') + ' gets this board: ' + what + '.</p>' +
         (fits ? '<div class="mv-qr"><canvas id="mv-qr" role="img" aria-label="QR code with the move link"></canvas></div>' : '') +
         '<div class="mv-link"><input type="text" id="mv-url" readonly value="' + esc(url) + '" aria-label="Move link"><button class="btn" id="mv-copy">Copy link</button>' +
-        (navigator.share ? '<button class="btn" id="mv-share">Share</button>' : '') + '</div>' +
-        '<p class="mv-note">' + ICON.lock + '<span>' + (p.f ? 'The link contains your calendar link, so treat it like a password. ' : 'The link contains your board, so only send it to yourself. ') +
+        (navigator.share ? '<button class="btn" id="mv-share">Share link</button>' : '') + '</div>' +
+        '<p class="mv-note">' + ICON.lock + '<span>' + (p.f ? 'The link includes your Schoology calendar link, so treat it like a password. ' : 'The link contains your board, so only send it to yourself. ') +
         'Everything sits after the \u201c#\u201d, which your browser never sends to any server. Nothing is uploaded.' +
-        (p.f ? '' : ' Your phone won\u2019t refresh from Schoology until you add your calendar link there.') + '</span></p>';
-      var d = dialog('Move to phone', body, '<span class="r"><button class="btn primary" data-close>Done</button></span>');
+        (p.f ? '' : ' Your phone won\u2019t update from Schoology until you paste your Schoology calendar link there.') + '</span></p>';
+      var d = dialog(sheetMode() ? 'Send this board to another device' : 'Move this board to your phone', body, '<span class="r"><button class="btn primary" data-close>Done</button></span>');
       d.classList.add('move');
       if (fits && !drawQr($('#mv-qr', d), url)) { var w = $('.mv-qr', d); if (w) w.remove(); }
       $('#mv-copy', d).onclick = function () {
@@ -1126,8 +1517,8 @@
   }
   // Turn a move payload into board state. Hashed calendar UIDs wait in S.pending until the feed arrives.
   function stateFromMove(p) {
-    var st = { status: {}, ov: {}, hidden: {}, pending: null, ics: {} };
-    [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden']].forEach(function (pair) {
+    var st = { status: {}, ov: {}, hidden: {}, est: {}, ttype: {}, actual: {}, sdone: {}, pending: null, ics: {} };
+    MOVE_MAPS.forEach(function (pair) {
       var m = p[pair[0]] || {};
       Object.keys(m).forEach(function (k) {
         if (k[0] === '~') { st.pending = st.pending || {}; (st.pending[pair[0]] = st.pending[pair[0]] || {})[k] = m[k]; }
@@ -1144,9 +1535,12 @@
     if (!S.pending) return;
     var byHash = {};
     Object.keys(S.ics).forEach(function (id) { byHash['~' + ics.hash(id)] = id; });
-    [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden']].forEach(function (pair) {
+    MOVE_MAPS.forEach(function (pair) {
       var m = S.pending[pair[0]]; if (!m) return;
-      Object.keys(m).forEach(function (h) { if (byHash[h]) { S[pair[1]][byHash[h]] = m[h]; delete m[h]; } });
+      Object.keys(m).forEach(function (h) {
+        var at = pair[0] === 'sd' ? h.lastIndexOf('@') : -1, base = at > 0 ? h.slice(0, at) : h, tail = at > 0 ? h.slice(at) : '';
+        if (byHash[base]) { S[pair[1]][byHash[base] + tail] = m[h]; delete m[h]; }
+      });
       if (!Object.keys(m).length) delete S.pending[pair[0]];
     });
     if (!Object.keys(S.pending).length) S.pending = null;
@@ -1162,7 +1556,7 @@
       S = normalizeState(base);
       if (!S.feedUrl && MODE === 'web') S.feedUrl = keepFeed; // a backup never carries the link; keep this device's
     } else {
-      ['status', 'ov', 'hidden', 'custom', 'cas', 'rename', 'classMap', 'ics', 'namingSeen'].forEach(function (k) { if (inc[k]) cur[k] = Object.assign({}, cur[k], inc[k]); });
+      ['status', 'ov', 'hidden', 'custom', 'cas', 'rename', 'classMap', 'ics', 'namingSeen', 'est', 'ttype', 'actual', 'sdone'].forEach(function (k) { if (inc[k]) cur[k] = Object.assign({}, cur[k], inc[k]); });
       (inc.cats || []).forEach(function (c) { if (cur.cats.indexOf(c) < 0) cur.cats.push(c); });
       (inc.order || []).forEach(function (c) { if (cur.order.indexOf(c) < 0) cur.order.push(c); });
       var seenR = {}; cur.rules = (cur.rules || []).concat(inc.rules || []).filter(function (r) { var j = JSON.stringify(r); if (seenR[j]) return false; seenR[j] = 1; return true; });
@@ -1200,6 +1594,8 @@
     var cu = Object.keys(inc.custom || {}).length; if (cu) parts.push(cu + ' of your own task' + (cu === 1 ? '' : 's'));
     var cas = Object.keys(inc.cas || {}).length; if (cas) parts.push(cas + ' from Course Assignment Sheets');
     var cm = Object.keys(inc.classMap || {}).length; if (cm) parts.push(cm + ' class name' + (cm === 1 ? '' : 's'));
+    var es = Object.keys(inc.est || {}).length + Object.keys(inc.ttype || {}).length + (inc.pending ? Object.keys(inc.pending.es || {}).length + Object.keys(inc.pending.ty || {}).length : 0);
+    if (es) parts.push(es + ' time estimate' + (es === 1 ? '' : 's'));
     return parts.join(' \u00b7 ');
   }
   function takeMoveFromUrl() {
@@ -1292,12 +1688,12 @@
         return '<div class="nm-row" data-k="' + esc(g.key) + '"><div class="nm-l"><b>' + esc(g.raw) + '</b><span class="dim"> \u00b7 ' + g.n + ' item' + (g.n === 1 ? '' : 's') + '</span><div class="nm-s">' + esc(g.sample) + '</div></div>' +
           '<input type="text" class="nm-in" list="nm-cats" value="' + esc(val) + '" aria-label="Class name for ' + esc(g.raw) + '"></div>';
       }).join('') + '</div>' : '') +
-      (nd.unsorted.length ? '<h4 class="nm-h">Not sorted yet <span class="dim">' + nd.unsortedTotal + '</span></h4><div class="nm-list">' + nd.unsorted.map(function (it) {
+      (nd.unsorted.length ? '<h4 class="nm-h">Not sorted yet <span class="dim">\u00b7 ' + nd.unsortedTotal + ' assignment' + (nd.unsortedTotal === 1 ? '' : 's') + '</span></h4><div class="nm-list">' + nd.unsorted.map(function (it) {
         return '<div class="nm-row" data-id="' + esc(it.id) + '"><div class="nm-l"><span class="nm-t">' + esc(it.title) + '</span><div class="nm-s">' + esc(it.d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })) + '</div></div>' +
           '<input type="text" class="nm-in" list="nm-cats" placeholder="Unsorted" aria-label="Class for ' + esc(it.title) + '"></div>';
       }).join('') + (nd.unsortedTotal > nd.unsorted.length ? '<p class="hint">Showing the first ' + nd.unsorted.length + '. You can sort the rest from each card\u2019s \u22ef menu.</p>' : '') + '</div>' : '') +
       '<datalist id="nm-cats">' + sugg.map(function (c) { return '<option value="' + esc(c) + '">'; }).join('') + '</datalist>';
-    var d = dialog('Name your classes', body, '<button class="btn ghost" id="nm-skip">' + (fromMenu ? 'Cancel' : 'Skip') + '</button><span class="r"><button class="btn primary" id="nm-done">Done</button></span>', true);
+    var d = dialog('Name your classes', body, '<button class="btn ghost" id="nm-skip">' + (fromMenu ? 'Cancel' : 'Skip for now') + '</button><span class="r"><button class="btn primary" id="nm-done">Save class names</button></span>', true);
     d.classList.add('naming');
     var lastIn = null;
     $$('.nm-in', d).forEach(function (inp) { inp.addEventListener('focus', function () { lastIn = inp; }); });
@@ -1327,7 +1723,7 @@
     resolvePending();
     S.lastImport = { at: Date.now(), source: source, count: items.length };
     save();
-    if (!$('#sb-board')) renderShell();
+    if (!$('#sb-main')) renderShell();
     renderBoard();
     if (!(opts && opts.quiet)) toast('Imported ' + items.length + ' calendar item' + (items.length === 1 ? '' : 's') + (Object.keys(before).length ? ' (' + fresh + ' new)' : '') + '.');
   }
@@ -1343,7 +1739,7 @@
     if (errEl) errEl.textContent = '';
     var icsFiles = files.filter(function (f) { return /\.(ics|ical|ifb)$/i.test(f.name) || /calendar/.test(f.type); });
     var pdfs = files.filter(function (f) { return /\.pdf$/i.test(f.name) || f.type === 'application/pdf'; });
-    if (!icsFiles.length && !pdfs.length) { if (errEl) errEl.textContent = 'Use a .ics calendar file or a CAS PDF.'; return; }
+    if (!icsFiles.length && !pdfs.length) { if (errEl) errEl.textContent = 'Use a calendar file from Schoology (it ends in .ics) or a Course Assignment Sheet PDF.'; return; }
     var chain = Promise.resolve();
     icsFiles.forEach(function (f) { chain = chain.then(function () { return readFile(f); }).then(function (b) { applyIcs(ics.decodeBytes(b), 'file'); }); });
     if (pdfs.length) {
@@ -1368,7 +1764,7 @@
         mainUrl = URL.createObjectURL(new Blob([inl.textContent], { type: 'text/javascript' }));
         workerUrl = URL.createObjectURL(new Blob([document.getElementById('sb-pdfworker').textContent], { type: 'text/javascript' }));
       } else if (MODE === 'offline') {
-        throw new Error('This offline copy has no PDF reader. Import CAS PDFs on the website.');
+        throw new Error('This offline copy can\u2019t read PDFs. Import Course Assignment Sheet PDFs on the website.');
       } else {
         mainUrl = new URL(BASE + 'vendor/pdf.min.mjs', location.href).href;
         workerUrl = new URL(BASE + 'vendor/pdf.worker.min.mjs', location.href).href;
@@ -1411,7 +1807,7 @@
         return '<section class="cas-file" data-f="' + fi + '"><header><input type="text" class="cas-course" value="' + esc(r.course) + '" aria-label="Class name" list="cas-cats">' +
           '<span class="muted small">' + esc(r.fileName) + ' \u00b7 ' + r.items.length + ' found \u00b7 <b class="cas-n">' + n + '</b> selected</span>' +
           '<label class="small muted" style="margin-left:auto">Class starts <input type="time" class="cas-time" value="' + r.classTime + '"></label>' +
-          '<button class="btn ghost small cas-all">All</button><button class="btn ghost small cas-none">None</button></header>' +
+          '<button class="btn ghost small cas-all">Select all</button><button class="btn ghost small cas-none">Select none</button></header>' +
           (r.warnings && r.warnings.length ? '<div class="err" style="padding:8px 12px">' + r.warnings.map(esc).join('<br>') + '</div>' : '') +
           '<table class="cas-table"><tbody>' + r.items.map(function (it, i) {
             var dd = toDate(it.due);
@@ -1464,7 +1860,7 @@
         });
       });
       save(); d.close();
-      if (!$('#sb-board')) renderShell();
+      if (!$('#sb-main')) renderShell();
       renderBoard();
       toast('Added ' + added + ' task' + (added === 1 ? '' : 's') + ' from ' + results.length + ' sheet' + (results.length > 1 ? 's' : '') + '.');
     };
@@ -1493,7 +1889,7 @@
       S.prefs.view = 'week'; S.prefs.weekOffset = 0; S.proctorCol = true; // the demo shows every column
       markCreated(addDays(target, -7).getTime()); // the made-up board "started" a week before the sample week
       applyIcs(text, 'sample', { shiftMs: weeks * 7 * 864e5 });
-    }).catch(function (e) { toastErr(e.message); if (btn) { btn.disabled = false; btn.innerHTML = 'Try the sample board ' + ICON.arrow; } });
+    }).catch(function (e) { toastErr(e.message); if (btn) { btn.disabled = false; btn.innerHTML = 'See a sample plan ' + ICON.arrow; } });
   }
 
   // ---------- offline download ----------
@@ -1536,6 +1932,7 @@
       themeCss().then(function (t) { files.theme = t; }),
       getSrc('ics.js', 'sb-src-ics').then(function (t) { files.ics = t; }),
       getSrc('cas.js', 'sb-src-cas').then(function (t) { files.cas = t; }),
+      getSrc('plan.js', 'sb-src-plan').then(function (t) { files.plan = t; }),
       getSrc('board.js', 'sb-src-board').then(function (t) { files.board = t; }),
       getSrc('vendor/qrcode.js', 'sb-src-qr').then(function (t) { files.qr = t; }, function () { }),
       getSrc('vendor/pdf.min.mjs', 'sb-pdfjs').then(function (t) { files.pdf = t; }, function () { }),
@@ -1561,6 +1958,7 @@
         (files.qr ? '<script id="sb-src-qr">' + scriptSafe(files.qr) + '</script>\n' : '') +
         '<script id="sb-src-ics">' + scriptSafe(files.ics) + '</script>\n' +
         '<script id="sb-src-cas">' + scriptSafe(files.cas) + '</script>\n' +
+        '<script id="sb-src-plan">' + scriptSafe(files.plan) + '</script>\n' +
         '<script id="sb-src-board">' + scriptSafe(files.board) + '</script>\n</body></html>\n';
     });
   }
@@ -1598,11 +1996,49 @@
     render();
     var moving = MODE === 'web' && location.hash.indexOf(MOVE_KEY) === 0;
     if (moving) takeMoveFromUrl(); else refreshFeed();
+    setInterval(function () { maybeRefresh(15 * 60000); }, 60000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { renderSync(); maybeRefresh(5 * 60000); } });
+    window.addEventListener('focus', function () { maybeRefresh(5 * 60000); });
+    setInterval(tickTimer, 1000);
+    registerSw();
     window.addEventListener('hashchange', function () { if (MODE === 'web') takeMoveFromUrl(); });
     setInterval(renderSync, 30000);
-    setInterval(function () { if (!drag && !document.querySelector('dialog[open]') && $('#sb-board') && !(document.activeElement && document.activeElement.classList.contains('card'))) renderBoard(); }, 60000);
+    // Keep times fresh (the plan follows the clock) unless the student is in the middle of something.
+    setInterval(function () {
+      var ae = document.activeElement;
+      if (!drag && !document.querySelector('dialog[open]') && !openMenu && $('#sb-main') && !(ae && (ae.classList.contains('card') || isTyping({ target: ae })))) renderBoard();
+    }, 60000);
     window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; delete S._needsProctorCheck; render(); } });
   }
-  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, version: '1.4.0' };
+  // ---------- installable app: the service worker keeps the app shell for offline use (never your calendar data) ----------
+  function registerSw() {
+    if (MODE !== 'web' || !('serviceWorker' in navigator) || !(location.protocol === 'https:' || location.hostname === 'localhost')) return;
+    var reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () { if (updateAsked && !reloading) { reloading = true; location.reload(); } });
+    navigator.serviceWorker.register('/sw.js').then(function (reg) {
+      function offer(w) {
+        if (!w || !navigator.serviceWorker.controller) return; // first install: nothing to update
+        showUpdate(function () { updateAsked = true; w.postMessage({ type: 'SKIP_WAITING' }); });
+      }
+      if (reg.waiting) offer(reg.waiting);
+      reg.addEventListener('updatefound', function () {
+        var w = reg.installing; if (!w) return;
+        w.addEventListener('statechange', function () { if (w.state === 'installed') offer(w); });
+      });
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) reg.update().catch(function () { }); });
+    }).catch(function () { });
+  }
+  var updateAsked = false;
+  function showUpdate(apply) {
+    if ($('#sb-update')) return;
+    var bar = document.createElement('div');
+    bar.id = 'sb-update'; bar.className = 'update-bar'; bar.setAttribute('role', 'status');
+    bar.innerHTML = '<span>Update ready</span><button type="button" class="btn small primary">Reload to update</button><button type="button" class="btn small ghost" aria-label="Later: update next time you open the app">Later</button>';
+    bar.querySelector('.primary').onclick = apply;
+    bar.querySelector('.ghost').onclick = function () { bar.remove(); };
+    document.body.appendChild(bar);
+  }
+  window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, version: '1.5.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

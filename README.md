@@ -1,34 +1,31 @@
 # Schoology Board
 
-**Your Schoology assignments on one drag-and-drop board.** Paste your Schoology calendar link (or drop an `.ics` file and your Course Assignment Sheet PDFs) and get a kanban board: **Need to be done → Started → Completed** (plus an optional **Needs to be proctored** column). It works offline, and nothing is stored on a server.
+**Know what to do tonight without opening Schoology.** Paste your Schoology calendar link and Schoology Board opens on **Now**: the one thing to do right now, tonight's plan hour by hour, and what's coming up. Behind it are the **Board** (every assignment by status) and **Week ahead**. It works offline, installs like an app, and nothing is stored on a server.
 
-**Live: https://schoology-board.vercel.app** · [Try the sample board](https://schoology-board.vercel.app) (no sign-in, made-up data)
+**Live: https://schoology-board.vercel.app** · [See a sample plan](https://schoology-board.vercel.app) (no sign-in, made-up data)
 
 ![Demo: first run, sample board, drag, mark done, Course Assignment Sheet preview](docs/demo.gif)
 
 ## What it does
 
-- **Setup in under a minute.** Paste your calendar link, or drop files. Not ready yet? Use **Try the sample board** (made-up classes).
-- **Three columns, four if you need them.** Turn on *Needs to be proctored* in **Filter**. Boards that already use it keep it. Turning it off moves those cards back to *Need to be done* without losing anything; turn it on again and they return. Drag cards with a mouse, or long-press and drag on a phone. Double-click a card to mark it done. Every card's **⋯** menu has **Move to…**, Mark done, Edit, Open in Schoology and Delete. On a phone it opens as a bottom sheet.
-- **Opens on this week.** Views: **Due today** (only things due on today's date), **Week** (Monday to Sunday, use ‹ › to step) and **All**. From **Friday 6 PM through Sunday**, Week opens on the coming week, labelled *Next week · Oct 26–Nov 1*. **Filter** holds *Hide past* and the column settings. Search with `/`.
-- **Always fresh.** If you saved your calendar link, the board re-fetches it every time you open it and merges the changes like a re-import (your progress stays). The header says *Updated 3m ago*. If Schoology doesn't answer you get a quiet *Couldn't refresh · Retry* and your saved board stays put.
-- **Grouped the way you think.** To-do columns are grouped by class, then by day. Completed is one flat list. Every card links to its Schoology page. Anything due within 36 hours, or overdue, gets a red edge.
-- **Classes, even though Schoology doesn't send them.** The feed has no course field, so the board works it out:
-  1. your own choices;
-  2. your Course Assignment Sheets (the class name on the sheet wins);
-  3. the title's prefix ("ALG2 Homework 10", "Apologia Chem - Module 03 Quiz", "Spanish I Quiz 2" / "Spanish 1 Activities…" are the same class);
-  4. words it learned from your sheets.
-
-  After an import, a quick **Name your classes** step lists each detected prefix group ("ALG2 · 12 items") with an editable name, plus anything still Unsorted. Your names are remembered and used on every refresh, re-import and backup. Reopen it any time from **⋯ → Name your classes**.
-
-  School-event audience tags like "(Grades 7-12)" or "FT Students Only" are never treated as classes.
-- **A clean start.** Imported work due **before the day you created the board** counts as already handled. It's hidden, not shown as overdue, and re-imports never bring it back. Work due later on the creation day still shows. A quiet note under the class chips says how many are hidden (*12 earlier items hidden · Show*); **Show** (or **Filter → Show items from before this board was created**) brings them back.
-- **Course Assignment Sheets (CAS).** Drop CAS PDFs. They're read **in your browser** with pdf.js and become dated cards under that class: readings, homework and submissions. Learning objectives are skipped. A preview lets you check, edit or untick items first. Items already on your Schoology calendar are flagged *Already on calendar* and skipped.
-- **Your own stuff.** Add tasks (title, category, due date/time, link, note) and your own categories. You can rename, reorder or delete them; everything survives re-imports.
-- **Save a backup** (in the **⋯** menu). You get one self-contained `.html` file with your board baked in, including your class names and column settings. It runs the exact same code as the website: it works with no internet, saves progress in that browser, and can re-import an `.ics` or CAS PDFs. It says *Offline copy* and never refreshes on its own, because it doesn't contain your calendar link.
-- **Move to phone** (in the **⋯** menu). Shows a QR code and a link that carry your board to another device: progress, your own tasks and categories, class names, column settings, the creation date and your calendar link. There's no server in between: everything is compressed into the part of the link after `#`, which browsers never send to a server. With a calendar link it sends only short fingerprints of the assignments, and the phone fetches the assignments itself. Without one it sends the minimum event data. If the link gets too long for a QR code that phones read reliably, you get the link only, with Copy and Share buttons. The phone asks first (*Replace this board?*, or *Merge*), then removes the fragment from its address bar. **The link contains your calendar link, so treat it like a password.**
-- **Import a backup** (in the **⋯** menu, on the website and inside a backup file). Pick a *Save a backup* `.html` file or a `.json` export, check what's in it, then **Replace** or **Merge**.
-- **Keyboard-friendly.** `N` add · `I` import · `/` search · `T`/`W`/`A` views · `[` `]` weeks · `H` hide past · arrows move focus · `1`–`4` move a card to a column · `M` card menu · `X` done · `E` edit · `?` all shortcuts.
+- **Now (the home screen).** On top: the one thing to do right now, with its due time, its Schoology link, **Start timer** and **Mark done**. Below it, **Tonight's plan**: time blocks from the start time you pick (it defaults to now, rounded up to 5 minutes, or 4:00 PM), ordered by due date and then biggest first, with a 10-minute break after about 50 minutes of work and a "done by" time. If tonight won't fit before 11 PM, it says so and lists what spills over. Then **After that**: the next few days, quizzes and tests, and anything to start early.
+- **Time estimates.** Every task starts with a typical time for its kind (reading 30 min, homework 45, writing 60, lab 60; quizzes and tests get 60–90 min of study). Tap the estimate to change it, or tell the board what kind of work it is. Plans show *est.* (typical), *learned* (your average) or *yours* (you set it).
+- **Timer.** Start and stop a timer on any task; the minutes come off tonight's plan. After you time two or more of the same kind of work in a class, the board uses your own average for that class.
+- **Quizzes and tests.** Anything called a quiz or test (or marked as one) gets study sessions on the nights before it: 2 for a quiz, 3 for a test, 4 for a midterm or final.
+- **Start early.** Work of 2 hours or more that's due in 3 to 5 days gets a **Start early** flag, and a 45-minute first chunk goes into tonight's plan.
+- **Week ahead.** Quizzes and tests coming up, the busiest day by estimated time, and what to start early. **Save as image** makes a picture of it right in your browser.
+- **The Board.** **Need to be done → Started → Completed** (plus an optional **Needs to be proctored** column), grouped by class and day. Drag cards (long-press on a phone), double-click to mark done, or use each card's **⋯** menu. Views: **Due today**, **Week** (from Friday 6 PM it opens on next week) and **All**.
+- **Always up to date.** With a saved link the board updates when you open it, every 15 minutes while it's open, and when you come back to it after a few minutes. If Schoology doesn't answer, it keeps your saved board and quietly tries again later.
+- **Install it.** On a Chromebook or Android phone use **Install app** in Chrome; on an iPhone use **Share → Add to Home Screen**. After the first visit it opens without internet.
+- **Classes, even though Schoology doesn't send them.** After an import, **Name your classes** lists each group of assignments that start the same way ("ALG2 · 12 items") so you can name it once. Your Course Assignment Sheets (CAS) and your own edits always win.
+- **Course Assignment Sheets.** Drop Course Assignment Sheet (CAS) PDFs. They're read in your browser and become dated tasks, including readings, which show up in tonight's plan with a reading estimate. Anything already on your Schoology calendar is skipped.
+- **A clean start.** Work that was due before the day you made the board counts as already handled. A quiet note says how many are hidden, with **Show**.
+- **Your own tasks and categories.** Add, rename, reorder or delete them; they survive every update.
+- **Save a backup file** (in **⋯**). One `.html` file with your board, plan, estimates and theme inside. It works without internet. It never contains your calendar link.
+- **Move this board to your phone** (in **⋯**). A QR code and a link carry your board, including estimates and timed minutes. Everything rides after the `#` in the link, which browsers never send to a server. The link includes your Schoology calendar link, so treat it like a password.
+- **Import a backup file** (in **⋯**). Pick a backup `.html` or `.json`, then **Replace** or **Merge**.
+- **Keyboard-friendly.** `N` add · `I` import · `/` search · `T`/`W`/`A` board views · `[` `]` weeks · `M` card menu · `X` done · `?` all shortcuts.
+- **No notifications (yet).** See the note at the end.
 
 | Board | First run |
 |---|---|
@@ -51,17 +48,18 @@ Verified on a real student account:
 1. In Schoology, open **Calendar**.
 2. At the bottom of the month grid, click **Export**.
 3. Choose **Share Calendar**.
-4. Copy the **iCal link** and paste it into Schoology Board. A `webcal://` link works too.
+4. Copy the link in that box (Schoology labels it "iCal") and paste it into Schoology Board.
 
 Some schools turn calendar sharing off; if you don't see **Export** or **Share Calendar**, that's probably why. Treat the link like a password: anyone who has it can read your calendar.
 
-**No link?** Drop an `.ics` file instead. Any calendar app that subscribed to your Schoology calendar can usually export one.
+**No link?** Drop a calendar file (it ends in `.ics`) instead. Any calendar app that subscribed to your Schoology calendar can usually export one.
 
 ## Privacy
 
 - **Nothing is stored on a server.** Your board, progress, custom tasks and categories live in your browser's `localStorage` (or inside your backup file). The saved calendar link stays in this browser's `localStorage` and is only ever sent, in a POST body, to the relay.
 - **The calendar proxy only relays.** Browsers can't read Schoology's feed directly (it has no CORS headers), so a tiny serverless route ([`app/api/feed/route.js`](app/api/feed/route.js)) fetches it and streams the bytes back. The link is sent in a POST body, so it never appears in a URL or request log. The route doesn't log, cache or store the link or the calendar. It refuses private network addresses and anything that isn't a calendar.
-- **CAS PDFs never leave your device.** They're parsed in the browser.
+- **Course Assignment Sheet PDFs never leave your device.** They're read in the browser.
+- **The installable app caches only the app itself.** Its service worker keeps the page, styles and scripts for offline use. It never caches calendar responses or anything with your link in it; your assignments live only in `localStorage`.
 - The calendar link is kept only if you tick *Remember the link on this device*. It is **never** put into a backup file.
 - **Move to phone links never touch a server.** The board rides in the URL fragment (`#move=…`), which browsers don't include in requests. The receiving page strips it from the address bar straight away. The QR code is drawn in your browser ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), MIT); no QR service is called.
 - No analytics, no accounts, no cookies.
@@ -85,9 +83,10 @@ How we checked: Schoology's REST API docs (events vs. assignment due events, tit
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # unit tests: iCal, CAS, and a 517-item synthetic school year
+npm test             # unit tests: calendar parsing, CAS, the planner, theme lint, a 517-item synthetic school year
 npm run build && npm start
 BASE_URL=http://localhost:3000 npm run test:e2e   # headless Chromium end-to-end (frozen clock)
+BASE_URL=http://localhost:3000 node scripts/perf-now.mjs      # time-to-content on a throttled phone
 BASE_URL=http://localhost:3000 node scripts/record-demo.mjs   # re-record docs/demo.gif (needs ffmpeg)
 ```
 
@@ -97,10 +96,16 @@ Deploy to Vercel as a standard Next.js project; no environment variables are nee
 
 - `public/board/theme/default.css`: every color, font, radius, shadow, texture and motion value as CSS variables. `board.css` only references them. See [THEMING.md](THEMING.md) for adding a theme.
 - `public/board/board.js`, `board.css`: the whole board UI, framework-free. The website (`public/index.html`) and the backup file run **the same files**. The backup inlines them along with pdf.js.
+- `public/board/plan.js`: the planner (estimates, learning, tonight's time blocks, study nights, start-early, week ahead). Pure functions, unit-tested with frozen clocks.
+- `scripts/build-pwa.mjs`: writes the app manifest and service worker at build time (colors from the theme).
 - `public/board/ics.js`: the iCal parser (no dependencies; runs in the browser and Node).
 - `public/board/cas.js`: the CAS parser. It works on pdf.js text positions: it finds the *Class Dates* and *Assignments* columns, assigns each task to its class day (including rows that run onto the next page), and pulls out explicit due dates like "Due Saturday 09/12/26 at 12:00 pm ET" or "by midnight the evening prior to class".
 - `app/api/feed/route.js`: the calendar relay (Next.js route handler).
 - Tests: `test/ics.test.mjs`, `test/cas.test.mjs`, `test/year.test.mjs` and `test/e2e.mjs`. Fixtures are all made up: `public/sample/schoology-sample.ics`, `test/fixtures/messy.ics`, `test/fixtures/sample-cas.pdf`, and `test/fixtures/year.ics` (Aug–Jun, generated by `make-year-feed.mjs` together with an independently computed `year-expected.json`). The end-to-end run checks the exact Due today / This week / per-column / per-class counts for that year. To check the CAS parser against your own sheets without committing them: `CAS_SAMPLES_DIR=~/Downloads npm test`.
+
+## Why no notifications
+
+Reminders would need push notifications. Web push needs a server that stores each device's push subscription and a scheduler that wakes up to send them, which conflicts with the rule that nothing about you is stored on a server. A phone can't reliably schedule its own reminders from a web page either. Possible later options: let the installed app show a reminder only while it's open, or offer an opt-in calendar file of study sessions that your phone's own calendar app reminds you about.
 
 ## License
 

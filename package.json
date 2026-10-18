@@ -1,19 +1,20 @@
 {
   "name": "schoology-board",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Turn your Schoology calendar (and Course Assignment Sheet PDFs) into a kanban board. Works offline.",
   "license": "MIT",
   "scripts": {
     "vendor": "node scripts/copy-pdfjs.mjs",
-    "predev": "npm run vendor",
+    "predev": "npm run vendor && npm run pwa",
     "dev": "next dev",
-    "prebuild": "npm run vendor",
+    "prebuild": "npm run vendor && npm run pwa",
     "build": "next build",
     "start": "next start",
     "test": "TZ=America/New_York node --test test/*.test.mjs",
     "test:e2e": "TZ=America/New_York node test/e2e.mjs",
-    "lint:theme": "node --test test/theme-lint.test.mjs"
+    "lint:theme": "node --test test/theme-lint.test.mjs",
+    "pwa": "node scripts/build-pwa.mjs"
   },
   "dependencies": {
     "next": "^16.4.2",

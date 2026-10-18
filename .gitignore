@@ -7,3 +7,5 @@ scratch/
 test-results/
 *.log
 .env*
+public/sw.js
+public/manifest.webmanifest

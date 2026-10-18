@@ -52,7 +52,10 @@ small.
 | Depth | `--ring`, `--ring-inset`, `--card-shadow`, `--col-shadow`, `--shadow-drag/-menu/-toast/-dialog/-hero`, `--hero-tilt` |
 | Texture | `--bg-image`, `--bg-image-size`, `--bg-image-attachment`, `--col-bg-image` (gradients or `url()`) |
 | Motion | `--dur-fast`, `--dur-slow`, `--anim-menu/-sheet/-scrim/-toast/-spin`, `--anim-card-landed` (a card just moved), `--anim-card-done` (a card just marked done). `prefers-reduced-motion` still switches all of it off |
-| Slots | `content` values (`none`, `"🎉"`, `url(…)`): `--slot-logo` (before the title), `--slot-empty` (empty states), `--slot-col-empty` (empty column), `--slot-done` (after "Completed") |
+| Now / Week ahead | `--tabbar-bg`, `--tab-active`, `--tab-idle`, `--tab-indicator`, `--hero-card-bg/-border/-shadow`, `--radius-hero`, `--block-bg/-border/-running-border/-break-color/-rail`, `--flag-test-bg/-color`, `--flag-early-bg/-color`, `--flag-late-color`, `--flag-run-color`, `--bar-track/-fill/-heavy`, `--spill-border/-bg` |
+| Slots | `content` values (`none`, `"🎉"`, `url(…)`): `--slot-logo` (before the title), `--slot-empty` (empty states), `--slot-col-empty` (empty column), `--slot-done` (after "Completed"), `--slot-now` (before "Do this now"), `--slot-all-set` (before "You're all set") |
 
 For anything the variables can't express (a sticker tilt on cards, a margin line), add rules to the
 theme file under `:root[data-theme="<name>"] …`; keep them visual-only so layout stays shared.
+
+The app icons and the install manifest take their colors from the theme too: `node scripts/make-icons.mjs` re-renders the icons, and `scripts/build-pwa.mjs` (run by `npm run build`) writes the manifest.

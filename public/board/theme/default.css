@@ -108,5 +108,33 @@
   --slot-empty:none;              /* above empty-state messages */
   --slot-col-empty:none;          /* inside an empty column */
   --slot-done:none;               /* after the Completed heading */
+  --slot-now:none;                /* before "Do this now" on the Now screen */
+  --slot-all-set:none;            /* before "You're all set for tonight" */
+
+  /* ---- Now / Tonight / Week ahead ---- */
+  --tabbar-bg:var(--colnav-bg);
+  --tab-active:var(--text-1);
+  --tab-idle:var(--text-3);
+  --tab-indicator:var(--accent);
+  --hero-card-bg:var(--surface-1);
+  --hero-card-border:var(--border-2);
+  --hero-card-shadow:none;
+  --radius-hero:var(--r-2xl);
+  --block-bg:var(--surface-1);
+  --block-border:var(--border-1);
+  --block-running-border:var(--accent);
+  --block-break-color:var(--text-3);
+  --block-rail:var(--border-2);
+  --flag-test-bg:var(--surface-3);
+  --flag-test-color:var(--text-1);
+  --flag-early-bg:var(--accent-soft);
+  --flag-early-color:var(--accent-hover);
+  --flag-late-color:var(--accent-hover);
+  --flag-run-color:var(--accent-hover);
+  --bar-track:var(--surface-2);
+  --bar-fill:var(--border-3);
+  --bar-heavy:var(--accent);
+  --spill-border:var(--accent);
+  --spill-bg:var(--accent-softer);
 }
 @media (pointer:coarse){:root{--h:40px}}

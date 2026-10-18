@@ -9,6 +9,13 @@ const nextConfig = {
   },
   async headers() {
     return [{
+      // The service worker must be re-checked on every visit so updates arrive.
+      source: '/sw.js',
+      headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+    }, {
+      source: '/manifest.webmanifest',
+      headers: [{ key: 'Content-Type', value: 'application/manifest+json' }],
+    }, {
       source: '/(.*)',
       headers: [
         { key: 'Referrer-Policy', value: 'no-referrer' },
