@@ -381,8 +381,9 @@ dialog.move{max-width:480px}
 @media (pointer:coarse){.card{padding-left:50px}.card .chk{width:32px;height:32px;left:8px;top:8px}}
 
 /* Theme picker: each preview carries its own theme's tokens (.thp[data-theme]) */
-dialog.themes{max-width:720px}
-.thgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+dialog.themes{max-width:860px}
+.thgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.thgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .thp{display:flex;flex-direction:column;gap:6px;text-align:left;padding:10px;border-radius:var(--r);border:var(--bw) solid var(--bc);background-color:var(--bgc);background-image:var(--bgi);background-size:var(--bgs);color:var(--ink);font-family:var(--fb);cursor:pointer}
 .thp[aria-checked=true]{outline:3px solid var(--ink);outline-offset:2px}
 .thp-s{display:flex;flex-direction:column;gap:8px}
@@ -482,6 +483,8 @@ dialog.reset .dlg-f .btn.danger{background:var(--late);border-color:var(--late);
 @media (max-width:900px){
  #app{padding-bottom:calc(var(--botnav-h) + env(safe-area-inset-bottom) + 12px)}
  .botnav{box-sizing:border-box;height:calc(var(--botnav-h) + env(safe-area-inset-bottom));align-items:flex-start}
+ .botnav a{position:relative}
+ .botnav a .soon{position:absolute;top:0;left:calc(50% + 8px);margin:0;line-height:1.3}
  main.tnm{padding-bottom:16px}
  .board{padding-bottom:16px}
  /* board header on a phone: pill + progress, then view + week, then search/filter + class chips, then the column tabs */

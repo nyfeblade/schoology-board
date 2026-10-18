@@ -951,14 +951,14 @@ await octx.close();
   ok('the freshness pill is on the Board too', await pg.locator('.bhead .fpill').isVisible());
   // themes
   await pg.click('#sb-theme'); await pg.waitForSelector('dialog .thgrid');
-  ok('theme picker: six themes with live previews, Sticker Book selected by default', await pg.locator('dialog .thp').count() === 6 && await pg.evaluate(() => document.documentElement.dataset.theme) === 'sticker');
+  ok('theme picker: seven themes with live previews, Sticker Book selected by default', await pg.locator('dialog .thp').count() === 7 && await pg.evaluate(() => document.documentElement.dataset.theme) === 'sticker');
   await pg.locator('dialog .thp[data-theme=arcade]').click(); await pg.waitForTimeout(100);
   ok('choosing a theme applies it at once and saves it on this device', await pg.evaluate(() => document.documentElement.dataset.theme) === 'arcade' && /"t":"arcade"/.test(await pg.evaluate(() => localStorage.getItem('sb-theme'))));
   await pg.keyboard.press('Escape');
   await pg.reload(); const early = await pg.evaluate(() => document.documentElement.dataset.theme);
   ok('the theme is set before first paint on reload (no flash)', early === 'arcade');
-  for (const t of ['sticker', 'arcade', 'notebook', 'varsity', 'riso', 'cafe']) {
-    await pg.evaluate((t) => { window.SchoologyBoard.theme(t, t === 'notebook' ? 'dark' : ''); }, t);
+  for (const t of ['sticker', 'arcade', 'notebook', 'varsity', 'riso', 'cafe', 'minimal', 'minimal-dark']) {
+    await pg.evaluate((t) => { window.SchoologyBoard.theme(t.replace('-dark', ''), t === 'notebook' || t === 'minimal-dark' ? 'dark' : ''); }, t);
     await pg.evaluate(() => document.querySelector('#sb-tabs [data-tab=now]').click()); await pg.waitForTimeout(150);
     const bad = await noCyan(pg);
     ok(`theme ${t}${t === 'notebook' ? ' (dark)' : ''}: no cyan/teal/blue-green or orange on Tonight`, bad.length === 0, bad.slice(0, 3).join(' ; '));
@@ -1110,7 +1110,7 @@ await octx.close();
   const order1 = Object.entries(st.colorAuto.sticker).sort((a, b) => a[1] - b[1]).map((x) => x[0]);
   ok('colors go out in order of first appearance (earliest due first): swatches 1, 2, 3 …', JSON.stringify(Object.values(st.colorAuto.sticker).sort()) === JSON.stringify([1, 2, 3, 4, 5].slice(0, order1.length)), JSON.stringify(st.colorAuto.sticker));
   const rendered = await pg.evaluate(() => [...new Set([...document.querySelectorAll('#sb-board .card')].map((e) => getComputedStyle(e).getPropertyValue('--c').trim() || getComputedStyle(e.querySelector('.tag')).backgroundColor))]);
-  for (const t of ['arcade', 'notebook', 'varsity', 'riso', 'cafe']) {
+  for (const t of ['arcade', 'notebook', 'varsity', 'riso', 'cafe', 'minimal']) {
     await pg.evaluate((t) => window.SchoologyBoard.theme(t, ''), t); await pg.waitForTimeout(120);
     const cc = await classColors(), sl = Object.values(cc).map((v) => v[0]);
     const fills = await pg.evaluate(() => { const o = {}; document.querySelectorAll('#sb-board .card').forEach((e) => { const t = e.querySelector('.tag'); o[t.textContent.trim()] = getComputedStyle(e).getPropertyValue('--c').trim(); }); return o; });
@@ -1203,6 +1203,69 @@ await octx.close();
   ok('"Reset this board" asks first, lists what gets erased and offers "Save a backup first"', /check-offs/.test(rt) && /tasks/.test(rt) && /can’t be undone/.test(rt) && await pg.locator('dialog.reset #rs-backup').count() === 1, rt.slice(0, 200));
   await pg.locator('dialog.reset [data-close]').last().click(); await pg.waitForTimeout(150);
   ok('Cancel keeps the board', Object.keys((await state(pg)).ics).length > 5);
+  await c.close();
+}
+// ---------- 19. G · Minimal (light + dark) ----------
+{
+  const MNOW = new Date('2026-10-19T17:02:00-04:00');
+  const c = await newCtx({ now: MNOW }); const pg = await c.newPage(); watch(pg, 'minimal');
+  await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow'); await pg.waitForTimeout(300);
+  // the picker: 7 themes in a 4-column grid, Minimal has Light/Dark
+  await pg.click('#sb-theme'); await pg.waitForSelector('dialog.themes');
+  const grid = await pg.evaluate(() => ({ n: document.querySelectorAll('dialog.themes .thp').length, cols: getComputedStyle(document.querySelector('.thgrid')).gridTemplateColumns.split(' ').length }));
+  ok('theme picker: 7 themes in a 4-column grid', grid.n === 7 && grid.cols === 4, JSON.stringify(grid));
+  await pg.click('dialog.themes .thp[data-theme="minimal"]'); await pg.waitForTimeout(200);
+  ok('picking Minimal offers Light / Dark', await pg.locator('#th-mode').isVisible() && /Minimal/.test(await pg.locator('#th-mode-n').innerText()));
+  await pg.screenshot({ path: join(SHOTS, 'picker-grid.png') });
+  await pg.click('dialog.themes [data-mode="dark"]'); await pg.waitForTimeout(200);
+  ok('Minimal dark: #0A0A0A page, data-mode="dark"', await pg.evaluate(() => document.documentElement.dataset.mode === 'dark' && getComputedStyle(document.body).backgroundColor === 'rgb(10, 10, 10)'));
+  await pg.click('dialog.themes [data-mode=""]'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
+  const look = await pg.evaluate(async () => { await document.fonts.ready; const tm = document.querySelector('#tnList .tm, #tnList .due') || document.body;
+    return { bg: getComputedStyle(document.body).backgroundColor, geist: document.fonts.check('14px Geist'), mono: document.fonts.check('12px GeistMono'), rowBorder: getComputedStyle(document.querySelector('#tnList .trow')).borderTopWidth, rowBg: getComputedStyle(document.querySelector('#tnList .trow')).backgroundColor,
+      dot: (() => { const e = document.querySelector('#tnList .rcls'); const b = getComputedStyle(e, '::before'); return b.width + ' ' + b.height; })(), theme: document.documentElement.dataset.theme }; });
+  ok('Minimal light: white page, Geist + Geist Mono loaded, rows split by hairlines (not boxed), class = 6px dot', look.theme === 'minimal' && look.bg === 'rgb(255, 255, 255)' && look.geist && look.mono && look.rowBorder === '0px' && /rgba\(0, 0, 0, 0\)|transparent/.test(look.rowBg) && look.dot === '6px 6px', JSON.stringify(look));
+  ok('Minimal: one "Link Schoology →" button when not linked', await pg.locator('#tn-main .fpill.linkb').count() === 1);
+  // board: flat 1px cards, radius 8, 2px class rule, mono times
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(); S.prefs.tab = 'board'; window.SchoologyBoard.render(); }); await pg.waitForSelector('#sb-board .card');
+  const card = await pg.evaluate(() => { const e = document.querySelector('.col[data-col="todo"] .card'), cs = getComputedStyle(e), b = getComputedStyle(e, '::before');
+    return { bw: cs.borderTopWidth, r: cs.borderTopLeftRadius, sh: cs.boxShadow, rule: b.width, ruleBg: b.backgroundColor, tm: getComputedStyle(e.querySelector('.tm')).fontFamily, tagBg: getComputedStyle(e.querySelector('.tag')).backgroundColor }; });
+  ok('Minimal board: flat card (1px border, radius 8, no shadow), 2px class-color rule, Geist Mono times, dot tags', card.bw === '1px' && card.r === '8px' && card.sh === 'none' && card.rule === '2px' && !/rgba\(0, 0, 0, 0\)/.test(card.ruleBg) && /GeistMono/.test(card.tm) && /rgba\(0, 0, 0, 0\)/.test(card.tagBg), JSON.stringify(card));
+  const cy = await noCyan(pg); ok('Minimal: no cyan/teal anywhere', cy.length === 0, cy.slice(0, 2).join('; '));
+  // Rose is never handed out automatically, even with more classes than swatches
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(), n = Date.now(); ['Art', 'Music', 'Health', 'Latin', 'Drama', 'Debate'].forEach((c, i) => { S.custom['m' + i] = { id: 'm' + i, title: c + ' homework', course: c, due: n + (3 + i) * 864e5, allDay: false, source: 'custom' }; }); window.SchoologyBoard.render(); });
+  await pg.waitForTimeout(200);
+  const auto = await pg.evaluate(() => window.SchoologyBoard.state().colorAuto.minimal);
+  ok('Minimal: Rose (swatch 8) is never auto-assigned; 11 classes share swatches 1–7', Object.keys(auto).length >= 11 && Object.values(auto).every((n) => n >= 1 && n <= 7), JSON.stringify(auto));
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(); for (let i = 0; i < 6; i++) delete S.custom['m' + i]; S.prefs.tab = 'now'; window.SchoologyBoard.render(); }); await pg.waitForSelector('#tnList .trow');
+  // completion: ink fill + strike, row gone by ~600 ms, Undo toast, no overlay; last one: "<Day> clear." + "Nothing left tonight."
+  const n0 = await pg.locator('#tnList .trow:not(.tdone)').count();
+  const t0 = Date.now(); await pg.locator('#tnList .trow:not(.tdone) .bigchk').first().click();
+  await pg.waitForTimeout(250); const fill = await pg.evaluate(() => { const b = document.querySelector('#tnList .trow.is-done .bigchk'); return b ? getComputedStyle(b).backgroundColor : null; });
+  await pg.waitForFunction((n) => document.querySelectorAll('#tnList .trow:not(.tdone)').length < n, n0, { timeout: 3000 }); const gone = Date.now() - t0;
+  ok('Minimal check-off: ink-filled box, the row is gone in about 600 ms, Undo offered, no overlay', fill === 'rgb(17, 17, 17)' && gone < 1100 && await pg.locator('#cel').count() === 0 && await pg.locator('.toast', { hasText: 'Undo' }).count() >= 1, `fill ${fill}, gone after ${gone} ms (incl. test overhead)`);
+  let k = 0, sawCel = false; while (await pg.locator('#tnList .trow:not(.tdone) .bigchk').count() && k++ < 8) { await pg.locator('#tnList .trow:not(.tdone) .bigchk').first().click(); await pg.waitForTimeout(150); sawCel = sawCel || await pg.locator('#cel').count() > 0; await pg.waitForTimeout(800); }
+  const day = MNOW.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' });
+  ok(`Minimal: clearing the night says "${day} clear." with Undo; no celebration overlay`, !sawCel && await pg.locator('.toast', { hasText: day + ' clear.' }).count() >= 1);
+  ok('Minimal all-done verdict: "Nothing left tonight."', /Nothing left tonight\./.test(await pg.locator('#tn-main .verdict').innerText()));
+  // backup keeps Minimal with its fonts inlined
+  const [dl] = await Promise.all([pg.waitForEvent('download'), more(pg, '#sb-backup')]);
+  const p2 = join(SHOTS, 'minimal-offline.html'); await dl.saveAs(p2); const html = readFileSync(p2, 'utf8');
+  ok('the backup file keeps Minimal with Geist + Geist Mono inlined (no font requests)', /data-theme="minimal"|data-theme=\\"minimal\\"/.test(html) && /GeistMono/.test(html) && (html.match(/data:font\/woff2|data:application\/octet-stream|data:font/g) || []).length >= 2 && !/url\(fonts\//.test(html));
+  await c.close();
+}
+// Minimal states: sync error has no red background; stale dot is yellow
+{
+  const c = await newCtx({ now: new Date('2026-10-19T17:02:00-04:00') }); const pg = await c.newPage(); watch(pg, 'qa');
+  await c.route('**/api/feed', (r) => r.fulfill({ status: 502, contentType: 'application/json', body: '{"error":"x"}' }));
+  await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+  await pg.evaluate(() => { window.SchoologyBoard.theme('minimal', ''); const S = window.SchoologyBoard.state(); S.feedUrl = 'https://feed.example.invalid/calendar/sample.ics'; S.lastFetch = { at: Date.now() - 40 * 60e3, ok: true }; localStorage.setItem('schoology-board:v1', JSON.stringify(S)); });
+  await pg.reload(); await pg.waitForSelector('.banner.ferr', { timeout: 10000 });
+  const ban = await pg.evaluate(() => { const cs = getComputedStyle(document.querySelector('.banner.ferr')); return { bg: cs.backgroundColor, bc: cs.borderTopColor, bw: cs.borderTopWidth }; });
+  const reddish = (s) => { const m = s.match(/(\d+), (\d+), (\d+)/); return m && +m[1] - +m[2] > 30; };
+  ok('Minimal sync error: the banner has no red background or border', !reddish(ban.bg) && (ban.bw === '0px' || !reddish(ban.bc)), JSON.stringify(ban));
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(); S.lastFetch = { at: Date.now() - 7 * 36e5, ok: true }; window.SchoologyBoard.render(); }); await pg.waitForTimeout(200);
+  const dot = await pg.evaluate(() => { const d = document.querySelector('#tn-main .fpill.stale .fdot'); return d ? getComputedStyle(d).backgroundColor : null; });
+  ok('Minimal stale: yellow #E5B800 dot', dot === 'rgb(229, 184, 0)', dot);
   await c.close();
 }
 await browser.close();

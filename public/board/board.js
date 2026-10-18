@@ -454,12 +454,17 @@
     ['notebook', 'Highlighter Notebook', 'Graph paper and highlighter. Light or dark.', ['Yellow', 'Green', 'Sky blue', 'Lavender', 'Red', 'Pencil', 'Ink blue', 'Purple']],
     ['varsity', 'Varsity', 'Scoreboard type, team colors, a final score.', ['Royal', 'Gold', 'Maroon', 'Kelly green', 'Varsity red', 'Navy', 'Silver', 'Purple']],
     ['riso', 'Riso Zine', 'Two-color print, stamps and halftone dots.', ['Riso blue', 'Yellow', 'Bright red', 'Green', 'Blue tint', 'Purple overprint', 'Warm grey', 'Burgundy']],
-    ['cafe', 'Lo-fi Caf\u00e9', 'Warm and dim. Your mug fills as you go.', ['Slate blue', 'Honey', 'Lavender', 'Sage', 'Brick', 'Plum', 'Latte', 'Foam']]
+    ['cafe', 'Lo-fi Caf\u00e9', 'Warm and dim. Your mug fills as you go.', ['Slate blue', 'Honey', 'Lavender', 'Sage', 'Brick', 'Plum', 'Latte', 'Foam']],
+    ['minimal', 'Minimal', 'Quiet black and white. Light or dark.', ['Blue', 'Mustard', 'Violet', 'Green', 'Plum', 'Graphite', 'Navy', 'Rose']]
   ];
+  // Themes with a light and a dark version; the student's choice is shared between them.
+  var MODES = { notebook: 1, minimal: 1 };
+  // Swatches a theme never hands out on its own (a student can still pick them): Minimal's Rose.
+  var NO_AUTO = { minimal: [8] };
   function themeInfo(id) { for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === id) return THEMES[i]; return THEMES[0]; }
   function curTheme() { var t = S && S.prefs.theme; return themeInfo(t)[0]; }
   function applyTheme() {
-    var t = curTheme(), mode = t === 'notebook' && S.prefs.mode === 'dark' ? 'dark' : '';
+    var t = curTheme(), mode = MODES[t] && S.prefs.mode === 'dark' ? 'dark' : '';
     // The backup file only carries the theme it was saved with.
     if (MODE === 'offline') { var baked = document.documentElement.getAttribute('data-theme'); if (baked) t = baked; }
     document.documentElement.setAttribute('data-theme', t);
@@ -481,19 +486,19 @@
         '<span class="thp-sw">' + [1, 2, 3, 4, 5].map(function (n) { return '<i style="background:var(--swatch-' + n + ')"></i>'; }).join('') + '</span></span>' +
         '<span class="thp-n">' + esc(t[1]) + '</span><span class="thp-d">' + esc(t[2]) + '</span></button>';
     }).join('') + '</div>' +
-      '<div class="thmode" id="th-mode"' + (cur === 'notebook' ? '' : ' hidden') + '><span>Highlighter Notebook:</span><div class="seg" role="group" aria-label="Light or dark"><button type="button" data-mode="" aria-pressed="' + (S.prefs.mode !== 'dark') + '">Light</button><button type="button" data-mode="dark" aria-pressed="' + (S.prefs.mode === 'dark') + '">Dark</button></div></div>';
+      '<div class="thmode" id="th-mode"' + (MODES[cur] ? '' : ' hidden') + '><span id="th-mode-n">' + esc(themeInfo(cur)[1]) + ':</span><div class="seg" role="group" aria-label="Light or dark"><button type="button" data-mode="" aria-pressed="' + (S.prefs.mode !== 'dark') + '">Light</button><button type="button" data-mode="dark" aria-pressed="' + (S.prefs.mode === 'dark') + '">Dark</button></div></div>';
     var d = dialog('Change theme', body, '<span class="r"><button class="btn primary" data-close>Done</button></span>');
     d.classList.add('themes');
     $$('.thp', d).forEach(function (b) {
       b.onclick = function () {
         setTheme(b.dataset.theme);
         $$('.thp', d).forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); });
-        $('#th-mode', d).hidden = b.dataset.theme !== 'notebook';
+        $('#th-mode', d).hidden = !MODES[b.dataset.theme]; $('#th-mode-n', d).textContent = themeInfo(b.dataset.theme)[1] + ':';
         toast('Theme: ' + themeInfo(b.dataset.theme)[1]);
       };
     });
     $$('[data-mode]', d).forEach(function (b) {
-      b.onclick = function () { setTheme('notebook', b.dataset.mode); $$('[data-mode]', d).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); };
+      b.onclick = function () { setTheme(curTheme(), b.dataset.mode); $$('[data-mode]', d).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); };
     });
   }
   // A class's color: the student's own pick for this theme wins. Otherwise each class gets the next unused swatch
@@ -510,7 +515,7 @@
     var use = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     Object.keys(first).forEach(function (c) { var n = picks[c] >= 1 && picks[c] <= 8 ? picks[c] : auto[c]; if (n >= 1 && n <= 8) use[n]++; });
     todo.forEach(function (c) {
-      var best = 1; for (var n = 2; n <= 8; n++) if (use[n] < use[best]) best = n;
+      var skip = NO_AUTO[t] || [], best = 1; for (var n = 2; n <= 8; n++) if (skip.indexOf(n) < 0 && use[n] < use[best]) best = n;
       auto[c] = best; use[best]++;
     });
     return true;
@@ -934,6 +939,7 @@
     }).join('') + more;
   }
   var ART = {
+    minimal: function () { return ''; },
     sticker: function (k) { return k === 'done' ? '<svg class="stk" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="48" class="a1"/><path d="M38 61l15 15 30-32" class="tick"/></svg><span class="stamp-s">DONE!</span>' : '<svg class="stk" viewBox="0 0 120 120" aria-hidden="true"><path d="M84 78A36 36 0 0 1 42 22a38 38 0 1 0 42 56z" class="a2"/><circle cx="92" cy="28" r="6" class="a1"/></svg>'; },
     arcade: function (k) { return '<span class="gg">' + (k === 'done' ? 'GG' : 'FREE PLAY') + '</span><span class="ggs">' + (k === 'done' ? '+50 XP \u00b7 night cleared' : 'Nothing due tonight') + '</span>'; },
     notebook: function (k) { return '<span class="hand">' + (k === 'done' ? 'nailed it.' : 'a free night.') + '<svg viewBox="0 0 200 70" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M178 20C140 2 46 4 18 24 0 38 22 62 92 64s104-10 98-34C186 16 150 8 120 10"/></svg></span>'; },
@@ -980,7 +986,7 @@
       verdict = 'Nothing due tonight';
       var nx = M.coming.slice().sort(function (a, b) { return a.d - b.d; })[0];
       if (nx) nudge = 'Next deadline: <b>' + esc(nx.title) + '</b>, due ' + esc(dueWords(nx, now)) + '.';
-    } else if (done) { verdict = 'You\u2019re free tonight'; nudge = 'Everything due through ' + esc(byWord(M.wEnd, now)) + ' is done. Nice work.'; }
+    } else if (done) { verdict = curTheme() === 'minimal' ? 'Nothing left tonight.' : 'You\u2019re free tonight'; nudge = 'Everything due through ' + esc(byWord(M.wEnd, now)) + ' is done. Nice work.'; }
     else {
       verdict = plural(n, 'thing') + ' tonight, <span class="nw">about ' + durS(mins) + '</span>';
       var lead = P.tasks[0];
@@ -1080,11 +1086,12 @@
     if (STAMP[t]) { var s = document.createElement('span'); s.className = 'stamp'; s.textContent = STAMP[t]; row.appendChild(s); }
     if (t === 'sticker') { var r = row.querySelector('.bigchk').getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 8, 46); }
     if (t === 'varsity') { var p = $('#pDone'); if (p) p.classList.add('flip'); }
+    var quiet = t === 'minimal';
     setTimeout(function () {
       var hgt = row.offsetHeight;
-      var a = row.animate([{ height: hgt + 'px', opacity: 1 }, { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginBottom: '-10px' }], { duration: 220, easing: 'ease-in', fill: 'forwards' });
+      var a = row.animate([{ height: hgt + 'px', opacity: 1 }, { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginBottom: quiet ? '0px' : '-10px' }], { duration: quiet ? 200 : 220, easing: 'ease-in', fill: 'forwards' });
       a.onfinish = after;
-    }, 560);
+    }, quiet ? 400 : 560);
   }
   function burst(x, y, n, spread) {
     var fx = $('#fx'); if (!fx) { fx = document.createElement('div'); fx.id = 'fx'; document.body.appendChild(fx); }
@@ -1107,6 +1114,7 @@
   };
   // The last check-off: one short finish moment, and one toast that still offers Undo (just the toast with reduced motion).
   function celebrateAll(n, title, undo) {
+    if (curTheme() === 'minimal') { var dc = new Date().toLocaleDateString('en-US', { weekday: 'long' }) + ' clear.'; live(dc); toast(dc, 'Undo', undo, 6000); return; }
     if (reducedMotion()) { toast('Everything\u2019s done. You\u2019re free tonight.', 'Undo', undo, 6000); return; }
     live('Everything\u2019s done. You\u2019re free tonight.');
     toast('Marked done: ' + title, 'Undo', undo, 6000);
@@ -2509,6 +2517,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, version: '1.6.2' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, version: '1.7.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

@@ -120,8 +120,14 @@ test('every theme has 8 clearly different class swatches, each with readable tex
     const t = readFileSync(f, 'utf8'); if (!/data-theme="\w+"\]/.test(t)) continue; themes++;
     const pal = []; for (let i = 1; i <= 8; i++) { const m = new RegExp(`--swatch-${i}:(#[0-9A-Fa-f]{6});--swatch-${i}-ink:(#[0-9A-Fa-f]{6})`).exec(t); assert.ok(m, `${relative(root, f)} swatch ${i}`); pal.push(m[1]); if (cr(m[1], m[2]) < 4.5) bad.push(`${relative(root, f)} swatch ${i} text contrast ${cr(m[1], m[2]).toFixed(2)}`); }
     for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) if (tooAlike(pal[i], pal[j])) bad.push(`${relative(root, f)} swatches ${i + 1} and ${j + 1} look alike: ${pal[i]} ${pal[j]}`);
+    // a dark version may swap some swatches: check that palette too
+    for (const dm of t.matchAll(/data-mode="dark"\]\{([^}]*)\}/g)) {
+      const dp = pal.slice(); let changed = false;
+      for (let i = 1; i <= 8; i++) { const m = new RegExp(`--swatch-${i}:(#[0-9A-Fa-f]{6});--swatch-${i}-ink:(#[0-9A-Fa-f]{6})`).exec(dm[1]); if (!m) continue; changed = true; dp[i - 1] = m[1]; if (cr(m[1], m[2]) < 4.5) bad.push(`${relative(root, f)} dark swatch ${i} text contrast`); }
+      if (changed) for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) if (tooAlike(dp[i], dp[j])) bad.push(`${relative(root, f)} dark swatches ${i + 1} and ${j + 1} look alike: ${dp[i]} ${dp[j]}`);
+    }
   }
-  assert.equal(themes, 6); assert.deepEqual(bad, []);
+  assert.equal(themes, 7); assert.deepEqual(bad, []);
 });
 test('no hearts or sparkles in icons, emoji or copy', () => {
   const RX = /[\u2665\u2661\u2764\u2763\u{1F493}-\u{1F49F}\u{1F5A4}\u{1F90D}\u{1F90E}\u{1F9E1}\u2728\u2726\u2727\u2734\u2747\u{1F31F}\u2B50\u{1F4AB}]|\b(heart|sparkle|sparkles|twinkle)\b/iu;

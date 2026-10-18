@@ -1,7 +1,7 @@
 # Theming Schoology Board
 
-Six themes ship today: **Sticker Book** (the default), **Arcade Night**, **Highlighter Notebook** (light and
-dark), **Varsity**, **Riso Zine** and **Lo-fi Café**. Each one is a single CSS file of custom properties plus
+Seven themes ship today: **Sticker Book** (the default), **Arcade Night**, **Highlighter Notebook** (light and
+dark), **Varsity**, **Riso Zine**, **Lo-fi Café** and **Minimal** (light and dark). Each one is a single CSS file of custom properties plus
 a few visual-only flourishes. Layout and structure never change between themes.
 
 ```
@@ -35,6 +35,8 @@ picker draw live previews of every theme inside one page. A dark variant uses `[
   chroma, and no pink class colors. Every theme's 8 swatches must be clearly different (OKLab distance ≥ 0.11, and
   two colorful swatches need ≥ 30° of hue apart unless their lightness differs by ≥ 0.22), each with readable text
   (≥ 4.5:1 against its `-ink`). New classes get the next unused swatch in order of first appearance; a student's pick wins.
+- A theme can keep a swatch out of automatic assignment (`NO_AUTO` in board.js; Minimal's Rose). Themes listed in
+  `MODES` get a Light / Dark switch (`data-mode="dark"`), and a dark block may swap swatches (the test checks it too).
 - Overdue is the only red state: a 4px `--overdue` (#E5484D) left stripe plus red due text on a normal card. Today and
   tomorrow are never tinted.
 - `test/motion.test.mjs`: UI motion ≤ 0.4 s, celebrations ≤ 1.2 s, and everything off under `prefers-reduced-motion`.
