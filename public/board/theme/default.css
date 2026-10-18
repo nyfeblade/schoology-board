@@ -1,140 +1,108 @@
-/* Schoology Board theme: "default" (true black + one red).
-   Every visual value the board uses lives here as a CSS custom property. Layout CSS (board.css)
-   only references these. To make a new theme, copy this file, change the values, and scope it
-   with :root[data-theme="<name>"] (see THEMING.md). */
+/* Schoology Board theme layer: shared tokens + the default theme (Sticker Book).
+   Two layers of custom properties:
+   1. Theme tokens (short names from the UI designer's system: --bgc, --ink, --card, --acc, --sh, --fh ...).
+      Every theme file (sticker.css, arcade.css, ...) sets these on :root[data-theme="<name>"].
+   2. Component tokens (--surface-1, --text-2, --radius-card, --shadow-menu ...) that the layout CSS uses.
+      They are derived here from layer 1, so a new theme usually only sets layer 1 (see THEMING.md).
+   The values in :root below are Sticker Book's, so the app looks right even before a theme file loads.
+   Hard rules (test/colors.test.mjs): no orange, no cyan/teal, pink only as the optional --swatch-8. */
 :root{
-  color-scheme:dark;
+  color-scheme:light;
 
-  /* ---- palette ---- */
-  --bg:#000;
-  --surface-1:#0E0E10;   /* columns, dialogs */
-  --surface-2:#16161A;   /* cards, buttons, inputs, menus */
-  --surface-3:#1C1C21;   /* hover rows */
-  --border-1:#232327;
-  --border-2:#2E2E33;
-  --border-3:#3A3A40;
-  --text-1:#F2F2F3;
-  --text-2:#A1A1A8;
-  --text-3:#6E6E76;
-  --accent:#FF3E51;
-  --accent-hover:#FF5A6A;
-  --accent-pressed:#E02135;
-  --accent-soft:rgba(255,62,81,.12);
-  --accent-softer:rgba(255,62,81,.06);
-  --on-accent:#fff;
-  --note-color:var(--text-3);
-  --meta-theme-color:#000000;   /* browser UI color (mobile address bar) */
+  /* ---------- layer 1: theme tokens (Sticker Book values) ---------- */
+  --bgc:#FFF7EA; --bgi:radial-gradient(rgba(27,27,31,.07) 1.2px,transparent 1.3px); --bgs:22px 22px;
+  --ink:#1B1B1F; --ink2:#3A3631; --mut:#6B6460;
+  --card:#FFFFFF; --line:#1B1B1F; --soft:#F3EADB; --well:#FBEFD9; --wellB:0;
+  --hair:rgba(27,27,31,.16);                       /* quiet dividers and column outlines */
+  --bc:#1B1B1F; --bw:2px; --bw2:1.5px; --bwc:2px;  /* border color and widths (cards, controls, coming-up items) */
+  --r:14px; --rs:12px; --rb:999px;                 /* radius: cards / small controls / buttons */
+  --sh:3px 3px 0 #1B1B1F; --shs:2px 2px 0 #1B1B1F; --lift:6px 8px 0 #1B1B1F; --pop:4px 4px 0 #1B1B1F;
+  --fh:Fredoka,Nunito,system-ui,sans-serif; --fb:Nunito,system-ui,sans-serif;
+  --fwh:600; --fwt:800; --lsh:0; --tth:none; --lsb:0; --lsg:0; --ttg:none;
+  --acc:#FFE14D; --accInk:#1B1B1F; --acc2:#5BC25B; --okc:#5BC25B;
+  --late:#E23B4A; --lateBg:#FFECEC; --lateB:#1B1B1F; --on-late:#FFFFFF;
+  --warn:#FFE066; --warnInk:#3D3300; --warnB:#1B1B1F; --warnSoft:#FFF4BF;
+  --flagInk:#6E5E00; --flagBg:#FFF6CC; --flagB:#1B1B1F;
+  --navbg:#FFFFFF; --navb:#1B1B1F; --navon:#1B1B1F; --navonInk:#FFFFFF;
+  --cnt:#1B1B1F; --cntInk:#FFFFFF; --btnBg:#1B1B1F; --btnInk:#FFFFFF; --btnB:#1B1B1F;
+  --chr:11px; --chb:2.5px; --chc:#1B1B1F; --chbg:#FFFFFF; --ckInk:#1B1B1F; --ckBg:var(--c); --ckB:#1B1B1F;
+  --skel:#ECE7DD; --skelHi:rgba(255,255,255,.7);
+  --tbg:#1B1B1F; --tink:#FFFFFF; --tacc:#FFE14D; --tb:0; --pbb:2px solid #1B1B1F;
+  --focus:#2F5DA8;
+  --meta-theme-color:#FFF7EA;                      /* browser bar + install manifest (plain hex) */
 
-  /* component colors */
-  --btn-active-bg:#222228;
-  --seg-active-bg:#26262C;
-  --header-bg:rgba(0,0,0,.9);
-  --colnav-bg:rgba(0,0,0,.92);
-  --col-bg:var(--surface-1);
-  --col-border:var(--border-1);
-  --col-over-bg:#110A0C;          /* column under a dragged card */
-  --card-bg:var(--surface-2);
-  --card-hover-bg:#18181D;
-  --card-border:var(--border-1);
-  --card-edge:var(--border-2);    /* left edge; turns --accent when due soon */
-  --tag-bg:var(--border-1);       /* class pill; var(--ci) is this card's class color */
-  --tag-color:var(--text-2);
-  --scrim:rgba(0,0,0,.6);
-  --backdrop:rgba(0,0,0,.72);
-  --qr-dark:#000;                 /* keep QR codes high-contrast whatever the theme */
-  --qr-light:#fff;
+  /* class palette: 8 swatches per theme; --swatch-8 is the optional pink. Each has an ink for text on it. */
+  --swatch-1:#6FA3FF; --swatch-1-ink:#1B1B1F;  /* Sky */
+  --swatch-2:#FFE14D; --swatch-2-ink:#1B1B1F;  /* Lemon */
+  --swatch-3:#E0C3FF; --swatch-3-ink:#1B1B1F;  /* Lilac */
+  --swatch-4:#A8E05F; --swatch-4-ink:#1B1B1F;  /* Lime */
+  --swatch-5:#FF5A5F; --swatch-5-ink:#1B1B1F;  /* Cherry */
+  --swatch-6:#A98BFF; --swatch-6-ink:#1B1B1F;  /* Grape */
+  --swatch-7:#5BC25B; --swatch-7-ink:#1B1B1F;  /* Grass */
+  --swatch-8:#FF8FC7; --swatch-8-ink:#1B1B1F;  /* Bubblegum (optional, never a default) */
+  --swatch-0:#E9E1D3; --swatch-0-ink:#1B1B1F;  /* Unsorted */
 
-  /* class colors: each class gets one of these as --ci (Unsorted gets --class-0) */
-  --class-0:var(--border-1);
-  --class-1:var(--border-1); --class-2:var(--border-1); --class-3:var(--border-1); --class-4:var(--border-1);
-  --class-5:var(--border-1); --class-6:var(--border-1); --class-7:var(--border-1); --class-8:var(--border-1);
+  /* ---------- layer 2: component tokens (derived; themes rarely need to touch these) ---------- */
+  --bg:var(--bgc); --bg-image:var(--bgi); --bg-image-size:var(--bgs); --bg-image-attachment:fixed;
+  --surface-1:var(--card); --surface-2:var(--card); --surface-3:var(--soft);
+  --border-1:var(--hair); --border-2:var(--bc); --border-3:var(--ink2);
+  --text-1:var(--ink); --text-2:var(--ink2); --text-3:var(--mut);
+  --accent:var(--btnBg); --accent-hover:var(--btnBg); --accent-pressed:var(--btnBg); --on-accent:var(--btnInk);
+  --accent-soft:var(--soft); --accent-softer:var(--warnSoft);
+  --note-color:var(--mut);
+  --btn-bg:var(--card); --btn-active-bg:var(--soft); --seg-active-bg:var(--navon); --seg-active-ink:var(--navonInk);
+  --header-bg:transparent; --colnav-bg:var(--card);
+  --col-bg:transparent; --col-border:var(--hair); --col-border-style:dashed; --col-over-bg:var(--warnSoft);
+  --card-bg:var(--card); --card-hover-bg:var(--card); --card-border:var(--bc); --card-edge:var(--bc);
+  --card-late-bg:var(--lateBg); --card-done-bg:var(--soft);
+  --tag-bg:var(--c); --tag-color:var(--ci); --tag-border:var(--bw) solid var(--bc);
+  --scrim:rgba(20,18,16,.35); --backdrop:rgba(20,18,16,.45);
+  --qr-dark:#000000; --qr-light:#FFFFFF;          /* QR codes stay dark-on-white in every theme */
+  --class-0:var(--swatch-0);
+  --class-1:var(--swatch-1); --class-2:var(--swatch-2); --class-3:var(--swatch-3); --class-4:var(--swatch-4);
+  --class-5:var(--swatch-5); --class-6:var(--swatch-6); --class-7:var(--swatch-7);
 
-  /* ---- type ---- */
-  --font-body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  --font-display:var(--font-body);     /* board title, hero, column and dialog headings */
-  --font-card-title:var(--font-body);
-  --font-hand:var(--font-body);        /* optional handwritten accent */
+  --font-body:var(--fb); --font-display:var(--fh); --font-card-title:var(--fb); --font-hand:var(--fh);
   --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
-  --font-size:14px;
-  --line-height:1.4;
+  --font-size:15px; --line-height:1.38;
+  --fw-title:var(--fwt); --fw-head:var(--fwh);
 
-  /* ---- shape ---- */
-  --bw:1px;            /* default border width */
-  --bw-drop:1.5px;     /* file drop zone */
-  --card-edge-w:3px;
+  --bw-drop:2px; --card-edge-w:var(--bw);
   --r-2xs:2px; --r-xs:4px; --r-sm:6px; --r-md:8px; --r-lg:10px; --r-xl:12px; --r-2xl:16px; --r-pill:999px;
-  --radius-btn:var(--r-md);
-  --radius-input:var(--r-md);
-  --radius-card:var(--r-md);
-  --radius-col:var(--r-xl);
-  --radius-chip:var(--r-pill);
-  --radius-tag:var(--r-pill);
-  --radius-menu:var(--r-xl);
-  --radius-dialog:var(--r-xl);
-  --radius-toast:var(--r-lg);
-  --h:32px;            /* control height */
+  --radius-btn:var(--rb); --radius-input:var(--rs); --radius-card:var(--r); --radius-col:calc(var(--r) + 6px);
+  --radius-chip:var(--rb); --radius-tag:999px; --radius-menu:var(--rs); --radius-dialog:calc(var(--r) + 4px); --radius-toast:var(--rs);
+  --h:36px;
 
-  /* ---- depth ---- */
-  --ring:0 0 0 3px rgba(255,62,81,.35);
-  --ring-inset:inset 0 0 0 2px rgba(255,62,81,.5);
-  --card-shadow:none;
-  --col-shadow:none;
-  --shadow-drag:0 16px 40px rgba(0,0,0,.6);
-  --shadow-menu:0 16px 48px rgba(0,0,0,.65);
-  --shadow-toast:0 12px 32px rgba(0,0,0,.6);
-  --shadow-dialog:0 32px 80px rgba(0,0,0,.7);
-  --shadow-hero:0 32px 80px rgba(0,0,0,.7);
+  --ring:0 0 0 3px var(--focus);
+  --ring-inset:inset 0 0 0 2px var(--focus);
+  --card-shadow:var(--sh); --card-hover-shadow:var(--lift); --col-shadow:none; --btn-shadow:var(--shs);
+  --shadow-drag:var(--lift); --shadow-menu:var(--pop); --shadow-toast:var(--pop); --shadow-dialog:var(--pop); --shadow-hero:var(--pop);
+  --shadow-nav:0 -8px 24px -18px rgba(0,0,0,.4);
   --hero-tilt:rotate(-1deg);
-
-  /* ---- backgrounds and textures ---- */
-  --bg-image:none;                /* e.g. a notebook grid: linear-gradient(...) */
-  --bg-image-size:auto;
-  --bg-image-attachment:scroll;
   --col-bg-image:none;
 
-  /* ---- motion ---- */
-  --dur-fast:.12s;
-  --dur-slow:.3s;
-  --anim-menu:pop .12s ease-out;
-  --anim-sheet:sheet .2s ease-out;
+  /* motion: UI moves in 0.4 s or less; celebrations stay under ~1.2 s (prefers-reduced-motion turns all of it off) */
+  --dur-fast:.15s; --dur-mid:.25s; --dur-slow:.3s; --dur-celebrate:.9s; --dur-loop:1.2s;
+  --anim-menu:pop .15s ease-out;
+  --anim-sheet:sheet .25s ease-out;
   --anim-scrim:fade .15s;
-  --anim-toast:up .18s ease-out;
+  --anim-toast:up .2s ease-out;
   --anim-spin:spin .7s linear infinite;
-  --anim-card-landed:none;        /* a card that was just moved */
-  --anim-card-done:none;          /* a card that was just marked done */
+  --anim-card-landed:none;
+  --anim-card-done:none;
 
-  /* ---- illustration / emoji slots (content values: none, "🎉", url(...)) ---- */
-  --slot-logo:none;               /* before the board title */
-  --slot-empty:none;              /* above empty-state messages */
-  --slot-col-empty:none;          /* inside an empty column */
-  --slot-done:none;               /* after the Completed heading */
-  --slot-now:none;                /* before "Do this now" on the Now screen */
-  --slot-all-set:none;            /* before "You're all set for tonight" */
+  /* illustration / emoji slots (content: none, "text", or url(...)) */
+  --slot-logo:none; --slot-empty:none; --slot-col-empty:none; --slot-done:none;
 
-  /* ---- Now / Tonight / Week ahead ---- */
-  --tabbar-bg:var(--colnav-bg);
-  --tab-active:var(--text-1);
-  --tab-idle:var(--text-3);
-  --tab-indicator:var(--accent);
-  --hero-card-bg:var(--surface-1);
-  --hero-card-border:var(--border-2);
-  --hero-card-shadow:none;
-  --radius-hero:var(--r-2xl);
-  --block-bg:var(--surface-1);
-  --block-border:var(--border-1);
-  --block-running-border:var(--accent);
-  --block-break-color:var(--text-3);
-  --block-rail:var(--border-2);
-  --flag-test-bg:var(--surface-3);
-  --flag-test-color:var(--text-1);
-  --flag-early-bg:var(--accent-soft);
-  --flag-early-color:var(--accent-hover);
-  --flag-late-color:var(--accent-hover);
-  --flag-run-color:var(--accent-hover);
-  --bar-track:var(--surface-2);
-  --bar-fill:var(--border-3);
-  --bar-heavy:var(--accent);
-  --spill-border:var(--accent);
-  --spill-bg:var(--accent-softer);
+  /* Sunday plan (week ahead) */
+  --bar-track:var(--soft); --bar-fill:var(--mut); --bar-heavy:var(--acc2);
+  --flag-test-bg:var(--soft); --flag-test-color:var(--ink);
+  --flag-early-bg:var(--acc); --flag-early-color:var(--accInk);
+  --flag-late-color:var(--late); --flag-run-color:var(--ink);
+  --spill-border:var(--late); --spill-bg:var(--lateBg);
+
+  /* finish moments and art (themes recolor these) */
+  --confetti-1:#FF5A5F; --confetti-2:#FFE14D; --confetti-3:#A8E05F; --confetti-4:#6FA3FF; --confetti-5:#A98BFF; --confetti-stroke:#1B1B1F;
+  --art-1:#FFE14D; --art-2:#6FA3FF; --art-ink:#1B1B1F;
 }
 @media (pointer:coarse){:root{--h:40px}}

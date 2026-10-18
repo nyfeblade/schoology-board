@@ -30,7 +30,6 @@
   function dayKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function parseDay(k) { var p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
   function sod(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
-  function addMin(d, m) { return new Date(d.getTime() + m * 60000); }
   function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
   function monday(d) { var x = sod(d); var w = (x.getDay() + 6) % 7; return addDays(x, -w); }
   function toDate(due) { var d = new Date(due); return isNaN(d) ? new Date(8.64e15) : d; }
@@ -67,9 +66,6 @@
     clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
     play: svg('<path d="M7 4v16l13-8z"/>'),
     stop: svg('<rect x="6" y="6" width="12" height="12" rx="1.5"/>'),
-    tab_now: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
-    tab_board: svg('<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>'),
-    tab_ahead: svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
     star: svg('<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>')
   };
   var BIG_UPLOAD = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>';
@@ -84,13 +80,15 @@
       proctorCol: false, classMap: {}, namingSeen: {}, lastFetch: null, pending: null,
       // planner: time estimates, one-tap type (e.g. test), timed minutes, finished study/start-early chunks per night
       est: {}, ttype: {}, actual: {}, sdone: {}, timer: null, planStart: null,
-      prefs: { tab: 'now', view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '' }
+      // Tonight: items pulled in early, the student's own order for today, flags they confirmed, class colors per theme
+      pulled: {}, tnOrder: null, checked: {}, colors: {},
+      prefs: { tab: 'now', view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '', theme: 'sticker', mode: '', showDone: false }
     };
   }
   function normalizeState(st) {
     st = Object.assign(blank(), st || {});
     st.prefs = Object.assign(blank().prefs, st.prefs || {});
-    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen', 'est', 'ttype', 'actual', 'sdone'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
+    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'checked', 'colors'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
     ['cats', 'order', 'rules'].forEach(function (k) { if (!Array.isArray(st[k])) st[k] = []; });
     return st;
   }
@@ -104,9 +102,12 @@
     st = normalizeState(st);
     // Every visit opens on the default week (next week from Friday 6 PM). "range" no longer exists.
     st.prefs.view = 'week'; st.prefs.weekOffset = 0; st.prefs.q = '';
-    // Returning students open on Now ("what do I do next?"); ?view=board|ahead (e.g. from the installed app) picks another tab.
-    var qv = (location.search.match(/[?&]view=(now|board|ahead)\b/) || [])[1];
-    st.prefs.tab = qv || 'now';
+    // Returning students open on Tonight ("what do I do next?"); ?view=board|cal|ahead (e.g. from the installed app) picks another view.
+    var qv = (location.search.match(/[?&]view=(now|tonight|board|cal|ahead)\b/) || [])[1];
+    st.prefs.tab = qv === 'tonight' ? 'now' : qv || 'now';
+    // Pulled-in items only stay pulled for the night they were pulled.
+    var tk = dayKey(new Date());
+    Object.keys(st.pulled || {}).forEach(function (k) { if (st.pulled[k] !== tk) delete st.pulled[k]; });
     if (!hadProctorFlag) st._needsProctorCheck = true;
     if (baked) st.seenExport = baked.exportedAt;
     // Boards from before "board created" existed start counting from the first load after the update.
@@ -190,6 +191,9 @@
       for (var j = 0; j < icsItems.length; j++) {
         if (sameish(it, icsItems[j])) {
           var m = icsItems[j];
+          // The class sheet gives a definite date that disagrees with the calendar: we use the calendar, and say so.
+          if (it.note !== 'Before class' && dayDiff(it.due, m.due) !== 0 && !(S.ov[m.id] && S.ov[m.id].due)) m.check = { what: 'due date', src: 'Schoology calendar', url: safeUrl(m.url),
+            why: 'Your class sheet says ' + fmtDayShort(toDate(it.due)) + ', but the Schoology calendar says ' + fmtDayShort(toDate(m.due)) + '. This list uses the calendar date.' };
           if (!m.explicitCourse) { m.course = it.course; m.explicitCourse = true; }
           if (!S.status[m.id] && S.status[it.id]) m.inheritStatus = S.status[it.id];
           return false;
@@ -211,10 +215,21 @@
       if (it.col === 'proctor' && !S.proctorCol) it.col = 'todo';
       // Imported work due before the board existed counts as already handled: hidden, not overdue, not Completed.
       it.pre = isPre(it);
+      if (!it.check) it.check = checkOf(it);
     });
     preItems = result.filter(function (it) { return it.pre; });
     return S.prefs.showPre ? result : result.filter(function (it) { return !it.pre; });
   }
+  // Things we read but aren't sure about. Each becomes a "Double-check this" note with its reason and source.
+  function checkOf(it) {
+    var src = it.source === 'cas' ? 'class sheet' : it.source === 'ics' ? 'Schoology calendar' : '', url = it.source === 'ics' ? safeUrl(it.url) : '';
+    if (!src) return null;
+    if (it.source === 'cas' && it.dueWord && it.note === 'Before class') return { what: 'due date', src: src, url: url, why: 'The class sheet mentions a due date we couldn\u2019t read, so this uses the start of class (' + fmtDayShort(toDate(it.due)) + ').' };
+    var kw = /\b(quiz|test|exam)\b/i.test(it.title) && it.title.match(/\b(open[- ]?book|take[- ]?home|practice|retake)\b/i);
+    if (kw) return { what: 'kind of work', src: src, url: url, why: 'The title says it\u2019s a quiz or test but also \u201c' + kw[0].toLowerCase() + '\u201d, so it may be homework instead. It\u2019s planned as a test with study time. If that\u2019s wrong, change the kind in its time estimate.' };
+    return null;
+  }
+  function fmtDayShort(d) { return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); }
   function classifier(out) {
     var known = [], seen = {}, examples = [];
     function add(c) { c = c && alias(c); if (c && c !== UNSORTED && !seen[c]) { seen[c] = 1; known.push(c); } }
@@ -294,7 +309,9 @@
   function closeMenu(restore) {
     if (!openMenu) return;
     var m = openMenu; openMenu = null;
-    m.el.remove(); if (m.scrim) m.scrim.remove();
+    m.el.remove();
+    // A tap on the backdrop closes on pointerdown; keep an invisible backdrop until the click that follows, so it can't land on what's underneath.
+    if (m.scrim) { var sc = m.scrim; if (m.tapped) { sc.style.opacity = '0'; var gone = function () { sc.remove(); }; sc.addEventListener('click', gone); setTimeout(gone, 500); } else sc.remove(); }
     m.anchor.setAttribute('aria-expanded', 'false');
     document.removeEventListener('pointerdown', m.outside, true);
     window.removeEventListener('scroll', m.onScroll, true);
@@ -313,7 +330,8 @@
       if (it.sep) return '<div class="menu-sep" role="separator"></div>';
       if (it.heading) return '<div class="menu-h" role="presentation">' + esc(it.heading) + '</div>';
       if (it.check) return '<label class="menu-i' + (it.cls ? ' ' + it.cls : '') + '" role="menuitemcheckbox" aria-checked="' + !!it.checked + '"><input type="checkbox" id="' + it.id + '"' + (it.checked ? ' checked' : '') + '><span>' + esc(it.label) + '</span>' + (it.kbd ? '<kbd>' + esc(it.kbd) + '</kbd>' : '') + '</label>';
-      return '<button type="button" class="menu-i' + (it.cls ? ' ' + it.cls : '') + '" role="menuitem" data-i="' + i + '"' + (it.id ? ' id="' + it.id + '"' : '') + '>' + (it.icon || '') + '<span>' + esc(it.label) + '</span>' + (it.kbd ? '<kbd>' + esc(it.kbd) + '</kbd>' : '') + '</button>';
+      var radio = it.swatch || it.radio, ic = it.swatch ? '<i class="msw" style="background:var(--swatch-' + it.swatch + ')" aria-hidden="true"></i>' : (it.icon || '');
+      return '<button type="button" class="menu-i' + (it.cls ? ' ' + it.cls : '') + (radio ? ' radio' : '') + '" role="' + (radio ? 'menuitemradio' : 'menuitem') + '"' + (radio ? ' aria-checked="' + !!it.checked + '"' : '') + ' data-i="' + i + '"' + (it.id ? ' id="' + it.id + '"' : '') + '>' + ic + '<span>' + esc(it.label) + '</span>' + (it.kbd ? '<kbd>' + esc(it.kbd) + '</kbd>' : '') + (radio && it.checked ? ICON.check : '') + '</button>';
     }).join('');
     var scrim = null;
     if (sheet) { scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.appendChild(scrim); }
@@ -330,7 +348,7 @@
     items.forEach(function (it) { if (it.check) { var cb = $('#' + it.id, el); cb.onchange = function () { cb.parentNode.setAttribute('aria-checked', String(cb.checked)); it.onChange(cb.checked); }; } });
     anchor.setAttribute('aria-expanded', 'true');
     var m = { el: el, scrim: scrim, anchor: anchor };
-    m.outside = function (e) { if (!el.contains(e.target) && !anchor.contains(e.target)) { if (scrim && e.target === scrim) e.preventDefault(); closeMenu(false); } };
+    m.outside = function (e) { if (!el.contains(e.target) && !anchor.contains(e.target)) { if (scrim && e.target === scrim) { e.preventDefault(); m.tapped = true; } closeMenu(false); } };
     m.onScroll = function (e) { if (!sheet && !(e && e.target && el.contains(e.target))) closeMenu(false); };
     document.addEventListener('pointerdown', m.outside, true);
     if (!sheet) { window.addEventListener('scroll', m.onScroll, true); window.addEventListener('resize', m.onScroll); }
@@ -350,35 +368,57 @@
   }
 
   // ---------- rendering ----------
-  function hasData() { return Object.keys(S.ics).length + Object.keys(S.cas).length + Object.keys(S.custom).length > 0 || S.cats.length > 0; }
+  function hasData() { return !!S.feedUrl || Object.keys(S.ics).length + Object.keys(S.cas).length + Object.keys(S.custom).length > 0 || S.cats.length > 0; }
   function render() {
     if (!hasData()) return renderFirstRun();
     renderShell();
     renderBoard();
   }
 
-  var TABS = [['now', 'Now', 'Tonight\u2019s plan and what to do next'], ['board', 'Board', 'Every assignment by status'], ['ahead', 'Week ahead', 'Tests, the busiest day and what to start early']];
+  // Views behind the top nav (bottom nav on phones). Tonight is home; Calendar is announced, not built yet.
+  var NAV = [['now', 'Tonight', 'moon', ''], ['board', 'Board', 'board', ''], ['cal', 'Calendar', 'cal', 'soon'], ['ahead', 'Sunday plan', 'sun', '']];
+  var NAV_TIP = { now: 'Tonight: what to do and in what order', board: 'Every assignment by status', cal: 'Calendar is coming soon', ahead: 'Your week ahead: tests, the busiest day and what to start early' };
+  var NICON = {
+    moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/></svg>',
+    board: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="9.5" y="4" width="5" height="11" rx="1.5"/><rect x="15.5" y="4" width="5" height="7" rx="1.5"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14.5h5M8 17h8"/></svg>',
+    pal: '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 1.6-2.1-.5-1.2.3-2.4 1.6-2.4H17a4 4 0 0 0 4-4C21 7 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/></svg>',
+    dots: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
+    ref: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9M20 20v-4h-4"/></svg>',
+    grip: '<svg viewBox="0 0 12 20" aria-hidden="true"><g fill="currentColor"><circle cx="3" cy="4" r="1.6"/><circle cx="9" cy="4" r="1.6"/><circle cx="3" cy="10" r="1.6"/><circle cx="9" cy="10" r="1.6"/><circle cx="3" cy="16" r="1.6"/><circle cx="9" cy="16" r="1.6"/></g></svg>',
+    pull: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V7M6.5 12.5 12 7l5.5 5.5M5 4h14"/></svg>',
+    flag: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 7.2v6.2"/><circle cx="12" cy="16.9" r=".6" fill="currentColor"/></svg>',
+    ext: '<svg class="ex" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg>',
+    ck: '<svg class="ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>',
+    cup: '<svg class="cup" viewBox="0 0 32 32" aria-hidden="true"><path class="steam" d="M12 3.5c-1.6 1.8 1.6 2.9 0 4.9M17.5 3.5c-1.6 1.8 1.6 2.9 0 4.9"/><clipPath id="cupc"><path d="M5.5 11h18v7.5a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"/></clipPath><g clip-path="url(#cupc)"><rect class="fill" x="4" y="10" width="21" height="17"/></g><path class="body" d="M5.5 11h18v7.5a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"/><path class="body" d="M23.5 13.5h2a3 3 0 0 1 0 6h-2.2"/><path class="tick" d="M10 18l3 3 5.5-6"/></svg>'
+  };
+  function navHtml(bottom) {
+    return NAV.map(function (n) {
+      var soon = n[3] ? '<span class="soon">Soon</span>' : '';
+      return '<a href="?view=' + n[0] + '" data-tab="' + n[0] + '" title="' + esc(NAV_TIP[n[0]]) + '">' + (bottom ? NICON[n[2]] + '<span>' + esc(n[1]) + '</span>' : esc(n[1])) + soon + '</a>';
+    }).join('');
+  }
   function renderShell() {
     closeMenu(false);
     app.innerHTML =
-      '<header class="sb-head"><h1><span class="name">Schoology Board</span> <span id="sb-label"></span></h1>' +
-      '<div class="prog"><span class="prog-t"><span id="sb-prog"></span><span id="sb-sync" class="sync" aria-live="polite"></span></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div>' +
-      '<div class="acts">' +
+      '<header class="topbar" id="sb-top"><a class="brand" href="?view=now" id="sb-brand"><i aria-hidden="true"></i><span>Schoology Board</span></a>' +
+      '<nav class="navt" id="sb-tabs" aria-label="Views">' + navHtml(false) + '</nav>' +
+      '<div class="tools">' +
       '<button class="btn" id="sb-add" title="Add a task (N)">' + ICON.plus + '<span class="lbl">Add task</span></button>' +
-      '<button class="btn hide-m" id="sb-import" title="Import from Schoology or a Course Assignment Sheet (I)">' + ICON.imp + '<span class="lbl">Import tasks</span></button>' +
-      '<button class="btn icon" id="sb-more" title="More" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">' + ICON.more + '</button>' +
+      (MODE === 'web' ? '<button class="ib thbtn hide-m" id="sb-theme" aria-label="Change theme" title="Change theme">' + NICON.pal + '</button>' : '') +
+      '<button class="ib" id="sb-more" aria-label="More actions" aria-haspopup="menu" aria-expanded="false" title="More">' + NICON.dots + '</button>' +
       '</div></header>' +
-      '<nav class="tabs" id="sb-tabs" aria-label="Screens">' + TABS.map(function (t) {
-        return '<button type="button" data-tab="' + t[0] + '" title="' + esc(t[2]) + '">' + ICON['tab_' + t[0]] + '<span>' + esc(t[1]) + '</span></button>';
-      }).join('') + '</nav>' +
       '<div id="sb-main"></div>' +
       '<div class="foot">' + (MODE === 'offline' ? 'Offline copy \u00b7 progress is saved in this browser' + (CFG.home ? ' \u00b7 <a href="' + esc(CFG.home) + '" target="_blank" rel="noopener">Open the website</a>' : '') :
         'Everything stays in your browser \u00b7 <a href="' + REPO + '" target="_blank" rel="noopener">Open source</a>') +
-      ' \u00b7 <a href="#" id="sb-reset">Reset this board</a></div>';
-    $('#sb-import').onclick = openImport;
+      ' \u00b7 <a href="#" id="sb-reset">Reset this board</a></div>' +
+      '<nav class="botnav" id="sb-botnav" aria-label="Views">' + navHtml(true) + '</nav>';
     $('#sb-add').onclick = function () { openEditor(null); };
     $('#sb-more').onclick = function () { moreMenu(this); };
-    $$('#sb-tabs button').forEach(function (b) { b.onclick = function () { setTab(b.dataset.tab); }; });
+    var th = $('#sb-theme'); if (th) th.onclick = openThemes;
+    $('#sb-brand').onclick = function (e) { e.preventDefault(); setTab('now'); };
+    $$('[data-tab]', app).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); setTab(b.dataset.tab); }; });
     $('#sb-reset').onclick = function (e) {
       e.preventDefault();
       if (confirm('Reset the board? This clears imported tasks, progress and categories in this browser.')) {
@@ -395,9 +435,81 @@
     renderBoard();
     window.scrollTo(0, 0);
   }
+
+  // ---------- themes and class colors ----------
+  var THEMES = [
+    ['sticker', 'Sticker Book', 'Chunky stickers, bold outlines, a DONE! stamp.', ['Sky', 'Lemon', 'Lilac', 'Lime', 'Cherry', 'Grape', 'Grass', 'Bubblegum']],
+    ['arcade', 'Arcade Night', 'Dark and glowing, with XP for every check-off.', ['Sunny', 'Violet', 'Lilac', 'Lime', 'Coral', 'Electric blue', 'Silver', 'Magenta']],
+    ['notebook', 'Highlighter Notebook', 'Graph paper and highlighter. Light or dark.', ['Sky blue', 'Yellow', 'Lavender', 'Lime', 'Coral', 'Pencil', 'Green', 'Pink']],
+    ['varsity', 'Varsity', 'Scoreboard type, team colors, a final score.', ['Royal', 'Gold', 'Maroon', 'Kelly green', 'Varsity red', 'Navy', 'Forest', 'Pink']],
+    ['riso', 'Riso Zine', 'Two-color print, stamps and halftone dots.', ['Riso blue', 'Yellow', 'Bright red', 'Green overprint', 'Blue tint', 'Purple overprint', 'Warm grey', 'Fluoro pink']],
+    ['cafe', 'Lo-fi Caf\u00e9', 'Warm and dim. Your mug fills as you go.', ['Slate blue', 'Butter', 'Lavender', 'Sage', 'Brick', 'Plum', 'Moss', 'Rose']]
+  ];
+  function themeInfo(id) { for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === id) return THEMES[i]; return THEMES[0]; }
+  function curTheme() { var t = S && S.prefs.theme; return themeInfo(t)[0]; }
+  function applyTheme() {
+    var t = curTheme(), mode = t === 'notebook' && S.prefs.mode === 'dark' ? 'dark' : '';
+    // The backup file only carries the theme it was saved with.
+    if (MODE === 'offline') { var baked = document.documentElement.getAttribute('data-theme'); if (baked) t = baked; }
+    document.documentElement.setAttribute('data-theme', t);
+    if (mode) document.documentElement.setAttribute('data-mode', mode); else document.documentElement.removeAttribute('data-mode');
+    try { localStorage.setItem('sb-theme', JSON.stringify({ t: t, m: mode })); } catch (e) { }
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', themeVar('--meta-theme-color', ''));
+  }
+  function setTheme(t, mode) {
+    S.prefs.theme = t; if (mode !== undefined) S.prefs.mode = mode;
+    save(); applyTheme(); render();
+  }
+  function openThemes() {
+    if (MODE !== 'web') { toast('Themes can be changed on the website. This backup keeps the theme it was saved with.'); return; }
+    var cur = curTheme();
+    var body = '<p class="mv-intro">Pick a look. Your tasks stay the same; class colors are saved for each theme.</p><div class="thgrid" role="radiogroup" aria-label="Themes">' + THEMES.map(function (t) {
+      return '<button type="button" class="thp" data-theme="' + t[0] + '" role="radio" aria-checked="' + (t[0] === cur) + '">' +
+        '<span class="thp-s"><span class="thp-card"><i class="thp-ck"></i><span class="thp-l"></span><span class="thp-tag"></span></span>' +
+        '<span class="thp-sw">' + [1, 2, 3, 4, 5].map(function (n) { return '<i style="background:var(--swatch-' + n + ')"></i>'; }).join('') + '</span></span>' +
+        '<span class="thp-n">' + esc(t[1]) + '</span><span class="thp-d">' + esc(t[2]) + '</span></button>';
+    }).join('') + '</div>' +
+      '<div class="thmode" id="th-mode"' + (cur === 'notebook' ? '' : ' hidden') + '><span>Highlighter Notebook:</span><div class="seg" role="group" aria-label="Light or dark"><button type="button" data-mode="" aria-pressed="' + (S.prefs.mode !== 'dark') + '">Light</button><button type="button" data-mode="dark" aria-pressed="' + (S.prefs.mode === 'dark') + '">Dark</button></div></div>';
+    var d = dialog('Change theme', body, '<span class="r"><button class="btn primary" data-close>Done</button></span>');
+    d.classList.add('themes');
+    $$('.thp', d).forEach(function (b) {
+      b.onclick = function () {
+        setTheme(b.dataset.theme);
+        $$('.thp', d).forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); });
+        $('#th-mode', d).hidden = b.dataset.theme !== 'notebook';
+        toast('Theme: ' + themeInfo(b.dataset.theme)[1]);
+      };
+    });
+    $$('[data-mode]', d).forEach(function (b) {
+      b.onclick = function () { setTheme('notebook', b.dataset.mode); $$('[data-mode]', d).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); };
+    });
+  }
+  // A class's color: the student's pick for this theme, or a stable default slot (never the optional pink).
+  function classIndex(name) { return !name || name === UNSORTED ? 0 : parseInt(ics.hash(name), 36) % 7 + 1; }
+  function colorOf(course) {
+    var pick = S.colors && S.colors[curTheme()] && S.colors[curTheme()][course];
+    var n = pick >= 1 && pick <= 8 ? pick : classIndex(course);
+    return { n: n, picked: !!pick };
+  }
+  function cvars(course) { var n = colorOf(course).n; return '--c:var(--swatch-' + n + ');--ci:var(--swatch-' + n + '-ink)'; }
+  function openSwatches(anchor, course) {
+    var t = themeInfo(curTheme()), cur = colorOf(course).n;
+    var items = [{ heading: 'Color for ' + course }];
+    t[3].forEach(function (name, i) {
+      items.push({ label: name + (i === 7 ? ' (optional)' : ''), swatch: i + 1, checked: cur === i + 1, onClick: function () {
+        S.colors = S.colors || {}; (S.colors[curTheme()] = S.colors[curTheme()] || {})[course] = i + 1; save(); renderBoard();
+        toast(course + ' is now ' + name + ' in ' + t[1] + '.');
+      } });
+    });
+    if (colorOf(course).picked) items.push({ sep: true }, { label: 'Use the default color', icon: ICON.refresh, onClick: function () { delete S.colors[curTheme()][course]; save(); renderBoard(); } });
+    menu(anchor, items, { title: 'Pick a color for ' + course, label: 'Class color' });
+  }
   // The Board tab: view switch, search, class chips and the columns.
   function mountBoard() {
     $('#sb-main').innerHTML =
+      '<div class="bhead"><div class="hl"><h1 class="bh-t">Board <span id="sb-label"></span></h1></div><div class="hr"><span id="sb-fresh">' + freshHtml() + '</span>' +
+      '<div class="prog"><span class="prog-t" id="sb-prog"></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div></div></div><div id="sb-banner">' + bannerHtml() + '</div>' +
       '<div class="sb-tools" id="sb-tools"><div class="tl">' +
       '<div class="seg" role="group" aria-label="Show"><button data-view="today">Due today</button><button data-view="week">Week</button><button data-view="all">All</button></div>' +
       '<span class="weeknav" id="sb-weeknav"><button class="btn ghost icon" id="sb-prev" aria-label="Previous week" title="Previous week ([)">' + ICON.left + '</button><b id="sb-week"></b><button class="btn ghost icon" id="sb-next" aria-label="Next week" title="Next week (])">' + ICON.right + '</button><button class="btn ghost small" id="sb-thisweek">This week</button></span>' +
@@ -440,8 +552,9 @@
   }
   function moreMenu(anchor) {
     var items = [
-      { label: 'Import tasks\u2026', icon: ICON.imp, kbd: 'I', cls: 'm-only', onClick: openImport },
-      S.feedUrl ? { label: 'Refresh from Schoology now', icon: ICON.refresh, id: 'sb-refresh', onClick: function () { toast('Getting your latest assignments\u2026'); importLink(S.feedUrl, true); } } : null,
+      { label: 'Import tasks\u2026', icon: ICON.imp, kbd: 'I', id: 'sb-import', onClick: openImport },
+      S.feedUrl ? { label: 'Refresh from Schoology now', icon: ICON.refresh, id: 'sb-refresh', onClick: function () { refreshFeed(true); } } : null,
+      MODE === 'web' ? { label: 'Change theme', icon: NICON.pal, id: 'sb-theme-m', cls: 'm-only', onClick: openThemes } : null,
       { label: 'Edit categories', icon: ICON.edit, id: 'sb-cats', onClick: openCategories },
       { label: 'Name your classes', icon: ICON.tag, id: 'sb-naming', onClick: function () { openNaming(true); } },
       { label: sheetMode() ? 'Send this board to another device' : 'Move this board to your phone', icon: ICON.phone, id: 'sb-move', onClick: openMove },
@@ -464,8 +577,6 @@
     save(); renderBoard();
   }
 
-  // Each class gets a stable slot in the theme's class palette (--class-1..8; Unsorted is --class-0).
-  function classIndex(name) { return !name || name === UNSORTED ? 0 : parseInt(ics.hash(name), 36) % 8 + 1; }
   function themeVar(name, fallback) {
     var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return v || fallback;
@@ -483,10 +594,13 @@
     else if (fl && fl.test) src += '<span class="flag test" title="Study sessions are planned on the nights before it">' + esc(plan.LABEL[fl.est.type]) + '</span>';
     if (S.timer && S.timer.id === it.id) src += '<span class="flag run" title="Timer running">' + ICON.clock + '<span class="run-t">' + timerText() + '</span></span>';
     var label = it.title + ', ' + it.course + ', due ' + fmtDay(it.d) + ' ' + when + (done ? ', done' : '');
-    return '<div class="card' + cls + '" tabindex="0" data-id="' + esc(it.id) + '" aria-label="' + esc(label) + '">' +
+    var fg = it.check && !S.checked[it.id] && !done;
+    return '<div class="card' + cls + (done ? ' is-done' : '') + (fg ? ' flagged' : '') + '" tabindex="0" data-id="' + esc(it.id) + '" aria-label="' + esc(label + (fg ? ', double-check this' : '')) + '" style="' + cvars(it.course) + '">' +
+      '<button type="button" class="chk" tabindex="-1" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Mark not done: ' : 'Mark done: ') + it.title) + '" title="' + (done ? 'Mark not done' : 'Mark done') + ' (X)">' + NICON.ck + '</button>' +
       (url ? '<a class="t" href="' + esc(url) + '" target="_blank" rel="noopener" draggable="false" tabindex="-1">' + esc(it.title) + '</a>' : '<span class="t">' + esc(it.title) + '</span>') +
       (it.note ? '<div class="note">' + esc(it.note) + '</div>' : '') +
-      '<div class="m"><span class="l"><span class="tag" style="--ci:var(--class-' + classIndex(it.course) + ')">' + esc(it.course) + '</span>' + src + '</span><span class="tm">' + esc(when) + '</span></div>' +
+      (fg ? '<span class="flagtag" title="' + esc(it.check.why) + '">' + NICON.flag + 'Double-check this</span>' : '') +
+      '<div class="m"><span class="l"><span class="tag">' + esc(it.course) + '</span>' + src + '</span><span class="tm">' + esc(when) + '</span></div>' +
       '<button class="more" type="button" tabindex="-1" aria-label="Card actions" aria-haspopup="menu" aria-expanded="false" title="Actions (M)">' + ICON.more + '</button></div>';
   }
   function cardMenu(el) {
@@ -498,8 +612,10 @@
       { label: it.col === 'done' ? 'Mark not done' : 'Mark done', icon: ICON.check, kbd: 'X', onClick: function () { toggleDone(id); } },
       { label: 'Edit\u2026', icon: ICON.edit, kbd: 'E', onClick: function () { openEditor(id); } },
       { label: 'Set time estimate\u2026', icon: ICON.clock, onClick: function () { openEstimate(id); } },
+      { label: 'Change ' + it.course + ' color\u2026', icon: ICON.tag, onClick: function () { openSwatches(el.querySelector('.more'), it.course); } },
       S.timer && S.timer.id === id ? { label: 'Stop timer', icon: ICON.stop, onClick: function () { stopTimer(true); } } : { label: 'Start timer', icon: ICON.play, onClick: function () { startTimer(id); } });
     if (url) items.push({ label: 'Open in Schoology', icon: ICON.ext, onClick: function () { window.open(url, '_blank', 'noopener'); } });
+    if (it.check && !S.checked[id]) items.push({ label: 'It\u2019s right (clear the double-check note)', icon: ICON.check, onClick: function () { S.checked[id] = 1; save(); renderBoard(); toast('Thanks. Marked as checked.'); } });
     items.push({ label: 'Delete', icon: ICON.trash, kbd: 'Del', onClick: function () { deleteItem(id); } });
     menu(el.querySelector('.more'), items, { title: it.title, label: 'Card actions' });
   }
@@ -509,10 +625,11 @@
   function renderBoard() {
     if (!$('#sb-main')) return render();
     var tab = S.prefs.tab || 'now';
-    $$('#sb-tabs button').forEach(function (b) { b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'); });
+    $$('[data-tab]', app).forEach(function (b) { if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     $('#sb-add').classList.toggle('primary', tab === 'board');
     document.body.dataset.tab = tab;
     if (tab === 'now') { renderNow(); return mark(); }
+    if (tab === 'cal') { renderStub('cal'); return mark(); }
     if (tab === 'ahead') { renderAhead(); return mark(); }
     if (!$('#sb-board')) mountBoard();
     drawBoard();
@@ -539,7 +656,7 @@
     var openTotal = viewItems.filter(function (i) { return i.col !== 'done'; }).length;
     if (p.course && cats.indexOf(p.course) < 0) p.course = null;
     $('#sb-chips').innerHTML = '<button class="chip" data-c="" aria-pressed="' + (!p.course) + '" title="' + openTotal + ' to do in this view">All classes <b>' + openTotal + '</b></button>' +
-      cats.filter(function (c) { return counts[c] || S.cats.indexOf(c) >= 0 || p.course === c; }).map(function (c) { return '<button class="chip" data-c="' + esc(c) + '" aria-pressed="' + (p.course === c) + '" title="' + (counts[c] || 0) + ' to do in this view">' + esc(c) + ' <b>' + (counts[c] || 0) + '</b></button>'; }).join('');
+      cats.filter(function (c) { return counts[c] || S.cats.indexOf(c) >= 0 || p.course === c; }).map(function (c) { return '<button class="chip" data-c="' + esc(c) + '" aria-pressed="' + (p.course === c) + '" title="' + (counts[c] || 0) + ' to do in this view" style="' + cvars(c) + '"><i class="cdot" aria-hidden="true"></i>' + esc(c) + ' <b>' + (counts[c] || 0) + '</b></button>'; }).join('');
     $$('#sb-chips .chip').forEach(function (b) { b.onclick = function () { S.prefs.course = b.dataset.c || null; save(); renderBoard(); }; });
     var sel = $('#sb-chips .chip[aria-pressed="true"]'), cw = $('#sb-chips');
     if (sel && cw.scrollWidth > cw.clientWidth && (sel.offsetLeft < cw.scrollLeft || sel.offsetLeft + sel.offsetWidth > cw.scrollLeft + cw.clientWidth)) cw.scrollLeft = sel.offsetLeft - 16;
@@ -599,18 +716,19 @@
       $('#sb-pre-toggle').onclick = function (e) { e.preventDefault(); S.prefs.showPre = !S.prefs.showPre; save(); renderBoard(); };
     }
     var done = shown.filter(function (i) { return i.col === 'done'; }).length;
-    $('.prog', app).classList.remove('empty');
-    $('#sb-prog').textContent = done + ' of ' + shown.length + ' done';
+    $('#sb-prog').innerHTML = '<b>' + done + '</b> of ' + shown.length + ' done';
+    document.body.dataset.view = 'board'; document.title = 'Board \u00b7 Schoology Board';
     $('#sb-bar').style.width = (shown.length ? Math.round(100 * done / shown.length) : 0) + '%';
     bindCards();
   }
 
-  // ---------- planner: Now / Tonight, estimates, timer, Week ahead ----------
+  // ---------- planner context ----------
   function pctx() {
-    return { est: S.est, ttype: S.ttype, actual: S.actual, sdone: S.sdone, timer: S.timer, isWork: function (it) { return ics.isWork(it); } };
+    var today = dayKey(new Date());
+    return { est: S.est, ttype: S.ttype, actual: S.actual, sdone: S.sdone, timer: S.timer, pulled: S.pulled,
+      order: S.tnOrder && S.tnOrder.day === today ? S.tnOrder.ids : null, isWork: function (it) { return ics.isWork(it); } };
   }
-  var SRC_LABEL = { est: 'est.', learned: 'learned', set: 'yours' };
-  var SRC_TIP = { est: 'A typical time for this kind of work. Tap to change it.', learned: 'Your average from timing this kind of work in this class.', set: 'Your own estimate.' };
+  var SRC_LABEL = { est: 'our guess', learned: 'your average', set: 'yours' };
   function fmtRange(a, b) {
     var x = fmtT(a), y = fmtT(b), ap = / [AP]M$/;
     if (x.slice(-2) === y.slice(-2)) x = x.replace(ap, '');
@@ -619,156 +737,352 @@
   // "today 11:59 PM", "tomorrow 8:00 AM", "Thu 8:00 AM", "Oct 30"
   function dueWords(it, now) {
     var dd = Math.round((sod(it.d) - sod(now)) / 864e5), t = it.allDay ? '' : ' ' + fmtT(it.d);
-    if (dd === 0) return 'today' + t;
+    if (dd === 0) return (it.d.getHours() >= 17 ? 'tonight' : 'today') + t;
     if (dd === 1) return 'tomorrow' + t;
     if (dd < 0) return (dd === -1 ? 'yesterday' : it.d.toLocaleDateString('en-US', { weekday: 'short' })) + t;
-    if (dd < 7) return it.d.toLocaleDateString('en-US', { weekday: 'long' }) + t;
+    if (dd < 7) return it.d.toLocaleDateString('en-US', { weekday: 'short' }) + t;
     return fmtShort(it.d) + t;
   }
-  function estChip(id, min, src, extra) {
-    return '<button type="button" class="est-chip" data-est="' + esc(id) + '" title="' + esc(SRC_TIP[src] + ' Tap to change.') + '" aria-label="' + esc(plan.fmtMin(min) + ', ' + (src === 'learned' ? 'learned from your timing' : src === 'set' ? 'your estimate' : 'estimate') + '. Change the time estimate') + '">' +
-      ICON.clock + esc(plan.fmtMin(min)) + (extra || '') + ' <i>' + esc(SRC_LABEL[src]) + '</i></button>';
-  }
-  function kindFlag(task) {
-    if (task.kind === 'study') return '<span class="flag test" title="Study session for a quiz or test">Study for ' + esc(task.est.type) + '</span>';
-    if (task.kind === 'early') return '<span class="flag early" title="A big assignment due in a few days: tonight is a first chunk">Start early</span>';
-    if (task.overdue) return '<span class="flag late">Overdue</span>';
-    return '';
-  }
+  function durS(m) { m = Math.round(m); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + m % 60 + 'm' : ''); }
+  function plural(n, w, ws) { return n + ' ' + (n === 1 ? w : (ws || w + 's')); }
   function timerText() {
     if (!S.timer) return '';
     var s = Math.max(0, Math.floor((Date.now() - S.timer.at) / 1000)), m = Math.floor(s / 60);
     return (m >= 60 ? Math.floor(m / 60) + ':' + pad(m % 60) : m) + ':' + pad(s % 60);
   }
-  var lastPlan = null;
-  function renderNow() {
-    var now = new Date(), items = allItems();
-    var ps = S.planStart && S.planStart.day === dayKey(now) ? S.planStart.t : null;
-    var P = plan.tonight(items, pctx(), now, { start: ps });
-    lastPlan = P;
-    var work = P.blocks.filter(function (b) { return b.kind !== 'break'; });
-    var running = S.timer && items.filter(function (i) { return i.id === S.timer.id; })[0];
-    if (S.timer && !running) { S.timer = null; save(); }
-    // Header: tonight's progress.
-    var wEnd = P.windowEnd, inWin = items.filter(function (i) { return plan.plannable(Object.assign({}, i, { col: 'todo' }), pctx()) && i.d >= sod(now) && i.d < wEnd && !plan.isTestType(plan.inferType(i, S.ttype)); });
-    var doneN = inWin.filter(function (i) { return i.col === 'done'; }).length;
-    $('#sb-label').textContent = 'Tonight \u00b7 ' + now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    var byDay = addDays(wEnd, -1), byWord = Math.round((byDay - sod(now)) / 864e5) === 1 ? 'tomorrow' : byDay.toLocaleDateString('en-US', { weekday: 'long' });
-    $('#sb-prog').textContent = inWin.length ? doneN + ' of ' + inWin.length + ' due by ' + byWord + ' done' : '';
-    $('.prog', app).classList.toggle('empty', !inWin.length);
-    $('#sb-bar').style.width = (inWin.length ? Math.round(100 * doneN / inWin.length) : 0) + '%';
-    renderSync();
+  function greeting(now) { var h = now.getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
 
-    // 1. The one thing to do right now.
-    var hero = '', first = work[0], focus = null;
-    if (running) {
-      var rt = P.tasks.filter(function (t) { return t.id === running.id; })[0];
-      focus = { item: running, task: rt || null, block: rt ? work.filter(function (b) { return b.task === rt; })[0] : null };
-    } else if (first) focus = { item: first.task.item, task: first.task, block: first };
-    if (focus) {
-      var it = focus.item, url = safeUrl(it.url), b = focus.block, tk = focus.task;
-      var est = tk ? tk.est : plan.estimate(it, pctx(), plan.learnedTable(items, pctx()));
-      var label = running ? 'Working on it' : b && b.start > addMin(now, 5) ? 'Next \u00b7 starts ' + fmtT(b.start) : 'Do this now';
-      var chunk = tk && (tk.kind === 'study' || tk.kind === 'early');
-      hero = '<section class="now-hero" aria-label="What to do now"><p class="now-k">' + esc(label) + '</p>' +
-        '<h2 class="now-t">' + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>' : esc(it.title)) + '</h2>' +
-        '<p class="now-m"><span class="tag" style="--ci:var(--class-' + classIndex(it.course) + ')">' + esc(it.course) + '</span>' +
-        '<span>Due ' + esc(dueWords(it, now)) + '</span>' +
-        (b ? '<span>' + esc(fmtRange(b.start, b.end)) + (b.parts > 1 ? ' \u00b7 part ' + b.part + ' of ' + b.parts : '') + '</span>' : '') +
-        (tk ? estChip(it.id, tk.min, est.src) : estChip(it.id, est.min, est.src)) + (tk ? kindFlag(tk) : '') + '</p>' +
-        '<div class="now-acts">' +
-        (running ? '<button class="btn primary big" id="now-stop">' + ICON.stop + 'Stop timer <span class="timer" id="now-timer">' + timerText() + '</span></button>'
-          : '<button class="btn primary big" id="now-start">' + ICON.play + 'Start timer</button>') +
-        '<button class="btn big" id="now-done">' + ICON.check + (chunk ? 'Done for tonight' : 'Mark done') + '</button>' +
-        (url ? '<a class="btn big ghost" href="' + esc(url) + '" target="_blank" rel="noopener">' + ICON.ext + 'Open in Schoology</a>' : '') +
-        '</div></section>';
-    } else {
-      var nxt = items.filter(function (i) { return i.col !== 'done' && plan.plannable(i, pctx()) && i.d >= now; }).sort(function (a, c) { return a.d - c.d; })[0];
-      hero = '<section class="now-hero calm" aria-label="What to do now"><p class="now-k">Tonight</p>' +
-        '<h2 class="now-t">' + (P.spill.length ? 'It\u2019s too late to start more tonight.' : 'You\u2019re all set for tonight.') + '</h2>' +
-        '<p class="now-s">' + (P.spill.length ? 'See what\u2019s left below.' : nxt ? 'Next up: <b>' + esc(nxt.title) + '</b>, due ' + esc(dueWords(nxt, now)) + '.' : 'Nothing else is coming up on your board.') + '</p>' +
-        '<div class="now-acts"><button class="btn primary big" id="now-ahead">' + ICON.tab_ahead + 'Look at the week ahead</button><button class="btn big" id="now-board">' + ICON.tab_board + 'Open the board</button></div></section>';
-    }
-
-    // 2. Tonight's plan.
-    var defStart = plan.defaultStart(now), startVal = pad(P.start.getHours()) + ':' + pad(P.start.getMinutes());
-    var sum = work.length ? P.tasks.length - P.spill.length + ' task' + (P.tasks.length - P.spill.length === 1 ? '' : 's') + ' \u00b7 ' + plan.fmtMin(P.workMin) + ' of work \u00b7 done by ' + fmtT(P.finish) : '';
-    var list = P.blocks.map(function (b) {
-      var t = '<span class="blk-time">' + esc(fmtRange(b.start, b.end)) + '</span>';
-      if (b.kind === 'break') return '<li class="blk brk">' + t + '<span class="blk-brk">Break \u00b7 ' + b.min + ' min</span></li>';
-      var it = b.task.item, url = safeUrl(it.url), isRun = S.timer && S.timer.id === it.id;
-      return '<li class="blk' + (isRun ? ' running' : '') + '" data-id="' + esc(it.id) + '" data-kind="' + b.task.kind + '">' + t +
-        '<div class="blk-b">' + (url ? '<a class="blk-title" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>' : '<span class="blk-title">' + esc(it.title) + '</span>') +
-        '<div class="blk-m"><span class="tag" style="--ci:var(--class-' + classIndex(it.course) + ')">' + esc(it.course) + '</span><span>Due ' + esc(dueWords(it, now)) + '</span>' +
-        estChip(it.id, b.min, b.task.est.src, b.parts > 1 ? ' \u00b7 ' + b.part + '/' + b.parts : '') + kindFlag(b.task) + (isRun ? '<span class="flag run">Timer running</span>' : '') + '</div></div>' +
-        (b.part === b.parts ? '<button type="button" class="blk-done" aria-label="' + esc((b.task.kind === 'work' ? 'Mark done: ' : 'Done for tonight: ') + it.title) + '" title="' + (b.task.kind === 'work' ? 'Mark done' : 'Done for tonight') + '">' + ICON.check + '</button>' : '<span class="blk-done-sp"></span>') + '</li>';
-    }).join('');
-    var spill = P.spill.length ? '<div class="spill" role="note"><p><b>Won\u2019t fit before ' + fmtT(P.endBy) + ':</b> ' + P.spill.length + ' task' + (P.spill.length === 1 ? '' : 's') + ', about ' + plan.fmtMin(P.spill.reduce(function (a, t) { return a + t.min; }, 0)) + '.</p><ul>' +
-      P.spill.map(function (t) { return '<li>' + esc(t.item.title) + ' <span class="dim">\u00b7 ' + esc(t.item.course) + ' \u00b7 due ' + esc(dueWords(t.item, now)) + ' \u00b7 ' + plan.fmtMin(t.min) + '</span></li>'; }).join('') +
-      '</ul><p class="dim">Start earlier, shorten an estimate, or ask your teacher about what won\u2019t fit.</p></div>' : '';
-    var tonightHtml = '<section class="tn" aria-labelledby="tn-h"><div class="sec-h"><h2 id="tn-h">Tonight\u2019s plan</h2>' +
-      '<label class="tn-start">Start at <input type="time" id="tn-start" value="' + startVal + '" step="300"></label>' +
-      (ps && P.picked && P.picked > defStart ? '<button class="btn ghost small" id="tn-now">Start now instead</button>' : '') + '</div>' +
-      (sum ? '<p class="tn-sum">' + esc(sum) + '</p>' : '') +
-      (list ? '<ol class="tn-list">' + list + '</ol>' : '<p class="empty-line">' + (P.spill.length ? 'Nothing fits before ' + fmtT(P.endBy) + '.' : 'Nothing is due tomorrow and there\u2019s nothing to study for tonight.') + '</p>') + spill + '</section>';
-
-    // 3. Coming up: the next few days, tests and start-early flags.
-    var flags = plan.flags(items, pctx(), now), learned = plan.learnedTable(items, pctx());
-    var days = '', d0 = sod(now);
-    for (var i = 0; i < 3; i++) {
-      var day = addDays(P.windowEnd, i), next = addDays(day, 1);
-      var due = items.filter(function (x) { return x.col !== 'done' && plan.plannable(x, pctx()) && x.d >= day && x.d < next; });
-      var mins = due.reduce(function (a, x) { var e = plan.estimate(x, pctx(), learned); return a + (plan.isTestType(e.type) ? 0 : e.min); }, 0);
-      days += '<li><b>' + esc(Math.round((day - d0) / 864e5) === 1 ? 'Tomorrow' : day.toLocaleDateString('en-US', { weekday: 'long' })) + '</b>' +
-        '<span class="cu-n">' + (due.length ? due.length + ' due' + (mins ? ' \u00b7 about ' + plan.fmtMin(mins) : '') : 'Nothing due') + '</span>' +
-        '<span class="cu-t">' + due.slice(0, 3).map(function (x) { return esc(x.title); }).join(' \u00b7 ') + (due.length > 3 ? ' \u00b7 ' + (due.length - 3) + ' more' : '') + '</span></li>';
-    }
-    var soonTests = items.filter(function (x) { return flags[x.id] && flags[x.id].test && x.d >= addDays(d0, 1) && x.d < addDays(d0, 8); }).sort(function (a, c) { return a.d - c.d; });
-    var earlies = items.filter(function (x) { return flags[x.id] && flags[x.id].early; }).sort(function (a, c) { return a.d - c.d; });
-    var extra = soonTests.map(function (x) {
-      var nights = plan.studyNights(x, flags[x.id].est, d0);
-      return '<li class="cu-f"><span class="flag test">' + esc(plan.LABEL[flags[x.id].est.type]) + '</span><span class="cu-ft">' + esc(x.title) + ' <span class="dim">\u00b7 ' + esc(dueWords(x, now)) + '</span></span>' +
-        '<span class="cu-n">' + (nights.length ? nights.length + ' study session' + (nights.length === 1 ? '' : 's') + ' planned' : 'No study nights left') + '</span></li>';
-    }).concat(earlies.map(function (x) {
-      return '<li class="cu-f"><span class="flag early">Start early</span><span class="cu-ft">' + esc(x.title) + ' <span class="dim">\u00b7 due ' + esc(dueWords(x, now)) + '</span></span><span class="cu-n">about ' + plan.fmtMin(flags[x.id].est.min) + '</span></li>';
-    })).join('');
-    var sunday = now.getDay() === 0 || (now.getDay() === 6 && now.getHours() >= 12);
-    var coming = '<section class="cu" aria-labelledby="cu-h"><div class="sec-h"><h2 id="cu-h">After that</h2><button class="btn ghost small" id="cu-ahead">See the week ahead ' + ICON.arrow + '</button></div>' +
-      (sunday ? '<p class="cu-sun">It\u2019s the weekend: <a href="#" id="cu-sun">plan your week</a> before it starts.</p>' : '') +
-      '<ul class="cu-days">' + days + '</ul>' + (extra ? '<ul class="cu-flags">' + extra + '</ul>' : '') + '</section>';
-
-    $('#sb-main').innerHTML = '<div class="now">' + hero + '<div class="now-cols">' + tonightHtml + coming + '</div></div>';
-    bindNow(focus);
+  // ---------- freshness: always visible, on every view ----------
+  // The first fetch for a linked board with nothing saved yet shows a skeleton (a note appears after 8 s).
+  var loadSince = 0;
+  function loadingNow() { return MODE === 'web' && !!S.feedUrl && !Object.keys(S.ics).length && (syncing || !S.lastFetch); }
+  // "Open Schoology" goes to the student's own school site (taken from their saved link, in this browser only).
+  function schoologyHome() {
+    try { var u = new URL(S.feedUrl); if (u.protocol === 'https:' || u.protocol === 'webcal:') return 'https://' + u.host + '/home'; } catch (e) { }
+    return 'https://www.schoology.com/';
   }
-  function bindNow(focus) {
-    var m = $('#sb-main');
-    var st = $('#now-start', m); if (st) st.onclick = function () { startTimer(focus.item.id); };
-    var sp = $('#now-stop', m); if (sp) sp.onclick = function () { stopTimer(true); };
-    var dn = $('#now-done', m); if (dn) dn.onclick = function () { finishTask(focus.item.id, focus.task ? focus.task.kind : 'work'); };
-    [['#now-ahead', 'ahead'], ['#now-board', 'board'], ['#cu-ahead', 'ahead']].forEach(function (p) { var b = $(p[0], m); if (b) b.onclick = function () { setTab(p[1]); }; });
-    var sun = $('#cu-sun', m); if (sun) sun.onclick = function (e) { e.preventDefault(); setTab('ahead'); };
-    $$('.est-chip', m).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); openEstimate(b.dataset.est); }; });
-    $$('.blk-done', m).forEach(function (b) { b.onclick = function () { var li = b.closest('.blk'); finishTask(li.dataset.id, li.dataset.kind); }; });
+  function freshState() {
+    if (MODE === 'offline') return { k: 'off', t: 'Saved copy from ' + fmtShort(new Date(CFG.exportedAt || S.updated || Date.now())), tip: 'This is a backup file. Open the website to update from Schoology.' };
+    if (!S.feedUrl) return { k: 'none', t: 'Not linked to Schoology', tip: 'Add your Schoology calendar link so this updates by itself.' };
+    var f = S.lastFetch || {}, at = f.at ? new Date(f.at) : null, tip = at ? 'Last good sync: ' + at.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + fmtT(at) : 'Not synced yet';
+    if (syncing) return { k: 'sync', t: 'Syncing with Schoology\u2026', tip: tip };
+    if (f.ok === false) return { k: 'err', t: at ? 'Sync failed \u00b7 last good ' + fmtT(at) : 'Couldn\u2019t reach Schoology', tip: tip };
+    if (at && Date.now() - f.at > 6 * 36e5) return { k: 'stale', t: 'Synced ' + ago(f.at) + ' \u00b7 ' + fmtT(at), tip: tip };
+    if (at) return { k: 'ok', t: 'Synced with Schoology ' + ago(f.at), tip: tip };
+    return { k: 'sync', t: 'Syncing with Schoology\u2026', tip: tip };
+  }
+  function freshHtml() {
+    var s = freshState();
+    var btn = s.k === 'none' ? '<button type="button" class="btn small" data-addlink>Add your link</button>' :
+      s.k === 'off' ? '' : '<button type="button" class="refresh" data-refresh' + (s.k === 'sync' ? ' disabled' : '') + ' aria-label="Refresh from Schoology" title="Refresh from Schoology now">' + NICON.ref + '</button>';
+    return '<div class="fresh"><span class="fpill ' + (s.k === 'ok' ? 'ok' : s.k === 'sync' ? 'fsync' : s.k === 'err' ? 'ferr' : s.k) + '" role="status" title="' + esc(s.tip) + '"><i class="fdot"></i><span class="ft">' + esc(s.t) + '</span></span>' + btn + '</div>';
+  }
+  function bannerHtml() {
+    if (MODE !== 'web' || !S.feedUrl || syncing) return '';
+    var f = S.lastFetch || {};
+    if (f.ok === false) return '<div class="banner ferr" role="alert"><div class="bt"><b>Couldn\u2019t reach Schoology.</b> ' + (f.at ? 'Showing what we had at ' + fmtT(new Date(f.at)) + (sod(new Date(f.at)) < sod(new Date()) ? ' on ' + fmtShort(new Date(f.at)) : '') + '.' : 'Showing what\u2019s saved on this device.') +
+      ' <span class="bs">Your check-offs still save on this device.</span></div><div class="ba"><button class="btn primary" data-refresh>Retry</button><a class="btn" href="' + esc(schoologyHome()) + '" target="_blank" rel="noopener">Open Schoology' + NICON.ext + '</a></div></div>';
+    if (f.at && Date.now() - f.at > 6 * 36e5) return '<div class="banner stale" role="status"><div class="bt"><b>This list might be out of date.</b> The last sync was ' + esc(ago(f.at)) + ' (' + fmtT(new Date(f.at)) + '), so anything posted since then won\u2019t show yet.</div><div class="ba"><button class="btn primary" data-refresh>Refresh now</button></div></div>';
+    return '';
+  }
+  function bindFresh(root) {
+    $$('[data-refresh]', root).forEach(function (b) { b.onclick = function () { refreshFeed(true); }; });
+    $$('[data-addlink]', root).forEach(function (b) { b.onclick = openImport; });
+  }
+
+  // ---------- "Double-check this": low-confidence reads, each with a reason and a source ----------
+  function flagOf(it) { return it.check && !(S.checked && S.checked[it.id]) ? it.check : null; }
+  function flagBox(it, compact) {
+    var f = flagOf(it); if (!f) return '';
+    var src = f.url ? '<a href="' + esc(f.url) + '" target="_blank" rel="noopener">Source: ' + esc(f.src) + NICON.ext + '</a>' : '<span>Source: ' + esc(f.src) + '</span>';
+    return '<div class="flagbox' + (compact ? ' small' : '') + '" role="note"><span class="fl-h">' + NICON.flag + 'Double-check this ' + esc(f.what) + '</span><p>' + esc(f.why) + '</p>' +
+      '<div class="fl-a">' + src + '<button type="button" class="lnk" data-ok="' + esc(it.id) + '">It\u2019s right</button></div></div>';
+  }
+
+  // ---------- Tonight (home) ----------
+  var lastPlan = null, tnBusy = false;
+  function tonightModel(now) {
+    var items = allItems(), ctx = pctx();
+    var ps = S.planStart && S.planStart.day === dayKey(now) ? S.planStart.t : null;
+    var P = plan.tonight(items, ctx, now, { start: ps });
+    var today = sod(now), wEnd = P.windowEnd, tk = dayKey(now);
+    var first = {}, last = {}, brk = {};
+    P.blocks.forEach(function (b, i) {
+      if (b.kind === 'break') { var prev = P.blocks[i - 1]; if (prev && prev.task) brk[prev.task.id] = true; return; }
+      if (!first[b.task.id]) first[b.task.id] = b; last[b.task.id] = b;
+    });
+    var spillIds = {}; P.spill.forEach(function (t) { spillIds[t.id] = true; });
+    var od = P.tasks.filter(function (t) { return t.overdue; }), tn = P.tasks.filter(function (t) { return !t.overdue; });
+    var inScope = function (i) { return plan.plannable(Object.assign({}, i, { col: 'todo' }), ctx) && !plan.isTestType(plan.inferType(i, S.ttype)) && ((i.d >= addDays(today, -2) && i.d < wEnd) || (S.pulled && S.pulled[i.id])); };
+    var finished = items.filter(function (i) { return i.col === 'done' && inScope(i); });
+    var chunkDone = items.filter(function (i) { return S.sdone[i.id + '@' + tk] && i.col !== 'done'; });
+    var coming = items.filter(function (i) { return i.col !== 'done' && plan.plannable(i, ctx) && i.d >= wEnd && i.d < addDays(wEnd, 7) && !(S.pulled && S.pulled[i.id]) && !P.tasks.some(function (t) { return t.id === i.id; }); });
+    // Open work overdue by more than two days isn't planned tonight; say so instead of hiding it.
+    var older = items.filter(function (i) { return i.col !== 'done' && plan.plannable(i, ctx) && !plan.isTestType(plan.inferType(i, S.ttype)) && i.d < addDays(today, -2) && !(S.pulled && S.pulled[i.id]); });
+    return { P: P, items: items, od: od, tn: tn, first: first, last: last, brk: brk, spill: spillIds, finished: finished, chunkDone: chunkDone, coming: coming, older: older, wEnd: wEnd };
+  }
+  function dueLine(t, now) {
+    var it = t.item;
+    if (t.overdue) { var dd = Math.round((sod(now) - sod(it.d)) / 864e5); return 'Was due ' + it.d.toLocaleDateString('en-US', { weekday: 'short' }) + (it.allDay ? '' : ' ' + fmtT(it.d)) + ', ' + (dd <= 0 ? 'earlier today' : dd === 1 ? 'yesterday' : dd + ' days ago'); }
+    if (t.kind === 'study') return plan.LABEL[t.est.type] + ' ' + dueWords(it, now);
+    var w = 'Due ' + dueWords(it, now);
+    if (it.note && /before class/i.test(it.note)) w += ', before class';
+    return w;
+  }
+  function kindTag(t) {
+    if (t.kind === 'study') { var n = plan.studyNights(t.item, t.est, sod(new Date())); return '<span class="pin">Study session' + (n.length > 1 ? ' \u00b7 ' + n.length + ' planned' : '') + '</span>'; }
+    if (t.kind === 'early') return '<span class="pin early" title="Big assignment due in a few days. Tonight is a first chunk.">Start early \u00b7 first ' + durS(t.min) + '</span>';
+    return '';
+  }
+  function rowHtml(t, M, now, opts) {
+    var it = t.item, url = safeUrl(it.url), f = flagOf(it), b = M.first[t.id], e = M.last[t.id], spill = M.spill[t.id];
+    var guess = t.est.src === 'est', run = S.timer && S.timer.id === t.id;
+    var when = spill ? '<span class="when late">Won\u2019t fit before ' + fmtT(M.P.endBy) + '</span>' : b ? '<span class="when" title="Planned time">' + esc(fmtRange(b.start, e.end)) + (M.brk[t.id] ? ' \u00b7 then a ' + 10 + '-min break' : '') + '</span>' : '';
+    var timer = run ? '<span class="run" title="Timer running"><i class="fdot"></i><span class="run-t">' + timerText() + '</span></span><button type="button" class="lnk" data-stop>Stop timer</button>'
+      : opts.lead ? '<button type="button" class="lnk tmr" data-timer="' + esc(t.id) + '">Start timer</button>' : '';
+    var title = url ? '<a class="rt" href="' + esc(url) + '" target="_blank" rel="noopener" draggable="false" title="Open in Schoology">' + glue(it.title) + '</a>' : '<span class="rt">' + esc(it.title) + '</span>';
+    var chk = curTheme() === 'cafe' ? NICON.cup : NICON.ck;
+    var doneLabel = t.kind === 'work' ? 'Mark done: ' : 'Done for tonight: ';
+    return '<li class="trow ' + (t.overdue ? 'tlate' : 'tn') + (f ? ' flagged' : '') + (t.pulled ? ' pulled' : '') + (run ? ' running' : '') + '" data-id="' + esc(t.id) + '" data-kind="' + t.kind + '" style="' + cvars(it.course) + '">' +
+      (opts.drag ? '<button type="button" class="grip" aria-label="Reorder ' + esc(it.title) + ' (arrow keys)" title="Drag to reorder">' + NICON.grip + '</button>' : '') +
+      '<button type="button" class="bigchk" aria-pressed="false" aria-label="' + esc(doneLabel + it.title) + '" title="' + (t.kind === 'work' ? 'Mark done' : 'Done for tonight') + '">' + chk + '</button>' +
+      '<div class="rb">' + title + '<div class="rm"><span class="rcls">' + esc(it.course) + '</span><span class="due">' + (f && f.what === 'due date' ? '<span class="q" title="Double-check this date">?</span>' : '') + esc(dueLine(t, now)) + '</span>' + when + kindTag(t) +
+      (t.pulled ? '<span class="pin">Pulled in</span><button type="button" class="lnk" data-back="' + esc(t.id) + '">Put back</button>' : '') + timer + '</div>' + flagBox(it) + '</div>' +
+      '<button type="button" class="estb' + (guess ? ' guess' : '') + '" data-est="' + esc(t.id) + '" aria-haspopup="true" aria-label="Time estimate: ' + esc(durS(t.min)) + ', ' + SRC_LABEL[t.est.src] + '. Change it" title="' + (guess ? 'Our guess. Tap to set your own.' : t.est.src === 'learned' ? 'Your average from timing this kind of work. Tap to change.' : 'Your estimate. Tap to change.') + '">' + durS(t.min) + '</button></li>';
+  }
+  function glue(t) { t = String(t); var i = t.lastIndexOf(' '); return i < 0 ? '<span class="nw">' + esc(t) + NICON.ext + '</span>' : esc(t.slice(0, i + 1)) + '<span class="nw">' + esc(t.slice(i + 1)) + NICON.ext + '</span>'; }
+  function doneRow(it, now, chunk) {
+    var url = safeUrl(it.url);
+    return '<li class="trow tdone" data-id="' + esc(it.id) + '" data-kind="' + (chunk ? 'study' : 'work') + '" style="' + cvars(it.course) + '"><button type="button" class="bigchk" aria-pressed="true" aria-label="' + esc((chunk ? 'Not done for tonight: ' : 'Mark not done: ') + it.title) + '">' + (curTheme() === 'cafe' ? NICON.cup : NICON.ck) + '</button>' +
+      '<div class="rb">' + (url ? '<a class="rt" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>' : '<span class="rt">' + esc(it.title) + '</span>') +
+      '<div class="rm"><span class="rcls">' + esc(it.course) + '</span><span class="due">' + (chunk ? 'Done for tonight' : 'Done \u00b7 was due ' + esc(dueWords(it, now))) + '</span></div></div></li>';
+  }
+  function cuItem(it, now, learned) {
+    var e = plan.estimate(it, pctx(), learned), url = safeUrl(it.url), test = plan.isTestType(e.type);
+    return '<li class="cu" style="' + cvars(it.course) + '"><span class="cdot" aria-hidden="true"></span><div class="cb">' +
+      (url ? '<a class="ct" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>' : '<span class="ct">' + esc(it.title) + '</span>') +
+      '<span class="cm">' + esc(it.course) + ' \u00b7 ' + (test ? esc(plan.LABEL[e.type]) + ' \u00b7 ' : '') + (it.allDay ? 'all day' : fmtT(it.d)) + ' \u00b7 ~' + durS(e.min) + (test ? ' of study' : '') + '</span>' + flagBox(it, true) + '</div>' +
+      '<button type="button" class="pull" data-pull="' + esc(it.id) + '" aria-label="Pull ' + esc(it.title) + ' into tonight" title="' + (test ? 'Add a study session tonight' : 'Pull into tonight') + '">' + NICON.pull + '<span>Tonight</span></button></li>';
+  }
+  function dayGroups(list, now, max) {
+    var learned = plan.learnedTable(allItems(), pctx()), byDay = {};
+    list.forEach(function (it) { var k = dayKey(it.d); (byDay[k] = byDay[k] || []).push(it); });
+    var keys = Object.keys(byDay).sort(), rest = keys.slice(max).reduce(function (a, k) { return a + byDay[k].length; }, 0);
+    var more = rest ? '<p class="hid cu-more"><span class="cmn">' + rest + '</span> more due later ' + (rest === 1 ? 'is' : 'are') + ' on the board <span aria-hidden="true">\u00b7</span> <button type="button" class="lnk" data-go="board">Open the board</button></p>' : '';
+    return keys.slice(0, max).map(function (k) {
+      var l = byDay[k].sort(function (a, b) { return a.d - b.d; }), d = parseDay(k), dd = Math.round((d - sod(now)) / 864e5);
+      var m = l.reduce(function (a, it) { return a + plan.estimate(it, pctx(), learned).min; }, 0);
+      return '<div class="cug"><h3><span>' + esc(dd === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })) + '</span><em>' + plural(l.length, 'thing') + ' \u00b7 ~' + durS(m) + '</em></h3><ul>' + l.map(function (it) { return cuItem(it, now, learned); }).join('') + '</ul></div>';
+    }).join('') + more;
+  }
+  var ART = {
+    sticker: function (k) { return k === 'done' ? '<svg class="stk" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="48" class="a1"/><path d="M38 61l15 15 30-32" class="tick"/></svg><span class="stamp-s">DONE!</span>' : '<svg class="stk" viewBox="0 0 120 120" aria-hidden="true"><path d="M84 78A36 36 0 0 1 42 22a38 38 0 1 0 42 56z" class="a2"/><circle cx="92" cy="28" r="6" class="a1"/></svg>'; },
+    arcade: function (k) { return '<span class="gg">' + (k === 'done' ? 'GG' : 'FREE PLAY') + '</span><span class="ggs">' + (k === 'done' ? '+50 XP \u00b7 night cleared' : 'Nothing due tonight') + '</span>'; },
+    notebook: function (k) { return '<span class="hand">' + (k === 'done' ? 'nailed it.' : 'a free night.') + '<svg viewBox="0 0 200 70" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M178 20C140 2 46 4 18 24 0 38 22 62 92 64s104-10 98-34C186 16 150 8 120 10"/></svg></span>'; },
+    varsity: function (k, n) { return k === 'done' ? '<span class="bigw">W</span><span class="fin">FINAL \u00b7 ' + n + '\u20130</span>' : '<span class="rest">REST DAY</span><span class="fin">NO GAME TONIGHT</span>'; },
+    riso: function (k) { return '<span class="rstamp">' + (k === 'done' ? 'SORTED' : 'DAY OFF') + '</span>'; },
+    cafe: function (k) { return '<svg class="cafe" viewBox="0 0 160 110" aria-hidden="true"><path d="M14 30h132v74H14z" class="c-wall"/><path d="M8 18h144l-8 16H16z" class="c-awn"/>' + [0, 1, 2].map(function (i) { return '<rect class="pane' + (k === 'done' ? ' lit' : '') + '" style="animation-delay:' + (0.1 + i * 0.1) + 's" x="' + (28 + i * 38) + '" y="44" width="28" height="40" rx="14"/>'; }).join('') + '</svg><span class="cap">' + (k === 'done' ? 'Lights low. Kettle on.' : 'Quiet night at the caf\u00e9.') + '</span>'; }
+  };
+  function freeHtml(k, M, now) {
+    var nextDays = M.coming.slice().sort(function (a, b) { return a.d - b.d; });
+    var firstDay = nextDays.length ? dayKey(nextDays[0].d) : null, peek = nextDays.filter(function (i) { return dayKey(i.d) === firstDay; });
+    var n = M.finished.length + M.chunkDone.length, learned = plan.learnedTable(M.items, pctx());
+    var label = firstDay ? (function (d) { var dd = Math.round((d - sod(now)) / 864e5); return dd === 1 ? 'tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); })(parseDay(firstDay)) : '';
+    return '<section class="free ' + k + '" aria-label="' + (k === 'done' ? 'You\u2019re free tonight' : 'Nothing due tonight') + '"><div class="art">' + (ART[curTheme()] || ART.sticker)(k, n) + '</div>' +
+      '<p class="fl">' + (k === 'done' ? 'All ' + plural(n, 'thing') + ' due through ' + esc(byWord(M.wEnd, now)) + ' ' + (n === 1 ? 'is' : 'are') + ' checked off.' : 'Nothing is due ' + (M.wEnd - sod(now) > 2 * 864e5 ? 'before ' + esc(addDays(M.wEnd, -1).toLocaleDateString('en-US', { weekday: 'long' })) + ' ends' : 'today or tomorrow') + '. Take the night, or get a head start.') + '</p>' +
+      (peek.length ? '<div class="peek"><div class="sh"><h2>' + (k === 'done' ? 'Peek at what\u2019s next' : 'What\u2019s next') + '</h2><span class="meta">Due ' + esc(label) + '</span></div><ul>' + peek.map(function (it) { return cuItem(it, now, learned); }).join('') + '</ul>' +
+        (nextDays.length > peek.length ? '<p class="hid cu-more"><span class="cmn">' + (nextDays.length - peek.length) + '</span> more due later ' + (nextDays.length - peek.length === 1 ? 'is' : 'are') + ' on the board <span aria-hidden="true">\u00b7</span> <button type="button" class="lnk" data-go="board">Open the board</button></p>' : '') + '</div>'
+        : '<div class="peek"><p class="then">Nothing else is on your board for the next week.</p><div class="sa"><button type="button" class="btn" data-go="board">Open the board</button></div></div>') + '</section>';
+  }
+  function byWord(wEnd, now) { var d = addDays(wEnd, -1), dd = Math.round((d - sod(now)) / 864e5); return dd <= 0 ? 'today' : dd === 1 ? 'tomorrow' : d.toLocaleDateString('en-US', { weekday: 'long' }); }
+  function skeletonHtml(now) {
+    var r = function (w) { return '<div class="skrow"><span class="sk ckk"></span><span class="skb"><span class="sk" style="width:' + w + '%"></span><span class="sk s2" style="width:' + (w * 0.55) + '%"></span></span><span class="sk skchip"></span></div>'; };
+    var slow = loadSince && Date.now() - loadSince > 8000;
+    return '<section class="thero" aria-busy="true"><div class="hl"><p class="greet">' + greeting(now) + '</p><span class="sr">Getting tonight\u2019s list from Schoology</span><span class="sk vb"></span><span class="sk nb"></span></div><div class="hr">' + freshHtml() + '</div></section>' +
+      (slow ? '<div class="banner slow" role="status"><div class="bt"><b>Still working.</b> Schoology is slow right now. This page fills in by itself when it answers.</div><div class="ba"><a class="btn" href="' + esc(schoologyHome()) + '" target="_blank" rel="noopener">Open Schoology' + NICON.ext + '</a></div></div>' : '') +
+      '<section class="sec"><div class="sh"><span class="sk hb"></span></div><div class="list">' + r(62) + '</div></section>' +
+      '<section class="sec"><div class="sh"><span class="sk hb"></span></div><div class="list">' + r(70) + r(48) + r(58) + r(40) + '</div></section>';
+  }
+  function renderNow() {
+    var now = new Date(), main = $('#sb-main');
+    document.body.dataset.view = 'now';
+    if (loadingNow()) {
+      if (!loadSince) { loadSince = Date.now(); setTimeout(function () { if (loadingNow() && S.prefs.tab === 'now') renderNow(); }, 8100); }
+      main.innerHTML = '<main class="tnm" id="tn-main">' + skeletonHtml(now) + '</main>'; bindFresh(main); return;
+    }
+    loadSince = 0;
+    var M = tonightModel(now), P = M.P;
+    lastPlan = P;
+    if (S.timer && !M.items.some(function (i) { return i.id === S.timer.id; })) { S.timer = null; save(); }
+    var n = M.od.length + M.tn.length, mins = P.tasks.reduce(function (a, t) { return a + t.min; }, 0);
+    var total = n + M.finished.length + M.chunkDone.length;
+    var empty = !n && !M.finished.length && !M.chunkDone.length, done = !n && !empty;
+    var verdict, nudge = '';
+    if (empty) {
+      verdict = 'Nothing due tonight';
+      var nx = M.coming.slice().sort(function (a, b) { return a.d - b.d; })[0];
+      if (nx) nudge = 'Next deadline: <b>' + esc(nx.title) + '</b>, due ' + esc(dueWords(nx, now)) + '.';
+    } else if (done) { verdict = 'You\u2019re free tonight'; nudge = 'Everything due through ' + esc(byWord(M.wEnd, now)) + ' is done. Nice work.'; }
+    else {
+      verdict = plural(n, 'thing') + ' tonight, <span class="nw">about ' + durS(mins) + '</span>';
+      var lead = P.tasks[0];
+      nudge = lead.overdue ? 'Start with <b>' + esc(lead.item.title) + '</b>. It was due ' + esc(dueWords(lead.item, now)) + '.'
+        : lead.kind === 'study' ? 'First up: study for <b>' + esc(lead.item.title) + '</b> (' + esc(dueWords(lead.item, now)) + ').'
+        : 'First up: <b>' + esc(lead.item.title) + '</b>, due ' + esc(dueWords(lead.item, now)) + '.';
+      if (P.finish && !P.spill.length) nudge += ' Done by about ' + fmtT(P.finish) + '.';
+      else if (P.spill.length) nudge += ' That\u2019s more than fits tonight: ' + plural(P.spill.length, 'thing') + ' won\u2019t fit before ' + fmtT(P.endBy) + '.';
+    }
+    var flagged = M.items.filter(function (i) { return flagOf(i) && (P.tasks.some(function (t) { return t.id === i.id; }) || M.coming.indexOf(i) >= 0); });
+    var doneN = M.finished.length + M.chunkDone.length;
+    var prog = total ? '<div class="tprog" aria-label="' + doneN + ' of ' + total + ' done for tonight"><span class="tpt"><b>' + doneN + '</b> of ' + total + ' done</span><span class="ps"><span class="psl">Done</span><span class="pd" id="pDone">' + pad(doneN) + '</span><i>/</i><span class="pd">' + pad(total) + '</span></span><span class="pbar"><i style="width:' + Math.round(100 * doneN / total) + '%"></i></span></div>' : '';
+    var h = '<section class="thero"><div class="hl"><p class="greet">' + greeting(now) + '</p><h1 class="verdict" id="verdict">' + verdict + '</h1>' + (nudge ? '<p class="nudge">' + nudge + '</p>' : '') +
+      (flagged.length ? '<p class="flagn">' + NICON.flag + plural(flagged.length, 'item') + ' to double-check. ' + (flagged.length === 1 ? 'It\u2019s' : 'They\u2019re') + ' marked below.</p>' : '') + '</div><div class="hr">' + freshHtml() + prog + '</div></section>' + bannerHtml();
+    if (empty || done) h += freeHtml(empty ? 'empty' : 'done', M, now);
+    else {
+      var leadId = P.tasks[0] && P.tasks[0].id;
+      if (M.od.length) h += '<section class="sec dofirst" aria-labelledby="dfH"><div class="sh"><h2 id="dfH">Do first</h2><span class="cnt" title="' + plural(M.od.length, 'overdue item') + '">' + M.od.length + '</span><span class="meta">Overdue \u00b7 pinned to the top</span></div><ul class="list">' +
+        M.od.map(function (t) { return rowHtml(t, M, now, { lead: t.id === leadId }); }).join('') + '</ul></section>';
+      if (M.tn.length) {
+        var startVal = pad(P.start.getHours()) + ':' + pad(P.start.getMinutes()), defStart = plan.defaultStart(now);
+        h += '<section class="sec tonight" aria-labelledby="tnH"><div class="sh"><h2 id="tnH">Tonight</h2><span class="cnt" title="' + plural(M.tn.length, 'thing') + ' for tonight">' + M.tn.length + '</span><span class="meta">' +
+          (P.custom ? 'Your order \u00b7 <button type="button" class="lnk" data-resetorder>Back to suggested</button>' : 'By due time, then size \u00b7 <span class="dk">drag</span><span class="mb">hold</span> to reorder') + '</span></div>' +
+          '<p class="tn-when"><label>Start at <input type="time" id="tn-start" value="' + startVal + '" step="300"></label>' + (S.planStart && S.planStart.day === dayKey(now) && P.picked && P.picked > defStart ? ' <button type="button" class="lnk" id="tn-now">Start now instead</button>' : '') +
+          (P.spill.length ? '<span> \u00b7 <b>' + plural(P.spill.length, 'thing') + '</b> won\u2019t fit before ' + fmtT(P.endBy) + '</span>' : P.finish ? '<span> \u00b7 done by about <b>' + fmtT(P.finish) + '</b></span>' : '') + '</p>' +
+          '<ul class="list" id="tnList">' + M.tn.map(function (t) { return rowHtml(t, M, now, { drag: true, lead: t.id === leadId }); }).join('') + '</ul>' +
+          (P.spill.length ? '<div class="spill" role="note"><p><b>Won\u2019t fit before ' + fmtT(P.endBy) + ':</b> ' + plural(P.spill.length, 'thing') + ', about ' + durS(P.spill.reduce(function (a, t) { return a + t.min; }, 0)) + '. Start earlier, shorten an estimate, or ask your teacher about what won\u2019t fit.</p></div>' : '') +
+          (P.tasks.some(function (t) { return t.est.src === 'est'; }) ? '<p class="legend"><span class="lg" aria-hidden="true"></span>Dashed times are our guesses. Tap one to set your own.</p>' : '') + '</section>';
+      }
+    }
+    if (M.older.length) h += '<p class="hid older">' + plural(M.older.length, 'older overdue item') + ' (more than 2 days late) ' + (M.older.length === 1 ? 'is' : 'are') + ' on the board, not in tonight\u2019s plan <span aria-hidden="true">\u00b7</span> <button type="button" class="lnk" data-go="board">Open the board</button></p>';
+    var fin = M.finished.concat(M.chunkDone);
+    if (fin.length && !done) h += S.prefs.showDone ? '<p class="hid fin">Showing ' + plural(fin.length, 'finished item') + ' <span aria-hidden="true">\u00b7</span> <button type="button" class="lnk" data-showdone aria-expanded="true">Hide</button></p><ul class="list donel">' + M.finished.map(function (it) { return doneRow(it, now); }).join('') + M.chunkDone.map(function (it) { return doneRow(it, now, true); }).join('') + '</ul>'
+      : '<p class="hid fin">Hiding ' + plural(fin.length, 'finished item') + ' <span aria-hidden="true">\u00b7</span> <button type="button" class="lnk" data-showdone aria-expanded="false">Show</button></p>';
+    if (!empty && !done && M.coming.length) h += '<section class="sec coming" aria-labelledby="cuH"><div class="sh"><h2 id="cuH">Coming up</h2><span class="cnt" title="' + plural(M.coming.length, 'thing') + ' due in the next week">' + M.coming.length + '</span><span class="meta">Pull one in if you have time tonight</span></div><div class="cuw">' + dayGroups(M.coming, now, 2) + '</div></section>';
+    main.innerHTML = '<main class="tnm" id="tn-main">' + h + '</main>';
+    document.title = (done ? 'Free tonight' : empty ? 'Nothing due' : n + ' tonight') + ' \u00b7 Schoology Board';
+    bindNow(M);
+  }
+  function bindNow(M) {
+    var m = $('#tn-main'); if (!m) return;
+    bindFresh(m);
+    $$('.bigchk', m).forEach(function (b) {
+      b.onclick = function () {
+        if (tnBusy) return;
+        var row = b.closest('.trow'), id = row.dataset.id, kind = row.dataset.kind;
+        if (b.getAttribute('aria-pressed') === 'true') { undoFinish(id, kind); return; }
+        completeRow(row, id, kind);
+      };
+    });
+    $$('[data-est]', m).forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); openEstPop(b); }; });
+    $$('[data-timer]', m).forEach(function (b) { b.onclick = function () { startTimer(b.dataset.timer); }; });
+    $$('[data-stop]', m).forEach(function (b) { b.onclick = function () { stopTimer(true); }; });
+    $$('[data-pull]', m).forEach(function (b) {
+      b.onclick = function () {
+        var id = b.dataset.pull, it = itemById(id); S.pulled = S.pulled || {}; S.pulled[id] = dayKey(new Date()); save(); renderBoard();
+        var row = $('.trow[data-id="' + cssEsc(id) + '"]'); if (row) row.classList.add('arrive');
+        toast('Pulled into tonight: ' + (it ? it.title : ''), 'Undo', function () { delete S.pulled[id]; save(); renderBoard(); });
+      };
+    });
+    $$('[data-back]', m).forEach(function (b) { b.onclick = function () { var id = b.dataset.back, it = itemById(id); delete S.pulled[id]; save(); renderBoard(); toast('Moved back to ' + (it ? it.d.toLocaleDateString('en-US', { weekday: 'long' }) : 'its day')); }; });
+    $$('[data-ok]', m).forEach(function (b) { b.onclick = function () { S.checked = S.checked || {}; S.checked[b.dataset.ok] = 1; save(); renderBoard(); toast('Thanks. Marked as checked.'); }; });
+    var sd = $('[data-showdone]', m); if (sd) sd.onclick = function () { S.prefs.showDone = !S.prefs.showDone; save(); renderBoard(); var x = $('[data-showdone]'); if (x) x.focus(); };
+    var ro = $('[data-resetorder]', m); if (ro) ro.onclick = function () { S.tnOrder = null; save(); renderBoard(); toast('Back to the suggested order.'); };
+    $$('[data-go]', m).forEach(function (b) { b.onclick = function () { setTab(b.dataset.go); }; });
     var inp = $('#tn-start', m);
     if (inp) inp.onchange = function () { if (!inp.value) return; S.planStart = { day: dayKey(new Date()), t: inp.value }; save(); renderBoard(); };
     var tn = $('#tn-now', m); if (tn) tn.onclick = function () { S.planStart = null; save(); renderBoard(); };
+    $$('.grip', m).forEach(function (g) {
+      g.onkeydown = function (e) {
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        e.preventDefault();
+        var ids = $$('#tnList .trow').map(function (r) { return r.dataset.id; }), id = g.closest('.trow').dataset.id, i = ids.indexOf(id), j = i + (e.key === 'ArrowUp' ? -1 : 1);
+        if (j < 0 || j >= ids.length) return;
+        ids.splice(i, 1); ids.splice(j, 0, id); S.tnOrder = { day: dayKey(new Date()), ids: ids }; save(); renderBoard();
+        var ng = $('.trow[data-id="' + cssEsc(id) + '"] .grip'); if (ng) ng.focus();
+        live('Moved to position ' + (j + 1) + ' of ' + ids.length);
+      };
+    });
   }
-  // Done from the plan: a regular task moves to Completed; a study session or start-early chunk is done for tonight.
-  function finishTask(id, kind) {
+  function cssEsc(s) { return window.CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/["\\]/g, '\\$&'); }
+  function live(msg) { var l = $('#sb-live'); if (!l) { l = document.createElement('div'); l.id = 'sb-live'; l.className = 'sr'; l.setAttribute('aria-live', 'polite'); document.body.appendChild(l); } l.textContent = msg; }
+  function reducedMotion() { return matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+  // Finish a row: the theme's finish moment, then the row folds away. Undo is always one tap away.
+  var STAMP = { sticker: 'DONE!', arcade: '+10 XP', varsity: 'FINAL', riso: 'DONE' };
+  function completeRow(row, id, kind) {
+    var openBefore = lastPlan ? lastPlan.tasks.length : 0;
+    var after = function () { tnBusy = false; finishTask(id, kind, openBefore <= 1); };
+    if (reducedMotion() || !row) { after(); return; }
+    tnBusy = true;
+    row.querySelector('.bigchk').setAttribute('aria-pressed', 'true'); row.classList.add('is-done', 'celebrate');
+    var t = curTheme();
+    if (STAMP[t]) { var s = document.createElement('span'); s.className = 'stamp'; s.textContent = STAMP[t]; row.appendChild(s); }
+    if (t === 'sticker') { var r = row.querySelector('.bigchk').getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 8, 46); }
+    if (t === 'varsity') { var p = $('#pDone'); if (p) p.classList.add('flip'); }
+    setTimeout(function () {
+      var hgt = row.offsetHeight;
+      var a = row.animate([{ height: hgt + 'px', opacity: 1 }, { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginBottom: '-10px' }], { duration: 220, easing: 'ease-in', fill: 'forwards' });
+      a.onfinish = after;
+    }, 560);
+  }
+  function burst(x, y, n, spread) {
+    var fx = $('#fx'); if (!fx) { fx = document.createElement('div'); fx.id = 'fx'; document.body.appendChild(fx); }
+    var sh = ['<circle cx="12" cy="12" r="8"/>', '<rect x="5" y="5" width="14" height="14" rx="3"/>', '<path d="M13 2L4 14h6l-1 8 9-12h-6z"/>'];
+    for (var i = 0; i < n; i++) {
+      var s = document.createElement('span'); s.className = 'tpt c' + (i % 5 + 1);
+      s.innerHTML = '<svg viewBox="0 0 24 24">' + sh[i % 3] + '</svg>';
+      s.style.left = x + 'px'; s.style.top = y + 'px'; fx.appendChild(s);
+      var ang = Math.PI * 2 * i / n + Math.random() * 0.4, d = spread * (0.6 + Math.random() * 0.5);
+      s.animate([{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + Math.cos(ang) * d + 'px),calc(-50% + ' + Math.sin(ang) * d + 'px)) scale(1)', opacity: 1, offset: 0.7 }, { transform: 'translate(calc(-50% + ' + Math.cos(ang) * d + 'px),calc(-50% + ' + (Math.sin(ang) * d + 18) + 'px)) scale(.9)', opacity: 0 }], { duration: 900, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = (function (el) { return function () { el.remove(); }; })(s);
+    }
+  }
+  var CEL = {
+    sticker: function () { return '<b>Free tonight!</b>'; },
+    arcade: function () { return '<b>GG</b><span>NIGHT CLEARED \u00b7 +50 XP</span>'; },
+    notebook: function () { return '<b>nailed it.</b><svg viewBox="0 0 300 120" preserveAspectRatio="none"><path pathLength="1" d="M270 30C220 4 70 6 30 40 6 62 40 108 150 110s160-20 140-64C280 22 230 10 190 14"/></svg>'; },
+    varsity: function (n) { return '<span class="cw">W</span><span><b>FINAL</b><i>' + n + '\u20130 tonight</i></span>'; },
+    riso: function () { return '<b>TONIGHT: SORTED</b><span>EVERY LAST THING.</span>'; },
+    cafe: function () { return '<b>You\u2019re free tonight.</b><span>Go put the kettle on.</span>'; }
+  };
+  // The last check-off: one short finish moment, and one toast that still offers Undo (just the toast with reduced motion).
+  function celebrateAll(n, title, undo) {
+    if (reducedMotion()) { toast('Everything\u2019s done. You\u2019re free tonight.', 'Undo', undo, 6000); return; }
+    live('Everything\u2019s done. You\u2019re free tonight.');
+    toast('Marked done: ' + title, 'Undo', undo, 6000);
+    var t = curTheme(), c = document.createElement('div');
+    c.id = 'cel'; c.setAttribute('aria-hidden', 'true'); c.innerHTML = '<div class="cin">' + (CEL[t] || CEL.sticker)(n) + '</div>';
+    document.body.appendChild(c);
+    if (t === 'sticker') burst(innerWidth / 2, innerHeight * 0.42, 22, Math.min(innerWidth * 0.38, 300));
+    setTimeout(function () { c.remove(); }, 1150);
+  }
+  // Done from Tonight: a regular task moves to Completed; a study session or start-early chunk is done for tonight.
+  function finishTask(id, kind, last) {
     if (S.timer && S.timer.id === id) stopTimer(false);
+    var it = itemById(id), title = it ? it.title : '';
+    if (S.pulled && S.pulled[id] && kind === 'work') delete S.pulled[id];
     if (kind === 'study' || kind === 'early') {
       var key = id + '@' + dayKey(new Date());
       S.sdone[key] = 1; save(); renderBoard();
-      toast('Done for tonight', 'Undo', function () { delete S.sdone[key]; save(); renderBoard(); }, 5000);
+      var undoS = function () { delete S.sdone[key]; save(); renderBoard(); };
+      if (last) celebrateAll(1, title, undoS); else toast('Done for tonight: ' + title, 'Undo', undoS, 6000);
       return;
     }
-    var prev = (itemById(id) || {}).col || 'todo';
+    var prev = (it || {}).col || 'todo';
     S.status[id] = 'done'; save(); renderBoard();
-    toast('Marked done', 'Undo', function () { S.status[id] = prev; save(); renderBoard(); }, 5000);
+    if (last) celebrateAll(tonightModel(new Date()).finished.length, title, function () { S.status[id] = prev === 'done' ? 'todo' : prev; save(); renderBoard(); });
+    else toast('Done: ' + title, 'Undo', function () { S.status[id] = prev === 'done' ? 'todo' : prev; save(); renderBoard(); var r = $('.trow[data-id="' + cssEsc(id) + '"]'); if (r) r.classList.add('arrive'); }, 6000);
+  }
+  function undoFinish(id, kind) {
+    if (kind === 'study') { delete S.sdone[id + '@' + dayKey(new Date())]; }
+    else { S.status[id] = 'todo'; }
+    save(); renderBoard();
+    var it = itemById(id), r = $('.trow[data-id="' + cssEsc(id) + '"]'); if (r) r.classList.add('arrive');
+    toast('Back on tonight\u2019s list: ' + (it ? it.title : ''));
   }
   function startTimer(id) {
     if (S.timer && S.timer.id !== id) stopTimer(false);
     S.timer = { id: id, at: Date.now() }; save(); renderBoard();
+    toast('Timer started. Tap Stop timer when you finish or take a break.');
   }
   function stopTimer(announce) {
     if (!S.timer) return;
@@ -782,8 +1096,100 @@
   }
   function tickTimer() {
     if (!S || !S.timer) return;
-    var el = $('#now-timer'); if (el) el.textContent = timerText();
-    var c = $('.card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(S.timer.id) : S.timer.id) + '"] .run-t'); if (c) c.textContent = timerText();
+    $$('.run-t').forEach(function (el) { el.textContent = timerText(); });
+  }
+  // Quick estimate popover (tap a time chip): common times, or "More options" for the full editor.
+  function openEstPop(btn) {
+    var id = btn.dataset.est, it = itemById(id); if (!it) return;
+    var cur = (lastPlan && lastPlan.tasks.filter(function (t) { return t.id === id; })[0]) || null;
+    var e = plan.estimate(it, pctx(), plan.learnedTable(allItems(), pctx())), test = plan.isTestType(e.type);
+    var items = [{ heading: test ? 'Total study time' : 'How long will this take?' }];
+    [15, 30, 45, 60, 90, 120].forEach(function (m) {
+      items.push({ label: plan.fmtMin(m), checked: e.min === m, radio: true, onClick: function () { setEstimate(id, m); } });
+    });
+    items.push({ sep: true }, { label: 'More options\u2026', icon: ICON.clock, onClick: function () { openEstimate(id); } });
+    menu(btn, items, { title: it.title + (cur && cur.kind === 'study' ? ' (study session)' : ''), label: 'Time estimate' });
+  }
+  function setEstimate(id, m) {
+    var it = itemById(id); if (!it) return;
+    var def = plan.estimate(it, Object.assign(pctx(), { est: {} }), plan.learnedTable(allItems(), pctx()));
+    if (m === def.min) delete S.est[id]; else S.est[id] = m;
+    save(); renderBoard(); toast('Estimate saved: ' + plan.fmtMin(m));
+    var b = $('[data-est="' + cssEsc(id) + '"]'); if (b) b.focus({ preventScroll: true });
+  }
+
+  // ---------- Tonight: drag to reorder (mouse: 5 px; touch: 280 ms long-press) ----------
+  var tdrag = { on: false, justDropped: false };
+  document.addEventListener('pointerdown', function (e) {
+    var row = e.target.closest && e.target.closest('#tnList .trow');
+    if (!row || e.button > 0 || tnBusy) return;
+    if (e.target.closest('a,button:not(.grip),input,.flagbox')) return;
+    var sx = e.clientX, sy = e.clientY, touch = e.pointerType === 'touch', started = false, timer = null, lastY = sy;
+    var start = function () { started = true; tBegin(row, sy); tMove(lastY); };
+    if (touch) timer = setTimeout(start, 280);
+    var mv = function (ev) {
+      lastY = ev.clientY;
+      if (!started) {
+        var dd = Math.hypot(ev.clientX - sx, ev.clientY - sy);
+        if (touch) { if (dd > 8) { clearTimeout(timer); clean(); } return; }
+        if (dd > 5) start(); else return;
+      }
+      ev.preventDefault(); tMove(ev.clientY);
+    };
+    var up = function () { clearTimeout(timer); if (started) tEnd(); clean(); };
+    var clean = function () { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); };
+    addEventListener('pointermove', mv, { passive: false }); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  });
+  document.addEventListener('touchmove', function (e) { if (tdrag.on) e.preventDefault(); }, { passive: false });
+  document.addEventListener('contextmenu', function (e) { if (tdrag.on || (e.target.closest && e.target.closest('#tnList .trow') && sheetMode())) e.preventDefault(); });
+  document.addEventListener('click', function (e) { if (tdrag.justDropped && e.target.closest && e.target.closest('.trow')) { tdrag.justDropped = false; e.preventDefault(); e.stopPropagation(); } }, true);
+  function tBegin(row, y) {
+    var rows = $$('#tnList .trow');
+    tdrag.on = true; tdrag.row = row; tdrag.rows = rows; tdrag.idx = rows.indexOf(row); tdrag.to = tdrag.idx; tdrag.y0 = y + scrollY; tdrag.y = y;
+    tdrag.mids = rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + scrollY + b.height / 2; });
+    tdrag.h = row.offsetHeight + 10;
+    row.classList.add('lift'); document.body.classList.add('dragging'); if (navigator.vibrate) navigator.vibrate(8); closeMenu(false); tAuto();
+  }
+  function tMove(y) {
+    if (!tdrag.on) return;
+    tdrag.y = y; var dy = y + scrollY - tdrag.y0; tdrag.row.style.transform = 'translateY(' + dy + 'px)';
+    var c = tdrag.mids[tdrag.idx] + dy, to = tdrag.rows.filter(function (r, i) { return i !== tdrag.idx && tdrag.mids[i] < c; }).length; tdrag.to = to;
+    tdrag.rows.forEach(function (r, i) {
+      if (i === tdrag.idx) return; var s = 0;
+      if (tdrag.idx < to && i > tdrag.idx && i <= to) s = -tdrag.h;
+      if (to < tdrag.idx && i >= to && i < tdrag.idx) s = tdrag.h;
+      r.style.transform = s ? 'translateY(' + s + 'px)' : '';
+    });
+  }
+  function tAuto() {
+    if (!tdrag.on) return;
+    var y = tdrag.y, edge = 70, bottom = innerHeight - edge - (sheetMode() ? 70 : 0), v = 0;
+    if (y < edge) v = -(edge - y) / 5; else if (y > bottom) v = (y - bottom) / 5;
+    if (v) { scrollBy(0, v); tMove(y); }
+    requestAnimationFrame(tAuto);
+  }
+  function tEnd() {
+    var row = tdrag.row, rows = tdrag.rows, idx = tdrag.idx, to = tdrag.to;
+    tdrag.on = false; tdrag.justDropped = true; setTimeout(function () { tdrag.justDropped = false; }, 50);
+    document.body.classList.remove('dragging'); rows.forEach(function (r) { r.style.transform = ''; }); row.classList.remove('lift');
+    if (to !== idx) {
+      var ids = rows.map(function (r) { return r.dataset.id; }), mv = ids.splice(idx, 1)[0]; ids.splice(to, 0, mv);
+      S.tnOrder = { day: dayKey(new Date()), ids: ids }; save(); renderBoard();
+      var el = $('.trow[data-id="' + cssEsc(mv) + '"]'); if (el) el.classList.add('arrive');
+      toast('Order saved. You can go back to the suggested order anytime.');
+    }
+  }
+
+  // ---------- Calendar (coming soon) ----------
+  function renderStub(v) {
+    var now = new Date();
+    document.body.dataset.view = v;
+    $('#sb-main').innerHTML = '<main class="tnm" id="tn-main"><section class="thero stubh"><div class="hl"><p class="greet">' + greeting(now) + '</p></div><div class="hr">' + freshHtml() + '</div></section>' +
+      '<section class="stub"><span class="soon">Coming soon</span><h1>Calendar</h1><p>Your whole month from Schoology on one calendar, with tests and big projects marked so you can see heavy weeks coming.</p>' +
+      '<div class="sa"><button type="button" class="btn primary" data-go="now">Back to Tonight</button><button type="button" class="btn" data-go="board">Open the board</button></div></section></main>';
+    var m = $('#tn-main'); bindFresh(m);
+    $$('[data-go]', m).forEach(function (b) { b.onclick = function () { setTab(b.dataset.go); }; });
+    document.title = 'Calendar (coming soon) \u00b7 Schoology Board';
   }
 
   // One-tap estimate editor: quick chips, a custom number, and the kind of work (Quiz/Test get study sessions).
@@ -844,9 +1250,6 @@
     var range = fmtShort(ws) + '\u2013' + (we.getMonth() === ws.getMonth() ? we.getDate() : fmtShort(we));
     var rel = Math.round((ws - monday(now)) / (7 * 864e5));
     lastWeek = { W: W, range: range, rel: rel };
-    $('#sb-label').textContent = 'Week ahead';
-    $('#sb-prog').textContent = ''; $('#sb-bar').style.width = '0%'; $('.prog', app).classList.add('empty');
-    renderSync();
     var max = Math.max.apply(null, W.days.map(function (d) { return d.min; }).concat([1]));
     var nItems = W.days.reduce(function (a, d) { return a + d.items.length; }, 0);
     var head = nItems || W.tests.length ?
@@ -868,9 +1271,12 @@
       return '<li><span class="flag early">Start early</span><span class="wk-t">' + esc(e.item.title) + '<span class="dim"> \u00b7 ' + esc(e.item.course) + ' \u00b7 due ' + esc(dueWords(e.item, now)) + '</span></span>' +
         '<span class="wk-n">about ' + esc(plan.fmtMin(e.est.min)) + ' \u00b7 start by ' + esc(sod(e.startBy) <= sod(now) ? 'today' : e.startBy.toLocaleDateString('en-US', { weekday: 'long' })) + '</span></li>';
     }).join('') + '</ul>' : '<p class="empty-line">Nothing big (2 hours or more) is due this week.</p>') + '</section>';
-    $('#sb-main').innerHTML = '<div class="wk"><div class="wk-top"><div><h2 class="wk-h">' + (rel === 1 ? 'Next week' : 'This week') + ' \u00b7 ' + esc(range) + '</h2>' + head + '</div>' +
-      '<div class="wk-acts"><button class="btn primary" id="wk-tonight">' + ICON.tab_now + 'See tonight\u2019s plan</button><button class="btn" id="wk-img">' + ICON.dl + 'Save as image</button></div></div>' +
-      bars + '<div class="wk-cols">' + tests + early + '</div></div>';
+    document.body.dataset.view = 'ahead';
+    $('#sb-main').innerHTML = '<main class="tnm wkm"><section class="thero"><div class="hl"><p class="greet">Sunday plan</p><h1 class="verdict">' + (rel === 1 ? 'Next week' : 'This week') + ' \u00b7 ' + esc(range) + '</h1>' + head + '</div><div class="hr">' + freshHtml() + '</div></section>' + bannerHtml() +
+      '<div class="wk"><div class="wk-acts"><button class="btn primary" id="wk-tonight">' + NICON.moon + 'See tonight\u2019s list</button><button class="btn" id="wk-img">' + ICON.dl + 'Save as image</button></div>' +
+      bars + '<div class="wk-cols">' + tests + early + '</div></div></main>';
+    bindFresh($('#sb-main'));
+    document.title = 'Sunday plan \u00b7 Schoology Board';
     $('#wk-tonight').onclick = function () { setTab('now'); };
     $('#wk-img').onclick = shareWeek;
   }
@@ -1378,17 +1784,19 @@
   // Background refresh: every ~15 min while the tab is visible, and on return/focus when the last update is
   // older than ~5 min. Failures back off (1, 2, 4 ... 60 min) and stay quiet.
   var BG = { fails: 0, next: 0, tries: 0 };
-  function refreshFeed() {
+  function refreshFeed(manual) {
     if (MODE !== 'web' || !S.feedUrl || syncing) return;
     syncing = true; BG.tries++; renderSync();
+    var wasLoading = !Object.keys(S.ics).length;
     var url = S.feedUrl;
     relayFetch(url)
       .then(function (buf) { if (S.feedUrl !== url) return; applyIcs(ics.decodeBytes(buf), 'refresh', { quiet: true }); S.lastFetch = { at: Date.now(), ok: true }; BG.fails = 0; BG.next = 0; save(); })
       .catch(function () {
         BG.fails++; BG.next = Date.now() + Math.min(60, Math.pow(2, BG.fails - 1)) * 60000;
         S.lastFetch = { at: (S.lastFetch && S.lastFetch.at) || null, ok: false, failedAt: Date.now() }; save();
+        if (manual) toastErr('Still couldn\u2019t reach Schoology. Your check-offs still save on this device.');
       })
-      .then(function () { syncing = false; renderSync(); });
+      .then(function () { syncing = false; if (wasLoading && S.prefs.tab !== 'board') renderBoard(); else renderSync(); });
   }
   function maybeRefresh(minAgeMs) {
     if (MODE !== 'web' || !S || !S.feedUrl || syncing || document.hidden) return;
@@ -1403,26 +1811,23 @@
     if (m < 24 * 60) return Math.floor(m / 60) + 'h ago';
     return 'on ' + fmtShort(new Date(t));
   }
+  // The freshness pill is on every view; the error/stale banner sits right under the page header.
   function renderSync() {
-    var el = $('#sb-sync'); if (!el) return;
-    var html = '';
-    if (MODE === 'offline') html = 'Offline copy';
-    else if (S.feedUrl) {
-      var f = S.lastFetch;
-      if (syncing) html = '<span class="spinner sm" aria-hidden="true"></span>Updating\u2026';
-      // A failed background try stays quiet while the last good update is recent.
-      else if (f && f.ok === false && (!f.at || Date.now() - f.at > 30 * 60000)) html = 'Couldn\u2019t reach Schoology' + (f.at ? ' \u00b7 updated ' + ago(f.at) : '') + ' \u00b7 <a href="#" id="sb-retry">Try again</a>';
-      else if (f && f.at) html = 'Updated ' + ago(f.at);
+    if (!$('#sb-main') || !app) return;
+    $$('.fresh', app).forEach(function (el) { var t = document.createElement('div'); t.innerHTML = freshHtml(); el.replaceWith(t.firstChild); });
+    var head = $('.thero', app) || $('.bhead', app);
+    if (head && !loadingNow()) {
+      var host = $('#sb-banner', app), b = bannerHtml();
+      if (host) host.innerHTML = b;
+      else { var old = $('.banner.ferr, .banner.stale', app); if (old) old.remove(); if (b) head.insertAdjacentHTML('afterend', b); }
     }
-    el.innerHTML = html ? '<span class="sep" aria-hidden="true">\u00b7</span>' + html : '';
-    var rt = $('#sb-retry'); if (rt) rt.onclick = function (e) { e.preventDefault(); refreshFeed(); };
+    bindFresh(app);
   }
-
 
   // ---------- move to phone: the board travels in the link's #fragment, which browsers never send to a server ----------
   var MOVE_KEY = '#move=', QR_MAX = 1200;
   // Payload key -> state map. Keys may be hashed calendar ids ('~...'; sdone keys end in '@YYYY-MM-DD').
-  var MOVE_MAPS = [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden'], ['es', 'est'], ['ty', 'ttype'], ['ac', 'actual'], ['sd', 'sdone']];
+  var MOVE_MAPS = [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden'], ['es', 'est'], ['ty', 'ttype'], ['ac', 'actual'], ['sd', 'sdone'], ['pu', 'pulled'], ['ok', 'checked']];
   function b64u(bytes) {
     var bin = '';
     for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
@@ -1458,8 +1863,8 @@
     var p = prune({
       f: feed, c: S.createdAt, pc: S.proctorCol ? 1 : 0, st: remap(S.status), ov: remap(S.ov), hd: remap(S.hidden),
       cu: S.custom, ca: S.cats, or: S.order, rn: S.rename, ru: S.rules, cm: S.classMap, cas: S.cas,
-      es: remap(S.est), ty: remap(S.ttype), ac: remap(S.actual), sd: remapDay(S.sdone),
-      pr: prune({ hp: S.prefs.hidePast ? 1 : 0, sp: S.prefs.showPre ? 1 : 0 })
+      es: remap(S.est), ty: remap(S.ttype), ac: remap(S.actual), sd: remapDay(S.sdone), pu: remap(S.pulled), ok: remap(S.checked), co: S.colors,
+      pr: prune({ hp: S.prefs.hidePast ? 1 : 0, sp: S.prefs.showPre ? 1 : 0, th: S.prefs.theme !== 'sticker' ? S.prefs.theme : '', md: S.prefs.mode || '' })
     });
     if (S.pending) MOVE_MAPS.map(function (x) { return x[0]; }).forEach(function (k) { if (S.pending[k]) p[k] = Object.assign({}, S.pending[k], p[k] || {}); });
     if (!feed) { // no link to refetch from: send the events still in play, minimal fields only
@@ -1517,7 +1922,7 @@
   }
   // Turn a move payload into board state. Hashed calendar UIDs wait in S.pending until the feed arrives.
   function stateFromMove(p) {
-    var st = { status: {}, ov: {}, hidden: {}, est: {}, ttype: {}, actual: {}, sdone: {}, pending: null, ics: {} };
+    var st = { status: {}, ov: {}, hidden: {}, est: {}, ttype: {}, actual: {}, sdone: {}, pulled: {}, checked: {}, pending: null, ics: {} };
     MOVE_MAPS.forEach(function (pair) {
       var m = p[pair[0]] || {};
       Object.keys(m).forEach(function (k) {
@@ -1528,7 +1933,8 @@
     (p.ev || []).forEach(function (e) { st.ics[e[0]] = { uid: e[0], title: e[1], course: e[6] || null, due: e[2], allDay: !!e[3], url: e[4], desc: '', kind: e[5] || 'assignment', source: 'ics' }; });
     st.custom = p.cu || {}; st.cats = p.ca || []; st.order = p.or || []; st.rename = p.rn || {}; st.rules = p.ru || [];
     st.classMap = p.cm || {}; st.cas = p.cas || {}; st.proctorCol = !!p.pc; st.createdAt = p.c || null; st.feedUrl = p.f || '';
-    st.prefs = { hidePast: !!(p.pr && p.pr.hp), showPre: !!(p.pr && p.pr.sp) };
+    st.prefs = { hidePast: !!(p.pr && p.pr.hp), showPre: !!(p.pr && p.pr.sp), theme: (p.pr && p.pr.th) || 'sticker', mode: (p.pr && p.pr.md) || '' };
+    st.colors = p.co || {};
     return st;
   }
   function resolvePending() {
@@ -1556,7 +1962,9 @@
       S = normalizeState(base);
       if (!S.feedUrl && MODE === 'web') S.feedUrl = keepFeed; // a backup never carries the link; keep this device's
     } else {
-      ['status', 'ov', 'hidden', 'custom', 'cas', 'rename', 'classMap', 'ics', 'namingSeen', 'est', 'ttype', 'actual', 'sdone'].forEach(function (k) { if (inc[k]) cur[k] = Object.assign({}, cur[k], inc[k]); });
+      ['status', 'ov', 'hidden', 'custom', 'cas', 'rename', 'classMap', 'ics', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'checked'].forEach(function (k) { if (inc[k]) cur[k] = Object.assign({}, cur[k], inc[k]); });
+      if (inc.colors) Object.keys(inc.colors).forEach(function (t) { cur.colors[t] = Object.assign({}, cur.colors[t], inc.colors[t]); });
+      if (inc.prefs && inc.prefs.theme) { cur.prefs.theme = inc.prefs.theme; cur.prefs.mode = inc.prefs.mode || ''; }
       (inc.cats || []).forEach(function (c) { if (cur.cats.indexOf(c) < 0) cur.cats.push(c); });
       (inc.order || []).forEach(function (c) { if (cur.order.indexOf(c) < 0) cur.order.push(c); });
       var seenR = {}; cur.rules = (cur.rules || []).concat(inc.rules || []).filter(function (r) { var j = JSON.stringify(r); if (seenR[j]) return false; seenR[j] = 1; return true; });
@@ -1854,7 +2262,7 @@
             if (base && !base.course && !(S.ov[mid] && S.ov[mid].course)) S.ov[mid] = Object.assign(S.ov[mid] || {}, { course: r.course });
           });
           if (!it.on) return;
-          S.cas[it.id] = { id: it.id, source: 'cas', course: r.course, title: it.title, due: it.due, classDate: it.classDate, kind: it.kind, note: it.explicitDue ? '' : 'Before class' };
+          S.cas[it.id] = { id: it.id, source: 'cas', course: r.course, title: it.title, due: it.due, classDate: it.classDate, kind: it.kind, note: it.explicitDue ? '' : 'Before class', dueWord: !it.explicitDue && /\bdue\b/i.test(it.raw || '') ? 1 : 0 };
           delete S.hidden[it.id];
           added++;
         });
@@ -1895,13 +2303,14 @@
   // ---------- offline download ----------
   function scriptSafe(s) { return String(s).replace(/<\/(script)/gi, '<\\/$1').replace(/<!--/g, '<\\!--'); }
   // ---------- theme ----------
-  function activeTheme() { return document.documentElement.getAttribute('data-theme') || 'default'; }
+  function activeTheme() { return document.documentElement.getAttribute('data-theme') || 'sticker'; }
   // The backup carries the theme in use: the default tokens plus the active theme, with any
   // url(...) assets (fonts, textures) turned into data: URIs so the file works offline.
   function themeCss() {
-    var baked = document.getElementById('sb-theme');
+    var baked = document.querySelector('style#sb-theme'); // (the web page's palette button shares the id)
     if (baked) return Promise.resolve(baked.textContent);
-    var name = activeTheme(), names = ['theme/default.css'];
+    // Shared tokens, the Tonight layout, then only the theme in use (with its fonts).
+    var name = activeTheme(), names = ['theme/default.css', 'tonight.css'];
     if (name !== 'default') names.push('theme/' + name + '.css');
     return Promise.all(names.map(function (n) { return getSrc(n).then(function (css) { return inlineUrls(css, BASE + n); }); }))
       .then(function (parts) { return parts.join('\n'); }, function () { return ''; });
@@ -1948,8 +2357,8 @@
         home: MODE === 'web' ? location.origin : CFG.home
       };
       var j = function (o) { return JSON.stringify(o).replace(/</g, '\\u003c'); };
-      return '<!doctype html>\n<html lang="en" data-theme="' + esc(activeTheme()) + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-        '<title>Schoology Board (backup)</title><meta name="color-scheme" content="dark"><meta name="theme-color" content="">' +
+      return '<!doctype html>\n<html lang="en" data-theme="' + esc(activeTheme()) + '"' + (document.documentElement.getAttribute('data-mode') ? ' data-mode="dark"' : '') + '><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<title>Schoology Board (backup)</title><meta name="color-scheme" content="light dark"><meta name="theme-color" content="">' +
         '<style id="sb-theme">' + files.theme.replace(/<\/style/gi, '<\\/style') + '</style><style id="sb-css">' + files.css.replace(/<\/style/gi, '<\\/style') + '</style></head><body>' +
         '<div id="app"><div class="loading">Loading your board\u2026</div></div>\n' +
         '<script id="sb-config" type="application/json">' + j(cfg) + '</script>\n' +
@@ -1982,9 +2391,8 @@
   function init() {
     app = document.getElementById('app');
     if (!app) return;
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', themeVar('--meta-theme-color', ''));
     S = load();
+    applyTheme();
     var migrated = S._migrated; delete S._migrated;
     if (S._needsProctorCheck) { // boards from before the column was optional keep it if they use it
       delete S._needsProctorCheck;
@@ -2006,9 +2414,9 @@
     // Keep times fresh (the plan follows the clock) unless the student is in the middle of something.
     setInterval(function () {
       var ae = document.activeElement;
-      if (!drag && !document.querySelector('dialog[open]') && !openMenu && $('#sb-main') && !(ae && (ae.classList.contains('card') || isTyping({ target: ae })))) renderBoard();
+      if (!drag && !tdrag.on && !tnBusy && !document.querySelector('dialog[open]') && !openMenu && $('#sb-main') && !(ae && (ae.classList.contains('card') || isTyping({ target: ae })))) renderBoard();
     }, 60000);
-    window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; delete S._needsProctorCheck; render(); } });
+    window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; delete S._needsProctorCheck; applyTheme(); render(); } });
   }
   // ---------- installable app: the service worker keeps the app shell for offline use (never your calendar data) ----------
   function registerSw() {
@@ -2039,6 +2447,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, version: '1.5.0' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, version: '1.6.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

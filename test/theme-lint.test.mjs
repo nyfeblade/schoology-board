@@ -41,12 +41,12 @@ test('the default theme defines every variable the layout uses', () => {
   const defined = new Set([...theme.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
   const used = new Set();
   for (const f of files) for (const m of readFileSync(f, 'utf8').matchAll(/var\((--[\w-]+)/g)) used.add(m[1]);
-  const local = new Set(['--ci']); // set per element by board.js
+  const local = new Set(['--c', '--ci']); // class color + its ink, set per element by board.js
   const missing = [...used].filter((v) => !v.endsWith('-') && !defined.has(v) && !local.has(v));
   assert.deepEqual(missing, []);
 });
-test('layout CSS has no fonts, durations or literal shadows', () => {
-  const css = readFileSync(join(root, 'public', 'board', 'board.css'), 'utf8').replace(/@keyframes[^{]+\{(?:[^{}]*\{[^}]*\})*[^}]*\}/g, '');
+for (const name of ['board.css', 'tonight.css']) test(`layout CSS (${name}) has no fonts, durations or literal shadows`, () => {
+  const css = readFileSync(join(root, 'public', 'board', name), 'utf8').replace(/@keyframes[^{]+\{(?:[^{}]*\{[^}]*\})*[^}]*\}/g, '');
   assert.ok(!/font-family:\s*(?!var\()[A-Za-z"']/.test(css), 'font-family must use var(--font-*)');
   assert.ok(!/font:[^;}]*\b(Inter|monospace|sans-serif)\b/.test(css), 'font shorthand must use var(--font-*)');
   assert.ok(!/\b\d*\.?\d+m?s\b(?![\w-])/.test(css.replace(/var\([^)]*\)/g, '')), 'durations must use var(--dur-*) / var(--anim-*)');

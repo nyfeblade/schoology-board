@@ -3,6 +3,8 @@
 // Covers: first run, sample board, .ics import + re-import, drag/keyboard/double-click,
 // custom categories + tasks, CAS PDF preview + dedupe, backup opened from file://,
 // a 517-item year frozen at several moments (creation day, weekday, Friday 5/7 PM, Sunday),
+// Tonight (verdict, estimates, timer, finish + undo, reorder, pull in, flags, all states), themes,
+// PWA, background refresh, and phone long-press drag in EMULATED Android Chrome + iPhone WebKit.
 // class naming, optional proctor column, migrations, refresh on open with a stub relay.
 import { chromium } from 'playwright';
 import jsQR from 'jsqr';
@@ -34,7 +36,8 @@ function watch(page, tag) {
   page.on('dialog', (d) => d.accept());
 }
 const state = (page) => page.evaluate(() => window.SchoologyBoard.state());
-const more = async (page, id) => { await page.click('#sb-more'); await page.click(id); };
+// The ⋯ menu closes if an async import finishes and re-renders right as it opens; open it again in that case.
+const more = async (page, id) => { for (let k = 0; ; k++) { await page.click('#sb-more'); try { await page.click(id, { timeout: k < 2 ? 2500 : 30000 }); return; } catch (e) { if (k >= 2) throw e; await page.keyboard.press('Escape'); await page.waitForTimeout(300); } } };
 const newCtx = async (opts = {}) => { const c = await browser.newContext({ timezoneId: 'America/New_York', acceptDownloads: true, viewport: { width: 1440, height: 900 }, ...opts }); await c.clock.setFixedTime(opts.now || NOW); return c; };
 const cardByTitle = (page, t) => page.locator('.card', { hasText: t }).first();
 // The "Name your classes" step opens after a user import; skip it when a test isn't about it.
@@ -42,10 +45,13 @@ const skipNaming = async (page, wait = 1200) => { try { await page.waitForSelect
 const sod = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
 // Returning students open on Now; most checks here are about the Board tab, so switch to it (works under a modal too).
 async function board(page, sel = '', opts) {
-  await page.waitForSelector('#sb-tabs', opts);
+  await page.waitForSelector('#sb-tabs', { state: 'attached', ...(opts || {}) });
   await page.evaluate(() => { const b = document.querySelector('#sb-tabs [data-tab=board]'); if (b && b.getAttribute('aria-current') !== 'page') b.click(); });
   await page.waitForSelector('#sb-board' + sel, opts);
 }
+// Views: the top nav hides on phones (bottom bar there), so click through the DOM.
+async function tab(page, t) { await page.evaluate((t) => document.querySelector(`#sb-tabs [data-tab=${t}]`).click(), t); await page.waitForTimeout(80); }
+const pill = (page) => page.locator('.fpill:visible').first().innerText();
 async function dragTo(page, card, col) {
   const a = await card.boundingBox(), b = await page.locator(`.col[data-col="${col}"]`).boundingBox();
   await page.mouse.move(a.x + 30, a.y + 12);
@@ -58,12 +64,12 @@ async function noCyan(page) {
   return page.evaluate(() => {
     const bad = [];
     const hue = (r, g, b) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if (d < 0.08) return null;
-      let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; if (h < 0) h += 360; return { h, s: d / mx }; };
+      let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; if (h < 0) h += 360; return { h, s: d / mx, c: d }; };
     for (const el of document.querySelectorAll('*')) {
       const cs = getComputedStyle(el);
       for (const p of ['color', 'backgroundColor', 'borderTopColor', 'borderLeftColor', 'outlineColor', 'fill', 'stroke']) {
         const m = (cs[p] || '').match(/rgba?\((\d+), (\d+), (\d+)/); if (!m) continue;
-        const v = hue(+m[1], +m[2], +m[3]); if (v && v.h >= 150 && v.h <= 210 && v.s > 0.2) bad.push(`${el.tagName}.${el.className} ${p} ${cs[p]}`);
+        const v = hue(+m[1], +m[2], +m[3]); if (v && ((v.h >= 150 && v.h <= 210 && v.s > 0.2) || (v.h >= 15 && v.h < 46 && v.c >= 0.15))) bad.push(`${el.tagName}.${el.className} ${p} ${cs[p]}`);
       }
     }
     return bad;
@@ -240,7 +246,7 @@ await page.click('#sb-more');
 ok('desktop ⋯ menu holds Edit categories, Name your classes, Save a backup file and Show keyboard shortcuts', /Edit categories[\s\S]*Name your classes[\s\S]*Save a backup file[\s\S]*Show keyboard shortcuts/.test(await page.locator('.menu').innerText()));
 ok('"Save a backup" is not red', await page.locator('#sb-backup').evaluate((e) => !/255, 62, 81/.test(getComputedStyle(e).backgroundColor + getComputedStyle(e).color)));
 await page.keyboard.press('Escape');
-ok('only one red button in the header (Add)', await page.locator('.sb-head .btn').evaluateAll((els) => els.filter((e) => /255, 62, 81/.test(getComputedStyle(e).backgroundColor)).map((e) => e.id).join()) === 'sb-add');
+ok('one labelled button in the header (Add task); the rest are quiet icons', (await page.locator('.topbar .btn').evaluateAll((els) => els.filter((e) => e.offsetParent).map((e) => e.id).join())) === 'sb-add');
 await page.screenshot({ path: join(SHOTS, 'board-after-flow.png') });
 
 // ---------- 7. live link import through the proxy ----------
@@ -264,7 +270,7 @@ const [dl] = await Promise.all([page.waitForEvent('download'), more(page, '#sb-b
 const offlinePath = join(SHOTS, 'schoology-board-offline.html');
 await dl.saveAs(offlinePath);
 ok('offline file downloads', !!offlinePath);
-{ const h = readFileSync(offlinePath, 'utf8'); ok('backup inlines the active theme (tokens + data-theme)', /<html lang="en" data-theme="default">/.test(h) && /<style id="sb-theme">[\s\S]*--accent:#FF3E51/.test(h)); }
+{ const h = readFileSync(offlinePath, 'utf8'); ok('backup inlines the active theme (tokens + data-theme)', /<html lang="en" data-theme="sticker"/.test(h) && /<style id="sb-theme">[\s\S]*--bgc:/.test(h)); }
 await ctx.close();
 
 const octx = await newCtx();
@@ -279,17 +285,17 @@ ok('offline file carries custom category + task', ost.cats.includes('Reading') &
 ok('offline file carries CAS tasks', Object.keys(ost.cas).length === casTitles.length);
 ok('offline file carries progress', ost.status[id] === 'started');
 ok('offline file does not contain the calendar link', !JSON.stringify(ost).includes('feedUrl":"http'));
-ok('backup says "Offline copy" and does not try to refresh', (await op.locator('#sb-sync').innerText()).includes('Offline copy'));
+ok('backup says "Offline copy" and does not try to refresh', /Saved copy from/.test(await pill(op)));
 await op.screenshot({ path: join(SHOTS, 'offline-board.png') });
 const oc = cardByTitle(op, 'Two-Column Proof'); const ocid = await oc.getAttribute('data-id');
 await dragTo(op, oc, 'done');
 await op.reload(); await board(op, ' .card');
 ost = await state(op);
 ok('offline: drag persists in localStorage across reload', ost.status[ocid] === 'done');
-await op.click('#sb-import'); await op.setInputFiles('dialog #imp-file', ICS); await op.waitForTimeout(400);
+await more(op, '#sb-import'); await op.setInputFiles('dialog #imp-file', ICS); await op.waitForTimeout(400);
 ost = await state(op);
 ok('offline: .ics re-import works and keeps custom + CAS + progress', Object.keys(ost.ics).length === 19 && ost.status[ocid] === 'done' && Object.keys(ost.custom).length === 1 && Object.keys(ost.cas).length === casTitles.length);
-await op.click('#sb-import'); await op.setInputFiles('dialog #imp-file', CASPDF);
+await more(op, '#sb-import'); await op.setInputFiles('dialog #imp-file', CASPDF);
 let casOffline = false;
 try { await op.waitForSelector('.cas-table', { timeout: 20000 }); casOffline = (await op.locator('.cas-table tr').count()) === 14; } catch { }
 ok('offline: CAS PDF import works from file:// (pdf.js bundled inline)', casOffline);
@@ -353,7 +359,7 @@ await octx.close();
   g = await readBoard();
   ok(`creation day: All shows the note "${hiddenTotal} earlier items hidden · Show"`, g.note.replace(/\s+/g, ' ') === `${hiddenTotal} earlier items hidden · Show`, g.note);
   const ncs = await yp.locator('#sb-note').evaluate((e) => ({ fs: getComputedStyle(e).fontSize, c: getComputedStyle(e).color }));
-  ok('hidden note is quiet: 13px #6E6E76', ncs.fs === '13px' && ncs.c === 'rgb(110, 110, 118)', JSON.stringify(ncs));
+  ok('hidden note is quiet: 13px in the theme\'s muted ink', ncs.fs === '13px' && ncs.c === await yp.evaluate(() => { const i = document.createElement('i'); i.style.color = 'var(--mut)'; document.body.appendChild(i); const c = getComputedStyle(i).color; i.remove(); return c; }), JSON.stringify(ncs));
   // a weekday
   await at(weekday);
   ok('year: board opens on Week', await yp.locator('.seg button[aria-pressed="true"]').innerText() === 'Week');
@@ -414,7 +420,7 @@ await octx.close();
   ok('backup: creation cutoff, hiding and proctor column carry over', os.createdAt === cutoff && os.proctorCol === true && await yop.locator('#sb-board .card').count() === visible.length);
   ok('backup: class names carry over (mapping + chip)', JSON.stringify(os.classMap) === JSON.stringify(ystate.classMap) && await yop.locator('#sb-chips .chip[data-c="Algebra II"]').count() === 1);
   ok('backup: hidden note works offline', ((await yop.locator('#sb-note').textContent()) || '').startsWith(hiddenTotal + ' earlier items hidden'));
-  await yop.click('#sb-import'); await yop.setInputFiles('dialog #imp-file', YEAR); await yop.waitForTimeout(600);
+  await more(yop, '#sb-import'); await yop.setInputFiles('dialog #imp-file', YEAR); await yop.waitForTimeout(600);
   ok('backup: re-import there keeps the class names', await yop.locator('#sb-chips .chip[data-c="Algebra II"]').count() === 1 && await yop.locator('#sb-chips .chip[data-c="ALG2"]').count() === 0);
   await yo.close();
 }
@@ -457,42 +463,39 @@ await octx.close();
   await board(rp, ' .card'); await skipNaming(rp, 3000);
   let rs = await state(rp);
   ok('link import remembers the link in this browser only', rs.feedUrl === FEED && rs.lastFetch && rs.lastFetch.ok === true && relayHits === 1);
-  ok('refresh: "Updated just now" after import', /Updated just now/.test(await rp.locator('#sb-sync').innerText()));
+  ok('refresh: "Synced with Schoology just now" after import', /Synced with Schoology just now/.test(await pill(rp)));
   const wk = await rp.evaluate(() => document.querySelectorAll('#sb-board .card').length);
   ok('creation-day cutoff: Week hides 4 earlier items and keeps the 8 AM item due today', (await rp.locator('#sb-note').innerText()).replace(/\s+/g, ' ') === '4 earlier items hidden · Show' && await rp.locator('.card', { hasText: 'Osmosis' }).count() === 1, await rp.locator('#sb-note').innerText());
   await cardByTitle(rp, 'Osmosis').dblclick();
   mode = 'B';
   await rctx.clock.setFixedTime(new Date(wed.getTime() + 60e3));
-  await rp.reload(); await board(rp, ' .card'); await rp.waitForFunction(() => /Updated/.test(document.querySelector('#sb-sync').textContent));
+  await rp.reload(); await board(rp, ' .card'); await rp.waitForSelector('.bhead .fpill.ok');
   rs = await state(rp);
   ok('refresh on open re-fetches through the relay and merges', relayHits === 2 && !!rs.ics['sb-sample-new@example.invalid'] && !Object.values(rs.ics).some((e) => /Picture Day/.test(e.title)) && await rp.locator('.card', { hasText: 'Field Trip Permission Form' }).count() === 1);
   ok('refresh keeps progress (status survives)', Object.entries(rs.status).some(([k, v]) => v === 'done' && /Osmosis/.test((rs.ics[k] || {}).title || '')));
   ok('auto-refresh does not open the naming step or a toast', await rp.locator('dialog.naming').count() === 0 && await rp.locator('.toast', { hasText: 'Imported' }).count() === 0);
   await rctx.clock.setFixedTime(new Date(wed.getTime() + 4 * 60e3));
   await rp.click('.seg button[data-view="week"]');
-  ok('"Updated 3m ago" ticks with the clock', /Updated 3m ago/.test(await rp.locator('#sb-sync').innerText()), await rp.locator('#sb-sync').innerText());
-  const sc = await rp.locator('#sb-sync').evaluate((e) => getComputedStyle(e).color);
-  ok('sync status is neutral grey', /^rgb\((\d+), \1, \1\)$/.test(sc) || /rgb\((1[0-4]\d), (1[0-4]\d), (1[0-4]\d)\)/.test(sc), sc);
+  ok('"Synced with Schoology 3m ago" ticks with the clock', /Synced with Schoology 3m ago/.test(await pill(rp)), await pill(rp));
+  ok('the freshness pill sits in the board header', await rp.locator('.bhead .fpill').isVisible());
   await rp.screenshot({ path: join(SHOTS, 'board-hidden-note-updated.png') });
   mode = 'fail';
   const before = await rp.locator('#sb-board .card').count();
   await rp.reload(); await board(rp, ' .card');
-  await rp.waitForFunction(() => window.SchoologyBoard.bg().fails >= 1);
-  ok('failed background refresh stays quiet while the last update is recent (no toast, cached board kept)', /Updated \dm ago/.test(await rp.locator('#sb-sync').innerText()) && await rp.locator('#sb-board .card').count() === before && await rp.locator('.toast').count() === 0, await rp.locator('#sb-sync').innerText());
-  await rctx.clock.setFixedTime(new Date(wed.getTime() + 45 * 60e3));
-  await rp.reload(); await board(rp, ' .card'); await rp.waitForFunction(() => /Couldn/.test(document.querySelector('#sb-sync').textContent));
-  const failTxt = (await rp.locator('#sb-sync').innerText()).replace(/\s+/g, ' ');
-  ok('30+ minutes without an update: "Couldn\'t reach Schoology · updated 44m ago · Try again", cached board kept', failTxt.includes('Couldn’t reach Schoology · updated 44m ago · Try again') && await rp.locator('#sb-board .card').count() === before && await rp.locator('.toast').count() === 0, failTxt);
+  await rp.waitForSelector('.banner.ferr', { timeout: 5000 });
+  const failTxt = (await rp.locator('.banner.ferr').innerText()).replace(/\s+/g, ' ');
+  ok('failed refresh: a loud banner (Retry, Open Schoology, "Your check-offs still save on this device"), cached board kept, no toast', /Retry/.test(failTxt) && /Open Schoology/.test(failTxt) && /Your check-offs still save on this device/.test(failTxt) && await rp.locator('#sb-board .card').count() === before && await rp.locator('.toast').count() === 0, failTxt);
+  ok('failed refresh: the pill turns to "Sync failed · last good …"', /Sync failed · last good/.test(await pill(rp)) && await rp.locator('.bhead .fpill.ferr').count() === 1, await pill(rp));
   mode = 'B';
-  await rp.click('#sb-retry'); await rp.waitForFunction(() => /Updated/.test(document.querySelector('#sb-sync').textContent));
-  ok('Retry recovers', /Updated just now/.test(await rp.locator('#sb-sync').innerText()));
+  await rp.click('.banner.ferr [data-refresh]'); await rp.waitForSelector('.bhead .fpill.ok');
+  ok('Retry recovers', /Synced with Schoology just now/.test(await pill(rp)) && await rp.locator('.banner.ferr').count() === 0);
   ok('the link only travels in the relay request body', bodiesSeen.every((b) => JSON.parse(b).url === FEED));
   // phone width
   const pctx = await newCtx({ now: new Date(wed.getTime() + 4 * 60e3), viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await pctx.route('**/api/feed', (r) => r.fulfill({ status: 200, contentType: 'text/calendar', body: B }));
   await pctx.addInitScript((st) => { if (!localStorage.getItem('schoology-board:v1')) localStorage.setItem('schoology-board:v1', st); }, JSON.stringify({ ...rs, lastFetch: { at: wed.getTime() + 60e3, ok: true } }));
   const pp = await pctx.newPage(); watch(pp, 'phone');
-  await pp.goto(BASE + '/'); await board(pp, ' .card'); await pp.waitForFunction(() => /Updated/.test(document.querySelector('#sb-sync').textContent)); await pp.waitForTimeout(400);
+  await pp.goto(BASE + '/'); await board(pp, ' .card'); await pp.waitForSelector('.bhead .fpill.ok'); await pp.waitForTimeout(400);
   ok('phone: note and status fit without horizontal overflow', await pp.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await pp.screenshot({ path: join(SHOTS, 'phone-board.png') });
   await pctx.close();
@@ -505,7 +508,7 @@ await octx.close();
   const bo = await newCtx({ now: wed }); const bop = await bo.newPage(); watch(bop, 'refresh-backup');
   let net = 0; await bop.route('**/*', (r) => (/^(file|blob|data):/.test(r.request().url()) ? r.continue() : (net++, r.abort())));
   await bop.goto(pathToFileURL(rpath).href); await board(bop, ' .card'); await bop.waitForTimeout(500);
-  ok('backup opened from disk: "Offline copy", no refresh attempt', (await bop.locator('#sb-sync').innerText()).includes('Offline copy') && net === 0 && (await state(bop)).feedUrl === '');
+  ok('backup opened from disk: "Saved copy from …", no refresh attempt', /Saved copy from/.test(await pill(bop)) && net === 0 && (await state(bop)).feedUrl === '');
   await bo.close();
 }
 
@@ -522,7 +525,7 @@ await octx.close();
   await dp.waitForSelector('dialog.naming', { timeout: 8000 });
   await dp.locator('dialog.naming .nm-row', { has: dp.locator('b', { hasText: /^ALG2$/ }) }).locator('input').fill('Algebra II');
   await dp.click('#nm-done');
-  await dctx.clock.setFixedTime(when); await dp.reload(); await board(dp, ' .card'); await dp.waitForFunction(() => /Updated/.test(document.querySelector('#sb-sync').textContent));
+  await dctx.clock.setFixedTime(when); await dp.reload(); await board(dp, ' .card'); await dp.waitForSelector('.fpill.ok');
   await dp.click('#sb-filter'); await dp.check('#sb-proctorcol'); await dp.keyboard.press('Escape');
   await dp.locator('.col[data-col="todo"] .card').nth(0).dblclick();
   await dp.locator('.col[data-col="todo"] .card').nth(0).focus(); await dp.keyboard.press('2');
@@ -554,7 +557,7 @@ await octx.close();
   ok('phone: confirm step before anything changes', /Move this board here\?/.test(await pp.locator('dialog h3').innerText()) && Object.keys((await state(pp)).ics).length === 0);
   ok('phone: fragment stripped from the address bar immediately', !(await pp.evaluate(() => location.href)).includes('#'));
   await pp.click('#mv-replace');
-  await pp.waitForFunction(() => /Updated/.test((document.querySelector('#sb-sync') || {}).textContent || ''), null, { timeout: 15000 });
+  await pp.waitForSelector('.fpill.ok', { timeout: 15000 });
   await pp.waitForTimeout(3500);
   const ps = await state(pp);
   const pick = (x) => ({ status: x.status, custom: x.custom, cats: x.cats, classMap: x.classMap, proctorCol: x.proctorCol, createdAt: x.createdAt, feedUrl: x.feedUrl, ov: x.ov, hidden: x.hidden, rules: x.rules, est: x.est, ttype: x.ttype, actual: x.actual, sdone: x.sdone });
@@ -637,73 +640,87 @@ await octx.close();
   await oc2.close();
 }
 
-// ---------- 13. Tonight planner, estimates, timer, study nights, start-early, Week ahead, share card ----------
+// ---------- 13. Tonight (home): verdict, rows, estimates, timer, finish + undo, study nights, start-early, Sunday plan ----------
 {
   const PNOW = new Date('2026-10-19T17:02:00-04:00'); // Monday afternoon
   const hm = (d) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
   const nc = await newCtx({ now: PNOW }); const np = await nc.newPage(); watch(np, 'planner');
-  await np.goto(BASE + '/'); await np.click('#imp-sample'); await np.waitForSelector('.now-hero');
-  ok('after import the home screen is Now: the one thing to do, then tonight, then coming up',
-    await np.locator('#sb-tabs [data-tab=now][aria-current=page]').count() === 1 && await np.locator('.now-hero + .now-cols .tn + .cu').count() === 1);
-  const hero = (await np.locator('.now-hero').innerText()).replace(/\s+/g, ' ');
-  ok('Now: the first block is the work due soonest, with its due time, Start timer, Mark done and Open in Schoology',
-    /Problem Set 4\.2/.test(hero) && /Due today 11:59 PM/.test(hero) && /Start timer/.test(hero) && /Mark done/.test(hero) && /Open in Schoology/.test(hero), hero.slice(0, 160));
+  await np.goto(BASE + '/'); await np.click('#imp-sample'); await np.waitForSelector('#tnList .trow');
+  ok('after import the home screen is Tonight: verdict, then the Tonight list, then Coming up',
+    await np.locator('#sb-tabs [data-tab=now][aria-current=page]').count() === 1 && await np.locator('#tn-main .thero + .sec.tonight').count() === 1 && await np.locator('#tn-main .sec.coming').count() === 1);
+  const hero = (await np.locator('#tn-main .thero').innerText()).replace(/\s+/g, ' ');
+  ok('verdict: "2 things tonight, about 1h 45m", the first step and a done-by time',
+    /2 things tonight, about 1h 45m/.test(hero) && /First up: Problem Set 4\.2, due tonight 11:59 PM\. Done by about 7:00 PM\./.test(hero), hero.slice(0, 200));
+  ok('the freshness pill is on Tonight', await np.locator('#tn-main .fpill').isVisible());
   const plan0 = await np.evaluate(() => { const p = window.SchoologyBoard.plan(); return { blocks: p.blocks.map((b) => [b.kind, b.min, b.task ? b.task.item.title : '']), finish: p.finish && p.finish.toISOString(), start: p.start.toISOString() }; });
   ok('Tonight: starts now rounded up to 5 minutes (5:05 PM), ordered by due date, with a 10-minute break after ~50 minutes',
     hm(new Date(plan0.start)) === '5:05 PM' && JSON.stringify(plan0.blocks) === JSON.stringify([['work', 45, 'Problem Set 4.2'], ['break', 10, ''], ['work', 60, 'DBQ: Causes of the French Revolution']]), JSON.stringify(plan0.blocks));
-  ok('Tonight: blocks show start–end and a done-by time', /5:05–5:50 PM/.test(await np.locator('.tn-list').innerText()) && /done by 7:00 PM/.test(await np.locator('.tn-sum').innerText()));
-  ok('estimates are marked "est." until they are learned or set', await np.locator('.tn-list .est-chip i', { hasText: 'est.' }).count() === 2);
+  ok('rows show their planned time, the list says when you will be done', /5:05–5:50 PM/.test(await np.locator('#tnList').innerText()) && /done by about 7:00 PM/.test(await np.locator('.tn-when').innerText()));
+  ok('guessed estimates are dashed chips, explained by a legend', await np.locator('#tnList .estb.guess').count() === 2 && /Dashed times are our guesses/.test(await np.locator('.legend').innerText()));
   await np.screenshot({ path: join(SHOTS, 'now-desktop.png') });
-  // estimate editor: one tap on the chip, quick chips + custom
-  await np.locator('.now-hero .est-chip').click(); await np.waitForSelector('dialog.est');
+  // a time chip: quick times, or the full editor
+  await np.locator('#tnList .estb').first().click(); await np.waitForSelector('#sb-menu');
+  ok('tapping a time chip offers quick times (15 min to 2 h) and "More options…"', await np.locator('#sb-menu .menu-i.radio').count() === 6 && await np.locator('#sb-menu .menu-i', { hasText: 'More options' }).count() === 1);
+  await np.locator('#sb-menu .menu-i', { hasText: 'More options' }).click(); await np.waitForSelector('dialog.est');
   ok('estimate editor: quick chips 15–180 min, a custom field and the kind of work', await np.locator('dialog.est [data-m]').count() === 7 && await np.locator('#est-custom').count() === 1 && await np.locator('dialog.est [data-t]').count() === 6);
   await np.locator('dialog.est [data-m="90"]').click();
   await np.screenshot({ path: join(SHOTS, 'estimate-editor.png') });
   await np.click('#est-save'); await np.waitForTimeout(150);
-  let p1 = await np.evaluate(() => { const p = window.SchoologyBoard.plan(); return { first: p.blocks[0].min, finish: p.finish.toISOString(), parts: p.blocks[0].parts }; });
-  ok('a new estimate recalculates the plan live (90 min splits around a break; finishes later)', p1.parts === 2 && new Date(p1.finish) > new Date(plan0.finish) && await np.locator('.now-hero .est-chip i', { hasText: 'yours' }).count() === 1);
+  const p1 = await np.evaluate(() => { const p = window.SchoologyBoard.plan(); return { finish: p.finish.toISOString(), parts: p.blocks[0].parts }; });
+  ok('a new estimate recalculates the plan live (90 min splits around a break; finishes later; chip no longer dashed)', p1.parts === 2 && new Date(p1.finish) > new Date(plan0.finish) && await np.locator('#tnList .trow').first().locator('.estb.guess').count() === 0);
+  await np.locator('#tnList .estb').nth(1).click(); await np.locator('#sb-menu .menu-i', { hasText: /^30 min$/ }).click(); await np.waitForTimeout(150);
+  ok('one tap on a quick time sets it (30 min) and the plan follows', await np.evaluate(() => window.SchoologyBoard.plan().tasks[1].min) === 30);
+  await np.locator('#tnList .estb').nth(1).click(); await np.locator('#sb-menu .menu-i', { hasText: /^1 h$/ }).click(); await np.waitForTimeout(150);
   // timer
-  await np.click('#now-start');
-  ok('Start timer: the hero switches to "Working on it" with a running clock', /working on it/i.test(await np.locator('.now-hero').innerText()) && await np.locator('#now-timer').count() === 1);
+  await np.click('#tnList [data-timer]');
+  ok('Start timer: the first row shows a running clock and "Stop timer"', await np.locator('#tnList .run-t').count() === 1 && await np.locator('#tnList [data-stop]').count() === 1);
   await nc.clock.setFixedTime(new Date(PNOW.getTime() + 20 * 60e3)); await np.waitForTimeout(1200);
-  ok('timer counts up', /20:0\d/.test(await np.locator('#now-timer').innerText()), await np.locator('#now-timer').innerText());
+  ok('timer counts up', /20:0\d/.test(await np.locator('#tnList .run-t').innerText()), await np.locator('#tnList .run-t').innerText());
   await np.screenshot({ path: join(SHOTS, 'timer-running.png') });
-  await np.click('#now-stop'); await np.waitForTimeout(150);
+  await np.click('#tnList [data-stop]'); await np.waitForTimeout(150);
   let st = await state(np); const psId = Object.keys(st.ics).find((k) => /Problem Set 4\.2/.test(st.ics[k].title));
   ok('Stop timer records actual minutes and takes them off the remaining time', st.actual[psId] === 20 && !st.timer && await np.evaluate(() => window.SchoologyBoard.plan().tasks[0].min) === 70);
-  // done recalculates
-  await np.click('#now-done'); await np.waitForTimeout(150);
+  // check it off, undo, check it off again
+  await np.locator('#tnList .trow', { hasText: 'Problem Set 4.2' }).locator('.bigchk').click(); await np.waitForTimeout(1100);
   st = await state(np);
-  ok('Mark done moves it to Completed and the plan moves on to the next task', st.status[psId] === 'done' && /DBQ/.test(await np.locator('.now-hero .now-t').innerText()));
-  ok('done items leave the plan; "Undo" is offered', await np.locator('.tn-list', { hasText: 'Problem Set 4.2' }).count() === 0 && await np.locator('.toast', { hasText: 'Marked done' }).count() === 1);
+  ok('check-off: it moves to Completed, leaves the list and the verdict counts down', st.status[psId] === 'done' && await np.locator('#tnList .trow', { hasText: 'Problem Set 4.2' }).count() === 0 && /1 thing tonight/.test(await np.locator('#verdict').innerText()));
+  ok('finished items are hidden with "Hiding N finished · Show"', /Hiding \d+ finished items? · Show/.test((await np.locator('.hid.fin').innerText()).replace(/\s+/g, ' ')));
+  await np.locator('.toast', { hasText: 'Done: Problem Set 4.2' }).locator('button').click(); await np.waitForTimeout(250);
+  ok('Undo puts it back on tonight\'s list', (await state(np)).status[psId] !== 'done' && await np.locator('#tnList .trow', { hasText: 'Problem Set 4.2' }).count() === 1);
+  await np.locator('#tnList .trow', { hasText: 'Problem Set 4.2' }).locator('.bigchk').click(); await np.waitForTimeout(1100);
+  await np.click('[data-showdone]');
+  ok('"Show" lists the finished items (crossed out)', await np.locator('.donel .trow.tdone', { hasText: 'Problem Set 4.2' }).count() === 1);
+  await np.click('[data-showdone]');
   // learning: two timed, finished Geometry homework tasks replace the default
   await np.evaluate(() => { const S = window.SchoologyBoard.state(); const g = Object.keys(S.ics).filter((k) => /Problem Set 4\.[13]/.test(S.ics[k].title)); g.forEach((k) => { S.status[k] = 'done'; S.actual[k] = 30; }); });
-  await np.click('#sb-tabs [data-tab=board]'); await np.click('#sb-tabs [data-tab=now]');
+  await tab(np, 'board'); await tab(np, 'now');
   const learned = await np.evaluate(() => { const S = window.SchoologyBoard.state(); const id = Object.keys(S.ics).find((k) => /Two-Column/.test(S.ics[k].title)); return window.SchoologyBoard.estimate(id); });
-  ok('learning: after 2 timed Geometry homework tasks, the next one uses the smoothed average and says "learned"', learned && learned.src === 'learned' && learned.min === 30, JSON.stringify(learned)); // (30 + 20 timed + 45 default) / 3 ≈ 30
+  ok('learning: after 2 timed Geometry homework tasks, the next one uses the smoothed average', learned && learned.src === 'learned' && learned.min === 30, JSON.stringify(learned));
   // one-tap "this is a test": the DBQ becomes study sessions on the nights before it
-  await np.locator('.now-hero .est-chip').click(); await np.locator('dialog.est [data-t="test"]').click(); await np.click('#est-save'); await np.waitForTimeout(150);
+  await np.locator('#tnList .trow', { hasText: 'DBQ' }).locator('.estb').click(); await np.locator('#sb-menu .menu-i', { hasText: 'More options' }).click();
+  await np.locator('dialog.est [data-t="test"]').click(); await np.click('#est-save'); await np.waitForTimeout(150);
   const tn = await np.evaluate(() => window.SchoologyBoard.plan().tasks.map((t) => t.kind + ':' + t.item.title));
   ok('marking an item as a test turns it into a study session tonight (the night before)', tn.some((x) => /^study:DBQ/.test(x)) && !tn.some((x) => /^work:DBQ/.test(x)), tn.join(' | '));
-  ok('study sessions are labeled in the plan', await np.locator('.tn-list .flag.test', { hasText: 'Study for test' }).count() >= 1);
+  ok('study sessions are labeled in the list', await np.locator('#tnList .pin', { hasText: 'Study session' }).count() >= 1);
   await np.screenshot({ path: join(SHOTS, 'test-block-night.png') });
   // start-early: a 3-hour project due in 4 days gets a board flag and a 45-minute chunk tonight
   await np.keyboard.press('n'); await np.fill('#ed-title', 'Science Fair Project'); await np.fill('#ed-date', '2026-10-23'); await np.fill('#ed-time', '08:00'); await np.click('#ed-save'); await np.waitForTimeout(150);
   await np.evaluate(() => { const S = window.SchoologyBoard.state(); const id = Object.keys(S.custom).find((k) => S.custom[k].title === 'Science Fair Project'); S.est[id] = 180; });
-  await np.click('#sb-tabs [data-tab=board]'); await np.click('#sb-tabs [data-tab=now]'); await np.waitForTimeout(100);
+  await tab(np, 'board'); await tab(np, 'now'); await np.waitForTimeout(100);
   const early = await np.evaluate(() => window.SchoologyBoard.plan().tasks.filter((t) => t.kind === 'early').map((t) => t.item.title + ':' + t.min));
-  ok('start-early: 2h+ due in 3–5 days puts a 45-minute first chunk in tonight\'s plan', JSON.stringify(early) === JSON.stringify(['Science Fair Project:45']), JSON.stringify(early));
+  ok('start-early: 2h+ due in 3–5 days puts a 45-minute first chunk in tonight\'s list', JSON.stringify(early) === JSON.stringify(['Science Fair Project:45']) && await np.locator('#tnList .pin.early', { hasText: 'Start early' }).count() === 1, JSON.stringify(early));
   await board(np, ' .card');
   ok('start-early: the card gets a subtle "Start early" flag on the board', await cardByTitle(np, 'Science Fair Project').locator('.flag.early').count() === 1);
   await cardByTitle(np, 'Science Fair Project').scrollIntoViewIfNeeded();
   await np.screenshot({ path: join(SHOTS, 'start-early-flag.png') });
   // overflow
-  await np.click('#sb-tabs [data-tab=now]');
+  await tab(np, 'now');
   await np.fill('#tn-start', '22:30'); await np.locator('#tn-start').dispatchEvent('change'); await np.waitForTimeout(150);
-  ok('overloaded night: an honest "won\'t fit before 11:00 PM" note lists what spills over', /Won’t fit before 11:00 PM/.test(await np.locator('.spill').innerText()) && await np.locator('.spill li').count() >= 1);
+  ok('overloaded night: an honest "won\'t fit before 11:00 PM" note, and the rows that spill say so', /Won’t fit before 11:00 PM/.test(await np.locator('.spill').innerText()) && await np.locator('#tnList .when.late').count() >= 1);
+  ok('the verdict and the start line both say what won\'t fit (no "done by" promise)', /more than fits tonight: \d+ things? won’t fit before 11:00 PM/.test(await np.locator('.nudge').innerText()) && /won’t fit before 11:00 PM/.test(await np.locator('.tn-when').innerText()) && !/done by/.test(await np.locator('.tn-when').innerText()));
   await np.click('#tn-now');
-  // persistence: refresh-on-open and the backup file
-  await np.reload(); await np.waitForSelector('.now-hero');
+  // persistence: reload and the backup file
+  await np.reload(); await np.waitForSelector('#tnList .trow');
   st = await state(np);
   ok('planner state survives a reload (estimates, test mark, timed minutes)', Object.keys(st.est).length >= 2 && Object.values(st.ttype).includes('test') && st.actual[psId] === 20);
   const [bdl] = await Promise.all([np.waitForEvent('download'), more(np, '#sb-backup')]);
@@ -712,25 +729,35 @@ await octx.close();
   ok('backup file carries the planner state and the planner code', JSON.stringify(bk.est) === JSON.stringify(st.est) && JSON.stringify(bk.actual) === JSON.stringify(st.actual) && /<script id="sb-src-plan">/.test(readFileSync(bpath, 'utf8')));
   const bo = await newCtx({ now: new Date(PNOW.getTime() + 25 * 60e3) }); const bop = await bo.newPage(); watch(bop, 'planner-backup');
   await bop.route('**/*', (r) => (/^(file|blob|data):/.test(r.request().url()) ? r.continue() : r.abort()));
-  await bop.goto(pathToFileURL(bpath).href); await bop.waitForSelector('.now-hero');
-  ok('the backup opens on Now with the same plan, offline', JSON.stringify(await bop.evaluate(() => window.SchoologyBoard.plan().tasks.map((t) => t.kind + t.item.title + t.min))) === JSON.stringify(await np.evaluate(() => window.SchoologyBoard.plan().tasks.map((t) => t.kind + t.item.title + t.min))));
+  await bop.goto(pathToFileURL(bpath).href); await bop.waitForSelector('#tn-main');
+  ok('the backup opens on Tonight with the same plan, offline', JSON.stringify(await bop.evaluate(() => window.SchoologyBoard.plan().tasks.map((t) => t.kind + t.item.title + t.min))) === JSON.stringify(await np.evaluate(() => window.SchoologyBoard.plan().tasks.map((t) => t.kind + t.item.title + t.min))));
+  ok('the backup shows "Saved copy" in the freshness pill', /Saved copy from/.test(await pill(bop)));
   await bo.close();
-  // Week ahead + share card
-  await np.click('#sb-tabs [data-tab=ahead]'); await np.waitForSelector('.wk');
-  const wk = (await np.locator('.wk').innerText()).replace(/\s+/g, ' ');
-  ok('Week ahead: quizzes and tests, the busiest day and what to start early', /Quizzes and tests/.test(wk) && /busiest day/.test(wk) && /Science Fair Project/.test(wk) && await np.locator('.wk-bars li').count() === 7 && await np.locator('.wk-bars li.heavy').count() === 1, wk.slice(0, 200));
+  // Sunday plan + share card
+  ok('the nav reads Tonight · Board · Calendar (Soon) · Sunday plan', (await np.locator('#sb-tabs').innerText()).replace(/\s+/g, ' ').trim().toLowerCase() === 'tonight board calendar soon sunday plan', await np.locator('#sb-tabs').innerText());
+  await tab(np, 'ahead'); await np.waitForSelector('.wk');
+  const wk = (await np.locator('#sb-main main').innerText()).replace(/\s+/g, ' ');
+  ok('Sunday plan: quizzes and tests, the busiest day and what to start early', /Quizzes and tests/.test(wk) && /busiest day/.test(wk) && /Science Fair Project/.test(wk) && await np.locator('.wk-bars li').count() === 7 && await np.locator('.wk-bars li.heavy').count() === 1, wk.slice(0, 200));
+  ok('Sunday plan has the freshness pill too', await np.locator('#sb-main main .fpill').isVisible());
   await np.screenshot({ path: join(SHOTS, 'week-ahead.png'), fullPage: true });
   const [img] = await Promise.all([np.waitForEvent('download'), np.click('#wk-img')]);
   const ipath = join(SHOTS, 'week-ahead-card.png'); await img.saveAs(ipath);
   const card = PNG.sync.read(readFileSync(ipath));
   ok('Save as image: a 1080×1350 PNG made in the browser (no network)', card.width === 1080 && card.height === 1350);
+  // Calendar is announced, not a dead end
+  await tab(np, 'cal'); await np.waitForSelector('.stub');
+  ok('Calendar says "Coming soon", explains itself and has a way back', /coming soon/i.test(await np.locator('.stub').innerText()) && await np.locator('.stub [data-go=now]').count() === 1 && await np.locator('.stub [data-go=board]').count() === 1 && await np.locator('#tn-main .fpill').isVisible());
+  await np.click('.stub [data-go=now]'); await np.waitForSelector('#tnList .trow');
+  ok('"Back to Tonight" goes home', await np.locator('#sb-tabs [data-tab=now][aria-current=page]').count() === 1);
   // phone width
   const pc = await newCtx({ now: PNOW, viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const pp = await pc.newPage(); watch(pp, 'planner-phone');
-  await pp.goto(BASE + '/'); await pp.click('#imp-sample'); await pp.waitForSelector('.now-hero'); await pp.waitForTimeout(3500);
-  const tb = await pp.locator('#sb-tabs').boundingBox();
-  ok('phone: Now, Board and Week ahead sit in a bottom tab bar', tb && tb.y + tb.height >= 843 && await pp.locator('#sb-tabs button').count() === 3);
-  ok('phone: Now fits without horizontal overflow', await pp.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await pp.goto(BASE + '/'); await pp.click('#imp-sample'); await pp.waitForSelector('#tnList .trow'); await pp.waitForTimeout(3500);
+  const tb = await pp.locator('#sb-botnav').boundingBox();
+  ok('phone: Tonight, Board, Calendar and Sunday plan sit in a bottom bar; the top tabs hide', tb && tb.y + tb.height >= 843 && await pp.locator('#sb-botnav a').count() === 4 && !(await pp.locator('#sb-tabs').isVisible()));
+  ok('phone: Tonight fits without horizontal overflow', await pp.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  ok('phone: the theme button lives in the ⋯ menu', !(await pp.locator('#sb-theme').isVisible()) && (await pp.click('#sb-more'), await pp.locator('#sb-theme-m').isVisible()));
+  await pp.keyboard.press('Escape');
   await pp.screenshot({ path: join(SHOTS, 'now-phone.png'), fullPage: true });
   await pc.close();
   await nc.close();
@@ -753,13 +780,16 @@ await octx.close();
   for (const vp of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     const c = await newCtx({ now: new Date('2026-10-19T17:02:00-04:00'), viewport: vp, isMobile: vp.width < 500, hasTouch: vp.width < 500 }); const pg = await c.newPage(); watch(pg, 'jargon');
     await pg.goto(BASE + '/'); await pg.waitForSelector('#imp-url'); await grab(pg, 'first run');
-    await pg.click('#imp-sample'); await pg.waitForSelector('.now-hero'); await grab(pg, 'Now');
-    await pg.click('#sb-tabs [data-tab=board]'); await pg.waitForSelector('#sb-board .card'); await grab(pg, 'Board');
+    await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow'); await grab(pg, 'Tonight');
+    await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card'); await grab(pg, 'Board');
     await pg.click('#sb-more'); await grab(pg, 'More menu'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
-    await pg.click('#sb-tabs [data-tab=ahead]'); await grab(pg, 'Week ahead');
-    await pg.evaluate(() => document.querySelector('#sb-import') && document.querySelector('#sb-import').click()); await pg.waitForSelector('dialog #imp-url'); await grab(pg, 'Import dialog'); await pg.keyboard.press('Escape');
+    await tab(pg, 'ahead'); await grab(pg, 'Sunday plan');
+    await tab(pg, 'cal'); await grab(pg, 'Calendar (soon)');
+    await more(pg, '#sb-import'); await pg.waitForSelector('dialog #imp-url'); await grab(pg, 'Import dialog'); await pg.keyboard.press('Escape');
     await pg.click('#sb-more'); await pg.click('#sb-move'); await pg.waitForSelector('dialog.move'); await grab(pg, 'Move dialog'); await pg.keyboard.press('Escape');
-    await pg.click('#sb-tabs [data-tab=now]'); await pg.locator('.now-hero .est-chip').click(); await pg.waitForSelector('dialog.est'); await grab(pg, 'Estimate editor'); await pg.keyboard.press('Escape');
+    await tab(pg, 'now'); await pg.locator('#tnList .estb').first().click(); await grab(pg, 'Time menu'); await pg.locator('#sb-menu .menu-i', { hasText: 'More options' }).click(); await pg.waitForSelector('dialog.est'); await grab(pg, 'Estimate editor'); await pg.keyboard.press('Escape');
+    await pg.evaluate(() => { const S = window.SchoologyBoard.state(); S.lastFetch = { at: Date.now() - 3600e3, ok: false }; S.feedUrl = 'https://feed.example.invalid/x.ics'; window.SchoologyBoard.render(); }); await grab(pg, 'Error banner');
+    await pg.evaluate(() => document.querySelector(innerWidth < 900 ? '#sb-more' : '#sb-theme').click()); if (vp.width < 900) await pg.click('#sb-theme-m'); await pg.waitForSelector('dialog .thgrid'); await grab(pg, 'Theme picker'); await pg.keyboard.press('Escape');
     await c.close();
   }
   const hits = texts.flatMap(([w, t]) => (t.match(new RegExp(BANNED.source, 'g')) || []).map((m) => w + ': ' + m));
@@ -772,13 +802,13 @@ await octx.close();
 {
   const c = await newCtx({ now: new Date('2026-10-19T17:02:00-04:00'), viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const pg = await c.newPage(); watch(pg, 'pwa');
-  await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('.now-hero');
+  await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tn-main');
   await pg.evaluate(() => navigator.serviceWorker.ready.then(() => true));
-  await pg.reload(); await pg.waitForSelector('.now-hero');
+  await pg.reload(); await pg.waitForSelector('#tn-main');
   ok('service worker installs on the first visit and controls the next load', await pg.evaluate(() => !!navigator.serviceWorker.controller));
   const man = await pg.evaluate(async () => (await fetch('/manifest.webmanifest')).json());
   const icons = man.icons || [];
-  ok('manifest: name, short name, standalone, opens on Now, theme colors, 192 and 512 icons incl. maskable',
+  ok('manifest: name, short name, standalone, opens on Tonight, theme colors, 192 and 512 icons incl. maskable',
     man.name === 'Schoology Board' && man.short_name && man.short_name.length <= 12 && man.display === 'standalone' && /view=now/.test(man.start_url) && man.theme_color && man.background_color &&
     ['192x192', '512x512'].every((sz) => icons.some((i) => i.sizes === sz && i.purpose === 'any') && icons.some((i) => i.sizes === sz && i.purpose === 'maskable')), JSON.stringify(man).slice(0, 200));
   let iconsOk = true;
@@ -795,10 +825,10 @@ await octx.close();
   await pg.evaluate(async () => { await fetch('/api/feed', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"url":"https://example.invalid/x"}' }).catch(() => 0); await fetch('/api/feed').catch(() => 0); });
   // offline
   await c.setOffline(true);
-  await pg.reload(); await pg.waitForSelector('.now-hero', { timeout: 10000 });
-  ok('offline: the app opens from the service worker and shows Now from saved data', /Do this now|Next/i.test(await pg.locator('.now-k').innerText()) && await pg.locator('.tn-list .blk').count() > 0);
+  await pg.reload(); await pg.waitForSelector('#tn-main', { timeout: 10000 });
+  ok('offline: the app opens from the service worker and shows Tonight from saved data', /things? tonight/.test(await pg.locator('#verdict').innerText()) && await pg.locator('#tnList .trow').count() > 0);
   await pg.screenshot({ path: join(SHOTS, 'offline-load.png') });
-  await pg.click('#sb-tabs [data-tab=board]');
+  await tab(pg, 'board');
   ok('offline: the Board tab works too', await pg.locator('#sb-board .card').count() > 5);
   const urls = await pg.evaluate(async () => { const out = []; for (const k of await caches.keys()) { const ch = await caches.open(k); (await ch.keys()).forEach((r) => out.push(r.url)); } return out; });
   ok('service worker cache holds only the app shell: no relay responses, nothing that looks like a calendar link', urls.length >= 8 && !urls.some((u) => /\/api\/|feed|ical|webcal|\.ics/i.test(u)), urls.length + ' entries');
@@ -808,7 +838,7 @@ await octx.close();
   await pg.waitForSelector('#sb-update', { timeout: 15000 });
   ok('a new version shows "Update ready · Reload to update" (or applies next time it opens)', /Update ready/.test(await pg.locator('#sb-update').innerText()) && /Reload to update/.test(await pg.locator('#sb-update').innerText()));
   await Promise.all([pg.waitForEvent('load'), pg.click('#sb-update .primary')]);
-  await pg.waitForSelector('.now-hero');
+  await pg.waitForSelector('#tn-main');
   ok('Reload to update swaps in the new version', /next=1/.test(await pg.evaluate(() => navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL)));
   await c.close();
 }
@@ -822,13 +852,13 @@ await octx.close();
   let hits = 0, mode = 'ok';
   await c.route('**/api/feed', (r) => { hits++; return mode === 'fail' ? r.fulfill({ status: 502, contentType: 'application/json', body: '{"error":"x"}' }) : r.fulfill({ status: 200, contentType: 'text/calendar', body: SAMPLE }); });
   const pg = await c.newPage(); watch(pg, 'bg-refresh');
-  await pg.goto(BASE + '/'); await pg.fill('#imp-url', FEED); await pg.click('#imp-go'); await pg.waitForSelector('.now-hero'); await skipNaming(pg, 3000);
-  const idle = async () => { await pg.waitForFunction(() => !document.querySelector('#sb-sync .spinner')); await pg.waitForTimeout(50); };
+  await pg.goto(BASE + '/'); await pg.fill('#imp-url', FEED); await pg.click('#imp-go'); await pg.waitForSelector('#tn-main .trow'); await skipNaming(pg, 3000);
+  const idle = async () => { await pg.waitForFunction(() => !document.querySelector('.fpill.fsync')); await pg.waitForTimeout(50); };
   await pg.clock.fastForward('10:00'); await idle();
   ok('background refresh: nothing before ~15 minutes', hits === 1, 'hits ' + hits);
   await pg.clock.fastForward('06:00'); await idle();
   ok('background refresh: re-fetches after ~15 minutes while the tab is visible', hits === 2, 'hits ' + hits);
-  ok('"Updated just now" after a background refresh', /Updated just now/.test(await pg.locator('#sb-sync').innerText()));
+  ok('"Synced with Schoology just now" after a background refresh', /Synced with Schoology just now/.test(await pill(pg)));
   await pg.clock.fastForward('03:00'); await pg.evaluate(() => window.dispatchEvent(new Event('focus'))); await idle();
   ok('focus within 5 minutes of the last update does not refetch', hits === 2);
   await pg.clock.fastForward('03:00'); await pg.evaluate(() => window.dispatchEvent(new Event('focus'))); await idle();
@@ -844,11 +874,205 @@ await octx.close();
     await pg.clock.fastForward('16:00'); await idle();
     gaps.push(await pg.evaluate(() => { const b = window.SchoologyBoard.bg(); return Math.round((b.next - Date.now()) / 60000); }));
   }
-  ok('failures back off (1, 2, 4, 8, 16, 32 minutes) and never toast', JSON.stringify(gaps) === JSON.stringify([1, 2, 4, 8, 16, 32]) && await pg.locator('.toast.err').count() === 0, JSON.stringify(gaps));
+  ok('failures back off (1, 2, 4, 8, 16, 32 minutes) and never toast (the banner says it instead)', JSON.stringify(gaps) === JSON.stringify([1, 2, 4, 8, 16, 32]) && await pg.locator('.toast.err').count() === 0, JSON.stringify(gaps));
   await pg.clock.fastForward('16:00'); await idle();
   ok('while backing off, no extra requests', hits === 4 + 6, 'hits ' + hits);
-  ok('"Updated" stays honest after failures (shows when it last worked + Try again)', /Couldn’t reach Schoology · updated \dh ago · Try again/.test((await pg.locator('#sb-sync').innerText()).replace(/\s+/g, ' ')), await pg.locator('#sb-sync').innerText());
+  ok('the pill stays honest after failures (when it last worked) and the banner offers Retry', /Sync failed · last good \d/.test(await pill(pg)) && await pg.locator('.banner.ferr [data-refresh]').count() === 1, await pill(pg));
   await c.close();
+}
+
+// ---------- 17. Tonight states, reorder (mouse + keyboard), pull in, flags, all-done, themes ----------
+{
+  const PNOW = new Date('2026-10-19T17:02:00-04:00');
+  const c = await newCtx({ now: PNOW }); const pg = await c.newPage(); watch(pg, 'tonight');
+  await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+  await pg.keyboard.press('n'); await pg.fill('#ed-title', 'Lab Questions 1-5'); await pg.fill('#ed-date', '2026-10-19'); await pg.fill('#ed-time', '21:00'); await pg.click('#ed-save'); await pg.waitForTimeout(200);
+  const order = () => pg.$$eval('#tnList .trow', (rs) => rs.map((r) => r.querySelector('.rt').textContent.trim()));
+  const o0 = await order();
+  ok('three things tonight, in suggested order (by due time)', JSON.stringify(o0) === JSON.stringify(['Lab Questions 1-5', 'Problem Set 4.2', 'DBQ: Causes of the French Revolution']), o0.join(' | '));
+  const g = await pg.locator('#tnList .trow').nth(2).locator('.grip').boundingBox(), top = await pg.locator('#tnList .trow').nth(0).boundingBox();
+  await pg.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await pg.mouse.down();
+  await pg.mouse.move(g.x + g.width / 2, g.y - 12, { steps: 3 }); await pg.mouse.move(g.x + g.width / 2, top.y + 6, { steps: 14 }); await pg.mouse.up(); await pg.waitForTimeout(300);
+  const o1 = await order(); let st = await state(pg);
+  ok('drag with a mouse: the row moves to the top, the order is saved and the plan follows it', o1[0] === o0[2] && st.tnOrder && st.tnOrder.ids.length === 3 && await pg.evaluate(() => window.SchoologyBoard.plan().tasks[0].item.title) === o0[2], o1.join(' | '));
+  ok('a custom order offers "Back to suggested"', await pg.locator('[data-resetorder]').count() === 1);
+  await pg.locator('#tnList .trow').nth(0).locator('.grip').focus(); await pg.keyboard.press('ArrowDown'); await pg.waitForTimeout(150);
+  const o2 = await order();
+  ok('keyboard: arrow keys on the grip move a row and keep focus on it', o2[1] === o1[0] && await pg.evaluate(() => document.activeElement.classList.contains('grip')), o2.join(' | '));
+  await pg.reload(); await pg.waitForSelector('#tnList .trow');
+  ok('the custom order survives a reload', JSON.stringify(await order()) === JSON.stringify(o2));
+  await pg.click('[data-resetorder]'); await pg.waitForTimeout(150);
+  ok('"Back to suggested" restores the suggested order', JSON.stringify(await order()) === JSON.stringify(o0) && !(await state(pg)).tnOrder);
+  // pull into tonight / put back
+  const cu = pg.locator('.sec.coming .cu').first(); const cuTitle = (await cu.locator('.ct').innerText()).trim();
+  await cu.locator('[data-pull]').click(); await pg.waitForTimeout(200);
+  ok('"Pull into tonight": it joins tonight\'s list marked "Pulled in" and leaves Coming up', await pg.locator('#tnList .trow.pulled', { hasText: cuTitle }).count() === 1 && await pg.locator('.sec.coming .ct', { hasText: cuTitle }).count() === 0, cuTitle);
+  ok('the verdict counts the pulled-in item', /^4 things tonight/.test(await pg.locator('#verdict').innerText()), await pg.locator('#verdict').innerText());
+  await pg.locator('#tnList .trow.pulled [data-back]').click(); await pg.waitForTimeout(200);
+  ok('"Put back" returns it to Coming up', await pg.locator('#tnList .trow.pulled').count() === 0 && await pg.locator('.sec.coming .ct', { hasText: cuTitle }).count() === 1);
+  // flagged: a calendar item whose title says quiz AND practice
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(); const id = Object.keys(S.ics).find((k) => /Problem Set 4\.3/.test(S.ics[k].title)); S.ov[id] = Object.assign({}, S.ov[id], { title: 'Practice Quiz 4.3' }); window.SchoologyBoard.render(); });
+  await pg.waitForTimeout(150);
+  const fb = pg.locator('#tn-main .flagbox').first();
+  const ftxt = (await fb.innerText().catch(() => '')).replace(/\s+/g, ' ');
+  ok('"Double-check this": the reason, where it came from, and an "It\'s right" button', /Double-check this/.test(ftxt) && /quiz or test but also “practice”/.test(ftxt) && /Schoology calendar/.test(ftxt) && await fb.locator('[data-ok]').count() === 1, ftxt.slice(0, 220));
+  ok('the verdict says how many items to double-check', /1 item to double-check/.test(await pg.locator('.thero').innerText()));
+  await pg.screenshot({ path: join(SHOTS, 'state-flagged.png') });
+  await fb.locator('[data-ok]').click(); await pg.waitForTimeout(150);
+  ok('"It\'s right" clears the flag and remembers it', await pg.locator('#tn-main .flagbox').count() === 0 && Object.keys((await state(pg)).checked).length === 1);
+  // all done: the finish moment (≤1.2 s), then "You're free tonight" with a peek at what's next
+  let guard = 0, celMs = -1;
+  while (await pg.locator('#tn-main .trow:not(.tdone) .bigchk').count() && guard++ < 8) {
+    const last = await pg.locator('#tn-main .trow:not(.tdone) .bigchk').count() === 1;
+    await pg.locator('#tn-main .trow:not(.tdone) .bigchk').first().click();
+    if (last) { await pg.waitForSelector('#cel', { timeout: 2000 }); const t0 = Date.now(); await pg.waitForSelector('#cel', { state: 'detached', timeout: 3000 }); celMs = Date.now() - t0; }
+    else await pg.waitForTimeout(950);
+  }
+  await pg.waitForTimeout(200);
+  ok('the last check-off plays a short finish moment (gone within ~1.2 s)', celMs > 0 && celMs <= 1300, celMs + ' ms');
+  const fr = (await pg.locator('#tn-main').innerText()).replace(/\s+/g, ' ');
+  ok('all done: "You\'re free tonight" with a peek at what\'s next', /You’re free tonight/.test(await pg.locator('#verdict').innerText()) && await pg.locator('.free.done').count() === 1 && await pg.locator('#tn-main .peek').count() >= 1, fr.slice(0, 200));
+  await pg.screenshot({ path: join(SHOTS, 'state-alldone.png') });
+  // the board shares the same data: everything due tonight is in Completed there
+  await board(pg, ' .card');
+  ok('Tonight and the Board share one data model (tonight\'s items are Completed on the board)', await pg.locator('.col[data-col=done] .card', { hasText: 'Problem Set 4.2' }).count() === 1 && await pg.locator('.col[data-col=done] .card', { hasText: 'Lab Questions 1-5' }).count() === 1);
+  ok('the freshness pill is on the Board too', await pg.locator('.bhead .fpill').isVisible());
+  // themes
+  await pg.click('#sb-theme'); await pg.waitForSelector('dialog .thgrid');
+  ok('theme picker: six themes with live previews, Sticker Book selected by default', await pg.locator('dialog .thp').count() === 6 && await pg.evaluate(() => document.documentElement.dataset.theme) === 'sticker');
+  await pg.locator('dialog .thp[data-theme=arcade]').click(); await pg.waitForTimeout(100);
+  ok('choosing a theme applies it at once and saves it on this device', await pg.evaluate(() => document.documentElement.dataset.theme) === 'arcade' && /"t":"arcade"/.test(await pg.evaluate(() => localStorage.getItem('sb-theme'))));
+  await pg.keyboard.press('Escape');
+  await pg.reload(); const early = await pg.evaluate(() => document.documentElement.dataset.theme);
+  ok('the theme is set before first paint on reload (no flash)', early === 'arcade');
+  for (const t of ['sticker', 'arcade', 'notebook', 'varsity', 'riso', 'cafe']) {
+    await pg.evaluate((t) => { window.SchoologyBoard.theme(t, t === 'notebook' ? 'dark' : ''); }, t);
+    await pg.evaluate(() => document.querySelector('#sb-tabs [data-tab=now]').click()); await pg.waitForTimeout(150);
+    const bad = await noCyan(pg);
+    ok(`theme ${t}${t === 'notebook' ? ' (dark)' : ''}: no cyan/teal/blue-green or orange on Tonight`, bad.length === 0, bad.slice(0, 3).join(' ; '));
+  }
+  // per-theme class colors
+  await pg.evaluate(() => { window.SchoologyBoard.theme('notebook', 'dark'); });
+  await board(pg, ' .card');
+  const gc = cardByTitle(pg, 'Two-Column'); await gc.hover(); await gc.locator('.more').click(); await pg.waitForSelector('#sb-menu');
+  await pg.locator('#sb-menu .menu-i', { hasText: /Change .* color/ }).click(); await pg.waitForTimeout(100);
+  ok('class color: the theme\'s 8 swatches', await pg.locator('#sb-menu .msw').count() === 8);
+  await pg.locator('#sb-menu .menu-i').nth(5).click(); await pg.waitForTimeout(150);
+  st = await state(pg);
+  ok('class color is saved for this theme only', st.colors.notebook && Object.values(st.colors.notebook)[0] === 6 && !st.colors.sticker && /swatch-6/.test(await cardByTitle(pg, 'Two-Column').getAttribute('style')), JSON.stringify(st.colors));
+  ok('the default class colors never use the optional pink swatch', await pg.evaluate(() => [...document.querySelectorAll('.card')].every((e) => !/swatch-8/.test(e.getAttribute('style') || ''))));
+  // backup carries the theme, its fonts and works offline; Move carries it too
+  const [bd] = await Promise.all([pg.waitForEvent('download'), more(pg, '#sb-backup')]);
+  const bp = join(SHOTS, 'theme-backup.html'); await bd.saveAs(bp); const bh = readFileSync(bp, 'utf8');
+  ok('the backup file opens in the chosen theme with its CSS and fonts inlined', /<html[^>]*data-theme="notebook"/.test(bh) && /data-mode="dark"/.test(bh) && /url\(data:font\/woff2;base64,/.test(bh) && /main\.tnm/.test(bh) && !/<link[^>]+stylesheet/.test(bh));
+  const oc = await newCtx({ now: PNOW }); const op = await oc.newPage(); watch(op, 'theme-backup');
+  const net = []; await op.route('**/*', (r) => (/^(file|blob|data):/.test(r.request().url()) ? r.continue() : (net.push(r.request().url()), r.abort())));
+  await op.goto(pathToFileURL(bp).href); await op.waitForSelector('#tn-main');
+  ok('the themed backup works offline (no network requests)', net.length === 0 && await op.evaluate(() => document.fonts.check('16px Caveat') || [...document.fonts].some((f) => /Caveat/i.test(f.family))), net.join(' '));
+  await oc.close();
+  const mp = await pg.evaluate(() => window.SchoologyBoard.movePayload());
+  ok('Move to phone carries the theme, the mode and the class colors', mp.pr && mp.pr.th === 'notebook' && mp.pr.md === 'dark' && mp.co && mp.co.notebook);
+  await c.close();
+}
+// ---------- 17b. empty, loading (slow), error and stale states ----------
+{
+  const LNOW = new Date('2026-11-02T17:00:00-05:00');
+  const ec = await newCtx({ now: LNOW }); const ep = await ec.newPage(); watch(ep, 'empty');
+  // (the sample is always "this week", so build a board whose only task is 10 days out)
+  await ec.addInitScript(([n, due]) => { if (!localStorage.getItem('schoology-board:v1')) localStorage.setItem('schoology-board:v1', JSON.stringify({ v: 1, custom: { 'c-book': { id: 'c-book', title: 'Book report', course: 'English', due, allDay: false, source: 'custom', created: n }, 'c-late': { id: 'c-late', title: 'Map worksheet', course: 'History', due: due - 15 * 864e5, allDay: false, source: 'custom', created: n - 30 * 864e5 } }, createdAt: n - 30 * 864e5 })); }, [sod(LNOW), LNOW.getTime() + 10 * 864e5]);
+  await ep.goto(BASE + '/'); await ep.waitForSelector('#tn-main');
+  ok('empty: "Nothing due tonight" with a clear next step (no dead end)', /Nothing due tonight/.test(await ep.locator('#verdict').innerText()) && await ep.locator('.free.empty').count() === 1 && await ep.locator('#tn-main [data-go=board], #tn-main [data-go=ahead]').count() >= 1);
+  ok('no silent hiding: work more than 2 days late is named, with a way to the board', /1 older overdue item \(more than 2 days late\) is on the board/.test(await ep.locator('.hid.older').innerText()) && await ep.locator('.hid.older [data-go=board]').count() === 1);
+  await ep.screenshot({ path: join(SHOTS, 'state-empty.png') }); await ec.close();
+
+  const PNOW = new Date('2026-10-19T17:02:00-04:00');
+  const ICSTXT = readFileSync(ICS, 'utf8');
+  const lc = await newCtx({ now: PNOW }); let mode = 'slow';
+  await lc.addInitScript(([n]) => { if (!localStorage.getItem('schoology-board:v1')) localStorage.setItem('schoology-board:v1', JSON.stringify({ v: 1, feedUrl: 'https://feed.example.invalid/calendar/slow.ics', createdAt: n })); }, [sod(PNOW)]);
+  await lc.route('**/api/feed**', async (r) => { if (mode === 'slow') { await new Promise((ok) => setTimeout(ok, 9000)); return r.fulfill({ status: 200, contentType: 'text/calendar', body: ICSTXT }); } if (mode === 'fail') return r.fulfill({ status: 502, contentType: 'application/json', body: '{"error":"unreachable"}' }); return r.fulfill({ status: 200, contentType: 'text/calendar', body: ICSTXT }); });
+  const lp = await lc.newPage(); watch(lp, 'refresh');
+  await lp.goto(BASE + '/'); await lp.waitForSelector('#tn-main .skrow', { timeout: 3000 });
+  ok('loading: a skeleton of Tonight and "Syncing with Schoology…"', await lp.locator('#tn-main .skrow').count() >= 3 && /Syncing with Schoology/.test(await pill(lp)));
+  await lp.screenshot({ path: join(SHOTS, 'state-loading.png') });
+  ok('loading: no "slow" note before 8 seconds', await lp.locator('.banner.slow').count() === 0);
+  await lc.clock.setFixedTime(new Date(PNOW.getTime() + 8500)); // the page clock is frozen; move it past 8 s so the real 8 s check sees the wait
+  await lp.waitForSelector('.banner.slow', { timeout: 9000 });
+  ok('loading: after 8 seconds a calm "still working" note appears', /Still/.test(await lp.locator('.banner.slow').innerText()));
+  await lp.waitForSelector('#tnList .trow', { timeout: 6000 });
+  ok('loading: the real list replaces the skeleton', await lp.locator('.skrow').count() === 0 && /Synced with Schoology just now/.test(await pill(lp)));
+  mode = 'fail';
+  await lp.locator('[data-refresh]').first().click(); await lp.waitForSelector('.banner.ferr', { timeout: 5000 });
+  const ban = (await lp.locator('.banner.ferr').innerText()).replace(/\s+/g, ' ');
+  ok('error: a banner with Retry and Open Schoology, saying check-offs still save; the list stays', /Retry/.test(ban) && /Open Schoology/.test(ban) && /Your check-offs still save on this device/.test(ban) && await lp.locator('#tnList .trow').count() >= 2 && await lp.locator('#tn-main .fpill.ferr').count() === 1, ban);
+  ok('error: the pill names the last good sync', /Sync failed · last good/.test(await pill(lp)), await pill(lp));
+  await lp.screenshot({ path: join(SHOTS, 'state-error.png') });
+  mode = 'ok';
+  await lp.locator('.banner.ferr [data-refresh]').click(); await lp.waitForSelector('#tn-main .fpill.ok', { timeout: 5000 });
+  ok('Retry recovers: the banner goes away', await lp.locator('.banner.ferr').count() === 0);
+  await lp.evaluate(() => { const S = window.SchoologyBoard.state(); S.lastFetch = { at: Date.now() - 7 * 36e5, ok: true }; window.SchoologyBoard.render(); });
+  ok('stale: more than 6 hours since the last sync turns the pill yellow with a Refresh banner', await lp.locator('#tn-main .fpill.stale').count() === 1 && await lp.locator('.banner.stale').count() === 1, await pill(lp));
+  await lp.screenshot({ path: join(SHOTS, 'state-stale.png') });
+  await lc.close();
+
+  // reduced motion: no confetti, a plain message instead
+  const rc = await newCtx({ now: PNOW, reducedMotion: 'reduce' }); const rp = await rc.newPage(); watch(rp, 'reduced');
+  await rp.goto(BASE + '/'); await rp.click('#imp-sample'); await rp.waitForSelector('#tnList .trow');
+  let n = 0; while (await rp.locator('#tn-main .trow:not(.tdone) .bigchk').count() && n++ < 6) { await rp.locator('#tn-main .trow:not(.tdone) .bigchk').first().click(); await rp.waitForTimeout(150); }
+  ok('reduced motion: finishing everything shows a message, no animation', await rp.locator('#cel').count() === 0 && /You’re free tonight/.test(await rp.locator('.toast').last().innerText().catch(() => '')) && await rp.locator('.toast', { hasText: 'Marked done' }).count() === 0 && await rp.evaluate(() => getComputedStyle(document.querySelector('#tn-main button')).transitionDuration.split(',').every((d) => parseFloat(d) <= 0.01)));
+  await rp.locator('.toast', { hasText: 'free tonight' }).locator('button').click(); await rp.waitForTimeout(200);
+  ok('the last check-off can be undone too', await rp.locator('#tnList .trow').count() === 1);
+  await rc.close();
+}
+// ---------- 18. phone long-press drag (EMULATED touch: Chromium Android profile + WebKit iPhone profile) ----------
+{
+  const { webkit, devices } = await import('playwright');
+  const PNOW = new Date('2026-10-19T17:02:00-04:00');
+  for (const [label, bt, dev] of [['Android Chrome (emulated)', 'chromium', devices['Pixel 7']], ['iPhone Safari (emulated WebKit)', 'webkit', devices['iPhone 14']]]) {
+    const br = bt === 'chromium' ? browser : await webkit.launch();
+    const c = await br.newContext({ ...dev, timezoneId: 'America/New_York' }); await c.clock.setFixedTime(PNOW);
+    const p = await c.newPage(); watch(p, 'touch-' + bt);
+    await p.goto(BASE + '/'); await p.click('#imp-sample'); await p.waitForSelector('#tnList .trow');
+    await p.evaluate(() => { const S = window.SchoologyBoard.state(); S.custom.lab = { id: 'lab', title: 'Lab Questions 1-5', course: 'Biology', due: new Date(2026, 9, 19, 21, 0).getTime(), allDay: false, source: 'custom' }; window.SchoologyBoard.render(); });
+    await p.waitForTimeout(200);
+    const ord = () => p.$$eval('#tnList .trow', (rs) => rs.map((r) => r.querySelector('.rt').textContent.trim()));
+    const o0 = await ord();
+    let x, y0, y1;
+    const aim = async () => {
+      await p.evaluate(() => { const l = document.querySelector('#tnList'); window.scrollBy(0, l.getBoundingClientRect().top - 90); }); await p.waitForTimeout(300);
+      const r2 = await p.locator('#tnList .trow').nth(2).boundingBox(), r0 = await p.locator('#tnList .trow').nth(0).boundingBox();
+      x = r2.x + r2.width * 0.55; y0 = r2.y + r2.height / 2; y1 = r0.y + 4;
+    };
+    await aim();
+    // a quick swipe (no hold) must scroll, not drag
+    const swipe = async (hold) => {
+      if (bt === 'chromium') {
+        const s = await c.newCDPSession(p);
+        await s.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: y0 }] });
+        if (hold) await p.waitForTimeout(400);
+        for (let i = 1; i <= 12; i++) await s.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y0 + (y1 - y0) * i / 12 }] });
+        await s.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      } else {
+        await p.evaluate(async ([x, y0, y1, hold]) => {
+          const el = document.elementFromPoint(x, y0); const ev = (t, y, tgt) => (tgt || el).dispatchEvent(new PointerEvent(t, { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+          ev('pointerdown', y0); if (hold) await new Promise((r) => setTimeout(r, 400));
+          for (let i = 1; i <= 12; i++) { ev('pointermove', y0 + (y1 - y0) * i / 12, document.elementFromPoint(x, y0 + (y1 - y0) * i / 12) || el); await new Promise((r) => setTimeout(r, 16)); }
+          ev('pointerup', y1, document.elementFromPoint(x, y1) || el);
+        }, [x, y0, y1, hold]);
+      }
+      await p.waitForTimeout(400);
+    };
+    const sy0 = await p.evaluate(() => scrollY);
+    await swipe(false);
+    const scrolled = bt === 'chromium' ? (await p.evaluate(() => scrollY)) !== sy0 : true; // synthetic WebKit events can't scroll; there we check only that nothing moved
+    ok(`${label}: a quick swipe scrolls instead of dragging`, JSON.stringify(await ord()) === JSON.stringify(o0) && scrolled && await p.locator('.trow.lift').count() === 0);
+    await aim();
+    await swipe(true);
+    const o1 = await ord();
+    ok(`${label}: long-press then drag moves the row to the top`, o1[0] === o0[2] && !!(await state(p)).tnOrder, o1.join(' | '));
+    ok(`${label}: rows let the page scroll vertically (touch-action: pan-y)`, await p.evaluate(() => getComputedStyle(document.querySelector('#tnList .trow')).touchAction) === 'pan-y');
+    await p.screenshot({ path: join(SHOTS, `touch-drag-${bt}.png`) });
+    await c.close(); if (bt !== 'chromium') await br.close();
+  }
 }
 
 await browser.close();

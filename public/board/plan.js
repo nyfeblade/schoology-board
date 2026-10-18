@@ -117,27 +117,42 @@
   function tonightTasks(items, ctx, now) {
     var today = sod(now), wEnd = windowEnd(today), learned = learnedTable(items, ctx), tk = dayKey(today), tasks = [];
     var spillAfter = addDays(today, -2);
+    var pulled = ctx.pulled || {};
     items.forEach(function (it) {
       if (!plannable(it, ctx)) return;
-      var e = estimate(it, ctx, learned);
+      var e = estimate(it, ctx, learned), pin = !!pulled[it.id];
       if (isTestType(e.type)) {
         if (it.d < addDays(today, 1) || it.d >= addDays(today, 15)) return;
         if (ctx.sdone && ctx.sdone[it.id + '@' + tk]) return;
+        var got = false;
         studyNights(it, e, today).forEach(function (n) {
-          if (dayKey(n.day) === tk) tasks.push({ id: it.id, item: it, kind: 'study', min: n.min, est: e, due: it.d });
+          if (dayKey(n.day) === tk) { got = true; tasks.push({ id: it.id, item: it, kind: 'study', min: n.min, est: e, due: it.d, pulled: pin }); }
         });
+        // Pulled into tonight with no study night planned for tonight: one extra study session.
+        if (!got && pin) tasks.push({ id: it.id, item: it, kind: 'study', min: Math.min(STUDY_BLOCK, e.min), est: e, due: it.d, pulled: true });
         return;
       }
-      if (it.d >= spillAfter && it.d < wEnd) {
+      if (pin && it.d >= wEnd) {
+        tasks.push({ id: it.id, item: it, kind: 'work', min: remaining(it, e, ctx, now), est: e, due: it.d, pulled: true });
+      } else if (it.d >= spillAfter && it.d < wEnd) {
         tasks.push({ id: it.id, item: it, kind: 'work', min: remaining(it, e, ctx, now), est: e, due: it.d, overdue: it.d < now });
       } else if (isStartEarly(it, e, today) && !(ctx.sdone && ctx.sdone[it.id + '@' + tk])) {
         tasks.push({ id: it.id, item: it, kind: 'early', min: Math.min(EARLY_CHUNK, remaining(it, e, ctx, now)), est: e, due: it.d });
       }
     });
     tasks.sort(function (a, b) { return a.due - b.due || b.min - a.min || String(a.item.title).localeCompare(String(b.item.title)); });
+    // Overdue work is pinned to the top ("Do first"); the student's own order (if any) applies to the rest.
+    var first = tasks.filter(function (t) { return t.overdue; }), rest = tasks.filter(function (t) { return !t.overdue; });
+    var order = ctx.order && ctx.order.length ? ctx.order : null;
+    if (order) {
+      var pos = {}; order.forEach(function (id, i) { pos[id] = i; });
+      var known = rest.filter(function (t) { return pos[t.id] !== undefined; }).sort(function (a, b) { return pos[a.id] - pos[b.id]; });
+      rest = known.concat(rest.filter(function (t) { return pos[t.id] === undefined; }));
+    }
+    tasks = first.concat(rest);
     var run = ctx.timer && ctx.timer.id;
     if (run) { var i = tasks.findIndex(function (t) { return t.id === run; }); if (i > 0) tasks.unshift(tasks.splice(i, 1)[0]); }
-    return { tasks: tasks, learned: learned, windowEnd: wEnd };
+    return { tasks: tasks, learned: learned, windowEnd: wEnd, custom: !!order };
   }
 
   // Lay tonight out as time blocks from a start time, with breaks, stopping at the end-of-night limit.
@@ -169,7 +184,7 @@
     var start = picked && picked > def ? picked : def;
     if (ctx.timer && ctx.timer.at) { var nowish = new Date(now.getTime()); nowish.setSeconds(0, 0); if (nowish < start) start = nowish; }
     var tt = tonightTasks(items, ctx, now), plan = layout(tt.tasks, start, endBy);
-    plan.tasks = tt.tasks; plan.learned = tt.learned; plan.windowEnd = tt.windowEnd; plan.picked = picked;
+    plan.tasks = tt.tasks; plan.learned = tt.learned; plan.windowEnd = tt.windowEnd; plan.picked = picked; plan.custom = tt.custom;
     return plan;
   }
 

@@ -179,3 +179,35 @@ test('minutes read in plain words', () => {
   assert.equal(P.fmtMin(60), '1 h');
   assert.equal(P.fmtMin(135), '2 h 15 min');
 });
+
+test('pulling into tonight: later work joins tonight, a test gets one study session', () => {
+  const a = item('Problem Set A', '2026-10-19T23:59');
+  const later = item('Worksheet 7', '2026-10-22T23:59');
+  const quiz = item('Vocab Quiz 9', '2026-10-30T08:00');
+  const plain = P.tonight([a, later, quiz], ctx(), MON);
+  assert.deepEqual(plain.tasks.map((t) => t.id), [a.id], 'nothing far off is planned by default');
+  const pulled = { [later.id]: '2026-10-19', [quiz.id]: '2026-10-19' };
+  const p = P.tonight([a, later, quiz], ctx({ pulled }), MON);
+  const byId = Object.fromEntries(p.tasks.map((t) => [t.id, t]));
+  assert.equal(byId[later.id].kind, 'work');
+  assert.equal(byId[later.id].pulled, true);
+  assert.equal(byId[quiz.id].kind, 'study');
+  assert.equal(byId[quiz.id].min, Math.min(P.STUDY_BLOCK, P.estimate(quiz, ctx(), {}).min));
+  assert.equal(p.tasks.length, 3);
+});
+
+test('custom order: overdue stays first, the student order applies to the rest, new items go last', () => {
+  const late = item('Late Lab', '2026-10-18T23:59');
+  const b = item('Reading B', '2026-10-19T22:00');
+  const c = item('Problem Set C', '2026-10-19T23:59');
+  const d = item('Essay D', '2026-10-20T08:00');
+  const sug = P.tonight([late, b, c, d], ctx(), MON);
+  assert.equal(sug.custom, false);
+  assert.equal(sug.tasks[0].id, late.id);
+  const p = P.tonight([late, b, c, d], ctx({ order: [d.id, b.id] }), MON);
+  assert.equal(p.custom, true);
+  assert.deepEqual(p.tasks.map((t) => t.id), [late.id, d.id, b.id, c.id]);
+  // The plan's time slots follow the new order.
+  const firstWork = p.blocks.filter((x) => x.kind !== 'break');
+  assert.equal(firstWork[1].task.id, d.id);
+});

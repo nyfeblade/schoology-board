@@ -9,3 +9,4 @@ test-results/
 .env*
 public/sw.js
 public/manifest.webmanifest
+AGENTS.md

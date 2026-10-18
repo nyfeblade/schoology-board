@@ -21,7 +21,10 @@ const manifest = {
   ]
 };
 writeFileSync(new URL('manifest.webmanifest', root), JSON.stringify(manifest, null, 2) + '\n');
-const SHELL = ['/', '/board/theme/default.css', '/board/board.css', '/board/vendor/qrcode.js', '/board/ics.js', '/board/cas.js', '/board/plan.js', '/board/board.js',
+// Every theme's CSS is tiny, so all six are in the shell; only the default theme's fonts are. Other fonts are kept after first use.
+const THEMES = ['sticker', 'arcade', 'notebook', 'varsity', 'riso', 'cafe'];
+const SHELL = ['/', '/board/theme/default.css', '/board/tonight.css', '/board/board.css', ...THEMES.map((n) => `/board/theme/${n}.css`),
+  '/board/theme/fonts/Fredoka.woff2', '/board/theme/fonts/Nunito.woff2', '/board/vendor/qrcode.js', '/board/ics.js', '/board/cas.js', '/board/plan.js', '/board/board.js',
   '/favicon.svg', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/apple-touch-icon.png'];
 const h = createHash('sha256');
 for (const f of SHELL) { const p = new URL('.' + (f === '/' ? '/index.html' : f), root); if (existsSync(p)) h.update(readFileSync(p)); }
@@ -46,7 +49,7 @@ self.addEventListener('fetch', (e) => {
   }
   if (SHELL.includes(url.pathname)) { e.respondWith(caches.match(url.pathname, { cacheName: CACHE }).then((r) => r || fetch(req))); return; }
   // Big optional pieces (the PDF reader, the sample board's picture) are kept after first use.
-  if (/^\\/board\\/(vendor|preview)/.test(url.pathname) || url.pathname.startsWith('/icons/')) {
+  if (/^\\/board\\/(vendor|preview|theme\\/fonts)/.test(url.pathname) || url.pathname.startsWith('/icons/')) {
     e.respondWith(caches.open(RUNTIME).then((c) => c.match(req).then((hit) => hit || fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; }))));
   }
 });
