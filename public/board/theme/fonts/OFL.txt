@@ -13,6 +13,7 @@ Graduate.woff2 (Graduate): Copyright (c) 2012, Eduardo Tunni (http://www.tipo.ne
 Anton.woff2 (Anton): Copyright 2020 The Anton Project Authors (https://github.com/googlefonts/AntonFont.git)
 SpaceGrotesk.woff2 (Space Grotesk): Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk)
 Fraunces.woff2 (Fraunces): Copyright 2020 The Fraunces Project Authors (github.com/undercasetype/Fraunces)
+InstrumentSerif-Regular.woff2, InstrumentSerif-Italic.woff2 (Instrument Serif): Copyright 2022 The Instrument Serif Project Authors (https://github.com/Instrument/instrument-serif)
 
 Copyright (c) <dates>, <Copyright Holder> (<URL|email>),
 with Reserved Font Name <Reserved Font Name>.

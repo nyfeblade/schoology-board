@@ -525,3 +525,4 @@ dialog.reset .dlg-f .btn.danger{background:var(--late);border-color:var(--late);
  .col{padding:4px 12px 8px}
  .col .day:first-child{margin-top:0}
 }
+.thp-pv{display:inline-block;margin-left:6px;padding:1px 6px;border:1px solid var(--border-1);border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);vertical-align:2px}

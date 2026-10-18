@@ -455,12 +455,23 @@
     ['varsity', 'Varsity', 'Scoreboard type, team colors, a final score.', ['Royal', 'Gold', 'Maroon', 'Kelly green', 'Varsity red', 'Navy', 'Silver', 'Purple']],
     ['riso', 'Riso Zine', 'Two-color print, stamps and halftone dots.', ['Riso blue', 'Yellow', 'Bright red', 'Green', 'Blue tint', 'Purple overprint', 'Warm grey', 'Burgundy']],
     ['cafe', 'Lo-fi Caf\u00e9', 'Warm and dim. Your mug fills as you go.', ['Slate blue', 'Honey', 'Lavender', 'Sage', 'Brick', 'Plum', 'Latte', 'Foam']],
-    ['minimal', 'Minimal', 'Quiet black and white. Light or dark.', ['Blue', 'Mustard', 'Violet', 'Green', 'Plum', 'Graphite', 'Navy', 'Rose']]
+    ['minimal', 'Minimal', 'Quiet black and white. Light or dark.', ['Blue', 'Mustard', 'Violet', 'Green', 'Plum', 'Graphite', 'Navy', 'Rose']],
+    ['nocturne', 'Nocturne', 'A night sky. Each thing you finish lights a star.', ['Sapphire', 'Amethyst', 'Moonlight gold', 'Garnet', 'Sage', 'Pearl', 'Brass', 'Orchid'], 'preview']
   ];
+  // Preview themes (Nocturne) stay out of the picker until ?preview=<name> is opened once on this device
+  // (?preview=off hides them again). A board already using one keeps it.
+  var PREVIEW = (function () {
+    try {
+      var m = /[?&]preview=([a-z]+)/.exec(location.search);
+      if (m) { if (m[1] === 'off') localStorage.removeItem('sb-preview'); else localStorage.setItem('sb-preview', m[1]); }
+      return localStorage.getItem('sb-preview') || '';
+    } catch (e) { return ''; }
+  })();
+  function pickable(t) { return !t[4] || PREVIEW === t[0] || (S && S.prefs.theme === t[0]); }
   // Themes with a light and a dark version; the student's choice is shared between them.
   var MODES = { notebook: 1, minimal: 1 };
-  // Swatches a theme never hands out on its own (a student can still pick them): Minimal's Rose.
-  var NO_AUTO = { minimal: [8] };
+  // Swatches a theme never hands out on its own (a student can still pick them): Minimal's Rose, Nocturne's Orchid.
+  var NO_AUTO = { minimal: [8], nocturne: [8] };
   function themeInfo(id) { for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === id) return THEMES[i]; return THEMES[0]; }
   function curTheme() { var t = S && S.prefs.theme; return themeInfo(t)[0]; }
   function applyTheme() {
@@ -472,6 +483,48 @@
     try { localStorage.setItem('sb-theme', JSON.stringify({ t: t, m: mode })); } catch (e) { }
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', themeVar('--meta-theme-color', ''));
+    document.documentElement.classList.toggle('lowfx', t === 'nocturne' && lowFx());
+    nocSky(t === 'nocturne');
+  }
+  // ---------- Nocturne: the sky, and the constellation that lights a star per finished thing ----------
+  // Glass blur is skipped (solid cards) on 2-core machines, with Save-Data, with ?lite, under
+  // prefers-reduced-transparency, and where backdrop-filter is unsupported (the last two in CSS).
+  function lowFx() {
+    try { return (navigator.hardwareConcurrency || 8) <= 2 || !!(navigator.connection && navigator.connection.saveData) || /[?&]lite\b/.test(location.search); } catch (e) { return false; }
+  }
+  function nocSky(on) {
+    var el = document.getElementById('sb-sky');
+    if (!on) { if (el) el.remove(); return; }
+    if (el || !document.body) return;
+    var r = 7, rnd = function () { r = (r * 16807) % 2147483647; return (r - 1) / 2147483646; }, stars = '';
+    for (var i = 0; i < 40; i++) stars += '<circle cx="' + Math.round(rnd() * 1440) + '" cy="' + Math.round(rnd() * 900) + '" r="' + (0.5 + Math.round(rnd() * 3) * 0.15).toFixed(2) + '" opacity="' + (0.22 + rnd() * 0.3).toFixed(2) + '"/>';
+    el = document.createElement('div'); el.id = 'sb-sky'; el.className = 'nsky'; el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<div class="nglow"></div><svg class="nstars" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">' + stars + '</svg>' +
+      '<div class="nmoon"><svg viewBox="0 0 120 120"><defs><radialGradient id="nmh"><stop offset="0" stop-opacity=".2"/><stop offset=".22" stop-opacity=".1"/><stop offset=".45" stop-opacity=".035"/><stop offset=".75" stop-opacity=".01"/><stop offset="1" stop-opacity="0"/></radialGradient>' +
+      '<mask id="nmm"><rect width="120" height="120" fill="white"/><circle cx="71.5" cy="51" r="24" fill="black"/></mask></defs>' +
+      '<circle cx="60" cy="60" r="60" fill="url(#nmh)"/><circle class="disc" cx="60" cy="60" r="22" opacity=".028"/><circle class="lit" cx="60" cy="60" r="22" mask="url(#nmm)"/></svg></div><div class="ngrain"></div>';
+    document.body.insertBefore(el, document.body.firstChild);
+  }
+  var NOC = { fresh: false, draw: false };
+  var CONST = {
+    8: { vb: '0 0 216 92', p: [[12, 70], [44, 62], [74, 69], [102, 54], [124, 28], [160, 18], [192, 36], [170, 64]], path: [0, 1, 2, 3, 4, 5, 6, 7, 3] },
+    15: { vb: '0 0 196 56', p: [[8, 38], [22, 26], [38, 32], [50, 18], [66, 12], [82, 20], [92, 34], [108, 40], [124, 32], [134, 18], [150, 12], [166, 20], [176, 34], [188, 44], [160, 46]], path: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 12, 14] }
+  };
+  function arcPts(n) { var p = [], path = []; for (var i = 0; i < n; i++) { var t = i / (n - 1 || 1); p.push([Math.round(10 + t * 196), Math.round(70 - Math.sin(t * Math.PI) * 44 + (i % 2 ? 6 : -4))]); path.push(i); } return { vb: '0 0 216 92', p: p, path: path }; }
+  // done of total, drawn with at most 15 stars (bigger nights light them in proportion; all lit only when all done).
+  function constel(done, total, o) {
+    o = o || {};
+    var n = Math.min(total, 15), lit = total <= 15 ? done : (done >= total ? 15 : Math.floor(done * 15 / total));
+    if (!n) return '';
+    var C = CONST[n] || arcPts(n), all = lit >= n, big = n > 8, uid = 'cg' + (o.id || '');
+    var d = C.path.map(function (i, k) { return (k ? 'L' : 'M') + C.p[i][0] + ' ' + C.p[i][1]; }).join(' ');
+    return '<svg class="cst' + (all ? ' full' : '') + (all && o.draw ? ' draw' : '') + '" viewBox="' + C.vb + '" aria-hidden="true" focusable="false">' +
+      '<defs><radialGradient id="' + uid + '"><stop offset="0" stop-opacity=".55"/><stop offset=".35" stop-opacity=".16"/><stop offset="1" stop-opacity="0"/></radialGradient></defs>' +
+      (all ? '<path class="cl" d="' + d + '" pathLength="1"/>' : '<path class="cg" d="' + d + '"/>') +
+      C.p.map(function (q, i) {
+        return i < lit ? '<g class="sl' + (o.fresh && i === lit - 1 ? ' fresh' : '') + '" style="--i:' + i + '"><circle class="sh" cx="' + q[0] + '" cy="' + q[1] + '" r="' + (big ? 7 : 9) + '" fill="url(#' + uid + ')"/><circle class="sc" cx="' + q[0] + '" cy="' + q[1] + '" r="' + (big ? 1.7 : 2.1) + '"/></g>'
+          : '<circle class="su" cx="' + q[0] + '" cy="' + q[1] + '" r="' + (big ? 1.1 : 1.4) + '"/>';
+      }).join('') + '</svg>';
   }
   function setTheme(t, mode) {
     S.prefs.theme = t; if (mode !== undefined) S.prefs.mode = mode;
@@ -480,11 +533,11 @@
   function openThemes() {
     if (MODE !== 'web') { toast('Themes can be changed on the website. This backup keeps the theme it was saved with.'); return; }
     var cur = curTheme();
-    var body = '<p class="mv-intro">Pick a look. Your tasks stay the same; class colors are saved for each theme.</p><div class="thgrid" role="radiogroup" aria-label="Themes">' + THEMES.map(function (t) {
+    var body = '<p class="mv-intro">Pick a look. Your tasks stay the same; class colors are saved for each theme.</p><div class="thgrid" role="radiogroup" aria-label="Themes">' + THEMES.filter(pickable).map(function (t) {
       return '<button type="button" class="thp" data-theme="' + t[0] + '" role="radio" aria-checked="' + (t[0] === cur) + '">' +
         '<span class="thp-s"><span class="thp-card"><i class="thp-ck"></i><span class="thp-l"></span><span class="thp-tag"></span></span>' +
         '<span class="thp-sw">' + [1, 2, 3, 4, 5].map(function (n) { return '<i style="background:var(--swatch-' + n + ')"></i>'; }).join('') + '</span></span>' +
-        '<span class="thp-n">' + esc(t[1]) + '</span><span class="thp-d">' + esc(t[2]) + '</span></button>';
+        '<span class="thp-n">' + esc(t[1]) + (t[4] ? ' <span class="thp-pv">Preview</span>' : '') + '</span><span class="thp-d">' + esc(t[2]) + '</span></button>';
     }).join('') + '</div>' +
       '<div class="thmode" id="th-mode"' + (MODES[cur] ? '' : ' hidden') + '><span id="th-mode-n">' + esc(themeInfo(cur)[1]) + ':</span><div class="seg" role="group" aria-label="Light or dark"><button type="button" data-mode="" aria-pressed="' + (S.prefs.mode !== 'dark') + '">Light</button><button type="button" data-mode="dark" aria-pressed="' + (S.prefs.mode === 'dark') + '">Dark</button></div></div>';
     var d = dialog('Change theme', body, '<span class="r"><button class="btn primary" data-close>Done</button></span>');
@@ -545,7 +598,7 @@
   function mountBoard() {
     $('#sb-main').innerHTML =
       '<div class="bhead"><div class="hl"><h1 class="bh-t">Board <span id="sb-label"></span></h1></div><div class="hr"><span id="sb-fresh">' + freshHtml() + '</span>' +
-      '<div class="prog"><span class="prog-t" id="sb-prog"></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div></div></div><div id="sb-banner">' + bannerHtml() + '</div>' +
+      '<div class="prog"><span class="hsky" id="sb-hsky"></span><span class="prog-t" id="sb-prog"></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div></div></div><div id="sb-banner">' + bannerHtml() + '</div>' +
       '<div class="sb-tools" id="sb-tools"><div class="tl">' +
       '<div class="seg" role="group" aria-label="Show"><button data-view="today">Due today</button><button data-view="week">Week</button><button data-view="all">All</button></div>' +
       '<span class="weeknav" id="sb-weeknav"><button class="btn ghost icon" id="sb-prev" aria-label="Previous week" title="Previous week ([)">' + ICON.left + '</button><b id="sb-week"></b><button class="btn ghost icon" id="sb-next" aria-label="Next week" title="Next week (])">' + ICON.right + '</button><button class="btn ghost small" id="sb-thisweek">This week</button></span>' +
@@ -779,6 +832,7 @@
     }
     var done = shown.filter(function (i) { return i.col === 'done'; }).length;
     $('#sb-prog').innerHTML = '<b>' + done + '</b> of ' + shown.length + ' done';
+    $('#sb-hsky').innerHTML = curTheme() === 'nocturne' ? constel(done, shown.length, { id: 'b' }) : '';
     document.body.dataset.view = 'board'; document.title = 'Board \u00b7 Schoology Board';
     $('#sb-bar').style.width = (shown.length ? Math.round(100 * done / shown.length) : 0) + '%';
     bindCards();
@@ -940,6 +994,7 @@
   }
   var ART = {
     minimal: function () { return ''; },
+    nocturne: function () { return ''; },
     sticker: function (k) { return k === 'done' ? '<svg class="stk" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="48" class="a1"/><path d="M38 61l15 15 30-32" class="tick"/></svg><span class="stamp-s">DONE!</span>' : '<svg class="stk" viewBox="0 0 120 120" aria-hidden="true"><path d="M84 78A36 36 0 0 1 42 22a38 38 0 1 0 42 56z" class="a2"/><circle cx="92" cy="28" r="6" class="a1"/></svg>'; },
     arcade: function (k) { return '<span class="gg">' + (k === 'done' ? 'GG' : 'FREE PLAY') + '</span><span class="ggs">' + (k === 'done' ? '+50 XP \u00b7 night cleared' : 'Nothing due tonight') + '</span>'; },
     notebook: function (k) { return '<span class="hand">' + (k === 'done' ? 'nailed it.' : 'a free night.') + '<svg viewBox="0 0 200 70" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M178 20C140 2 46 4 18 24 0 38 22 62 92 64s104-10 98-34C186 16 150 8 120 10"/></svg></span>'; },
@@ -986,7 +1041,7 @@
       verdict = 'Nothing due tonight';
       var nx = M.coming.slice().sort(function (a, b) { return a.d - b.d; })[0];
       if (nx) nudge = 'Next deadline: <b>' + esc(nx.title) + '</b>, due ' + esc(dueWords(nx, now)) + '.';
-    } else if (done) { verdict = curTheme() === 'minimal' ? 'Nothing left tonight.' : 'You\u2019re free tonight'; nudge = 'Everything due through ' + esc(byWord(M.wEnd, now)) + ' is done. Nice work.'; }
+    } else if (done) { verdict = curTheme() === 'minimal' ? 'Nothing left tonight.' : curTheme() === 'nocturne' ? 'The sky\u2019s clear tonight.' : 'You\u2019re free tonight'; nudge = 'Everything due through ' + esc(byWord(M.wEnd, now)) + ' is done. Nice work.'; }
     else {
       verdict = plural(n, 'thing') + ' tonight, <span class="nw">about ' + durS(mins) + '</span>';
       var lead = P.tasks[0];
@@ -998,8 +1053,9 @@
     }
     var flagged = M.items.filter(function (i) { return flagOf(i) && (P.tasks.some(function (t) { return t.id === i.id; }) || M.coming.indexOf(i) >= 0); });
     var doneN = M.finished.length + M.chunkDone.length;
-    var prog = total ? '<div class="tprog" aria-label="' + doneN + ' of ' + total + ' done for tonight"><span class="tpt"><b>' + doneN + '</b> of ' + total + ' done</span><span class="ps"><span class="psl">Done</span><span class="pd" id="pDone">' + pad(doneN) + '</span><i>/</i><span class="pd">' + pad(total) + '</span></span><span class="pbar"><i style="width:' + Math.round(100 * doneN / total) + '%"></i></span></div>' : '';
-    var h = '<section class="thero"><div class="hl"><p class="greet">' + greeting(now) + '</p><h1 class="verdict" id="verdict">' + verdict + '</h1>' + (nudge ? '<p class="nudge">' + nudge + '</p>' : '') +
+    var prog = total ? '<div class="tprog" aria-label="' + doneN + ' of ' + total + ' done for tonight">' + (curTheme() === 'nocturne' ? '<span class="nsk">' + constel(doneN, total, { id: 't', fresh: NOC.fresh, draw: NOC.draw }) + '</span>' : '') + '<span class="tpt"><b>' + doneN + '</b> of ' + total + ' done</span><span class="ps"><span class="psl">Done</span><span class="pd" id="pDone">' + pad(doneN) + '</span><i>/</i><span class="pd">' + pad(total) + '</span></span><span class="pbar"><i style="width:' + Math.round(100 * doneN / total) + '%"></i></span></div>' : '';
+    NOC.fresh = NOC.draw = false;
+    var h = '<section class="thero' + (done ? ' hdone' : '') + '"><div class="hl"><p class="greet">' + greeting(now) + '</p><h1 class="verdict" id="verdict">' + verdict + '</h1>' + (nudge ? '<p class="nudge">' + nudge + '</p>' : '') +
       (flagged.length ? '<p class="flagn">' + NICON.flag + plural(flagged.length, 'item') + ' to double-check. ' + (flagged.length === 1 ? 'It\u2019s' : 'They\u2019re') + ' marked below.</p>' : '') + '</div><div class="hr">' + freshHtml() + prog + '</div></section>' + bannerHtml();
     if (empty || done) h += freeHtml(empty ? 'empty' : 'done', M, now);
     else {
@@ -1086,7 +1142,8 @@
     if (STAMP[t]) { var s = document.createElement('span'); s.className = 'stamp'; s.textContent = STAMP[t]; row.appendChild(s); }
     if (t === 'sticker') { var r = row.querySelector('.bigchk').getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 8, 46); }
     if (t === 'varsity') { var p = $('#pDone'); if (p) p.classList.add('flip'); }
-    var quiet = t === 'minimal';
+    if (t === 'nocturne') { NOC.fresh = true; NOC.draw = openBefore <= 1; }
+    var quiet = t === 'minimal' || t === 'nocturne';
     setTimeout(function () {
       var hgt = row.offsetHeight;
       var a = row.animate([{ height: hgt + 'px', opacity: 1 }, { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginBottom: quiet ? '0px' : '-10px' }], { duration: quiet ? 200 : 220, easing: 'ease-in', fill: 'forwards' });
@@ -1114,6 +1171,7 @@
   };
   // The last check-off: one short finish moment, and one toast that still offers Undo (just the toast with reduced motion).
   function celebrateAll(n, title, undo) {
+    if (curTheme() === 'nocturne') { live('The sky\u2019s clear tonight.'); toast('The sky\u2019s clear tonight.', 'Undo', undo, 6000); return; }
     if (curTheme() === 'minimal') { var dc = new Date().toLocaleDateString('en-US', { weekday: 'long' }) + ' clear.'; live(dc); toast(dc, 'Undo', undo, 6000); return; }
     if (reducedMotion()) { toast('Everything\u2019s done. You\u2019re free tonight.', 'Undo', undo, 6000); return; }
     live('Everything\u2019s done. You\u2019re free tonight.');

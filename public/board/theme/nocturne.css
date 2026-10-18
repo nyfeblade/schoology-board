@@ -1,0 +1,307 @@
+/* Schoology Board theme: Nocturne (data-theme="nocturne"), a PREVIEW theme: it only shows in the picker after ?preview=nocturne.
+   Tokens and layout from the UI designer's reference (H · Nocturne). Fonts: Instrument Serif and Inter, OFL (see fonts/OFL.txt).
+   Class swatches: Sapphire #6F8CFF, Amethyst #937AB8, Moonlight gold #E9D27A, Garnet #E06C75, Sage #8FBF8F, Pearl #D9D6E8, Brass #9E8D2E, Orchid #E9A5DE.
+   Moonlight gold is nudged from the reference to hue 47.6 deg so it stays out of the no-orange band. The reference palette had
+   near-duplicates (Sapphire/Amethyst, Amethyst/Mauve, gold/Citrine, Sage/Citrine), so Amethyst is muted, Brass replaces Citrine
+   and Orchid replaces Mauve. Orchid is optional and never handed out automatically.
+   Text contrast (AA, checked on the worst sky/glass mix): tertiary #9C99B4, overdue text #F47E81; red #F2666A only marks overdue.
+   Frosted glass falls back to solid #12142B without backdrop-filter, under prefers-reduced-transparency, and with html.lowfx
+   (2 or fewer CPU cores, Save-Data, or ?lite), set by board.js. */
+@font-face{font-family:"Instrument Serif";src:url(fonts/InstrumentSerif-Regular.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Instrument Serif";src:url(fonts/InstrumentSerif-Italic.woff2) format("woff2");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:Inter;src:url(fonts/Inter.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root[data-theme="nocturne"],.thp[data-theme="nocturne"]{color-scheme:dark;--meta-theme-color:#070912;--bgs:auto;--bg-image-attachment:fixed;--hair:rgba(255,255,255,.07);--hair2:rgba(255,255,255,.14);--swatch-1:#6F8CFF;--swatch-1-ink:#14122B;--swatch-2:#937AB8;--swatch-2-ink:#14122B;--swatch-3:#E9D27A;--swatch-3-ink:#14122B;--swatch-4:#E06C75;--swatch-4-ink:#14122B;--swatch-5:#8FBF8F;--swatch-5-ink:#14122B;--swatch-6:#D9D6E8;--swatch-6-ink:#14122B;--swatch-7:#9E8D2E;--swatch-7-ink:#14122B;--swatch-8:#E9A5DE;--swatch-8-ink:#14122B;--swatch-0:#3A3858;--swatch-0-ink:#F2EEE6;--overdue:#F2666A;--on-late:#14122B;--solid:#12142B;--scrim:rgba(4,5,12,.55);--backdrop:rgba(4,5,12,.65);--shadow-nav:none;--surface-2:#12142B;--card-done-bg:var(--card);--card-late-bg:var(--card);--col-border:transparent;--col-border-style:solid;--col-over-bg:rgba(243,231,184,.035);--colnav-bg:rgba(7,9,18,.86);--radius-col:14px;--radius-tag:0;--radius-dialog:20px;--radius-toast:999px;--hero-tilt:none;--tag-border:0;--card-shadow:var(--sh);--card-hover-shadow:var(--sh);--confetti-1:#F3E7B8;--confetti-2:#A98BFF;--confetti-3:#6F8CFF;--confetti-4:#F3E7B8;--confetti-5:#8FBF8F;--confetti-stroke:#070912;--art-1:#F3E7B8;--art-2:#A98BFF;--art-ink:#070912;--bar-track:rgba(255,255,255,.08);--bar-fill:#8D8AA6;--bar-heavy:#F3E7B8;--flag-test-bg:var(--flagBg);--flag-early-bg:rgba(243,231,184,.07);--flag-early-color:#F3E7B8;--spill-bg:transparent;--focus:#F3E7B8;--font-display:var(--fh);--font-hand:var(--fh);--bgc:#070912;--bgi:linear-gradient(180deg,#070912 0%,#0F1230 55%,#1C1644 100%);--ink:#F2EEE6;--ink2:#A9A6B8;--mut:#A9A6B8;--mut3:#9C99B4;--dim:#6F6C85;--moon:#F3E7B8;--onmoon:#14122B;--redt:#F47E81;--gold:#E9D27A;
+ --card:rgba(255,255,255,.04);--line:rgba(255,255,255,.07);--soft:rgba(255,255,255,.05);--well:transparent;--wellB:0;--bc:rgba(255,255,255,.08);--bw:1px;--bw2:1px;--bwc:0px;--r:14px;--rs:12px;--rb:999px;
+ --sh:inset 0 1px 0 rgba(255,255,255,.06);--shs:inset 0 1px 0 rgba(255,255,255,.06);--lift:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(243,231,184,.35),0 24px 48px -18px rgba(0,0,0,.8);--pop:inset 0 1px 0 rgba(255,255,255,.06),0 24px 48px -18px rgba(0,0,0,.8);
+ --fh:"Instrument Serif",Georgia,serif;--fb:Inter,system-ui,sans-serif;--fwh:400;--lsh:0;--tth:none;--fwt:500;
+ --acc:#F3E7B8;--accInk:#14122B;--acc2:#F3E7B8;--okc:#8FBF8F;--late:#F2666A;--lateBg:transparent;--lateB:rgba(242,102,106,.3);--warn:transparent;--warnInk:#F2EEE6;--warnB:rgba(255,255,255,.08);--warnSoft:rgba(255,255,255,.04);--flagInk:#E9D27A;--flagBg:rgba(233,210,122,.05);--flagB:rgba(233,210,122,.32);
+ --navbg:rgba(255,255,255,.04);--navb:rgba(255,255,255,.08);--navon:rgba(243,231,184,.1);--navonInk:#F3E7B8;--cnt:transparent;--cntInk:#9C99B4;--btnBg:#F3E7B8;--btnInk:#14122B;--btnB:#F3E7B8;--focus:#F3E7B8;
+ --chr:50%;--chb:1.5px;--chc:rgba(242,238,230,.38);--chbg:transparent;--ckInk:#14122B;--ckBg:#F3E7B8;--ckB:#F3E7B8;--skel:rgba(255,255,255,.055);--skelHi:rgba(255,255,255,.06);--tbg:rgba(18,20,43,.78);--tink:#F2EEE6;--tacc:#F3E7B8;--tb:1px solid rgba(255,255,255,.1);color-scheme:dark}
+:root[data-theme="nocturne"] body{font-size:14px;line-height:21px;font-feature-settings:"cv11","ss01"}
+:root[data-theme="nocturne"] .tnm .tm,:root[data-theme="nocturne"] .tnm .sh .cnt,:root[data-theme="nocturne"] .tnm .estb,:root[data-theme="nocturne"] .tnm .tpt b,:root[data-theme="nocturne"] .tnm .cug h3 em,:root[data-theme="nocturne"] .tnm .nstreak b{font-variant-numeric:tabular-nums}
+:root[data-theme="nocturne"] .tnm ::selection{background:rgba(243,231,184,.28);color:#fff}
+:root[data-theme="nocturne"] .tnm :focus-visible{outline:2px solid var(--moon);outline-offset:3px}
+:root[data-theme="nocturne"] .topbar{padding:24px 32px 6px;max-width:1000px}
+:root[data-theme="nocturne"] .brand{font:400 21px/1 var(--fh);letter-spacing:0;gap:10px}
+:root[data-theme="nocturne"] .brand i{width:7px;height:7px;border:0;border-radius:50%;background:var(--moon);box-shadow:0 0 10px 1px rgba(243,231,184,.6)}
+:root[data-theme="nocturne"] .navt{padding:4px;gap:2px}
+:root[data-theme="nocturne"] .navt a{font-weight:500;font-size:13px;padding:7px 14px;color:var(--mut)}
+:root[data-theme="nocturne"] .navt a[aria-current=page]{box-shadow:inset 0 0 0 1px rgba(243,231,184,.28)}
+:root[data-theme="nocturne"] .soon{background:none;padding:0;color:var(--mut3);font-weight:500;font-size:9.5px;letter-spacing:.1em}
+:root[data-theme="nocturne"] .navt a[aria-current=page] .soon{color:inherit;opacity:.85}
+:root[data-theme="nocturne"] .ib{width:36px;height:36px;border-radius:50%;color:var(--mut)}
+:root[data-theme="nocturne"] .ib:hover{color:var(--ink);border-color:rgba(255,255,255,.16)}
+:root[data-theme="nocturne"] .ib svg{width:17px;height:17px}
+:root[data-theme="nocturne"] .tnm #menu{border-radius:14px}
+:root[data-theme="nocturne"] .tnm #menu button,:root[data-theme="nocturne"] .tnm #menu a{font-weight:500;font-size:13.5px}
+:root[data-theme="nocturne"] .tnm #menu button:hover,:root[data-theme="nocturne"] .tnm #menu a:hover{background:rgba(255,255,255,.06)}
+:root[data-theme="nocturne"] main.tnm{max-width:820px;padding:8px 32px 120px}
+:root[data-theme="nocturne"] .tnm .thero{padding:36px 0 28px;gap:32px;align-items:flex-start}
+:root[data-theme="nocturne"] .tnm .greet{font-size:11.5px;line-height:16px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin:0 0 12px}
+:root[data-theme="nocturne"] .tnm .verdict{font-size:44px;line-height:48px;font-weight:400;letter-spacing:-.01em;color:var(--ink)}
+:root[data-theme="nocturne"] .tnm .verdict .nw{font-style:italic;color:var(--ink2)}
+:root[data-theme="nocturne"] .tnm .verdict.vdone{font-style:italic}
+:root[data-theme="nocturne"] .tnm .nudge{font-size:14.5px;line-height:22px;margin-top:12px;color:var(--ink2)}
+:root[data-theme="nocturne"] .tnm .nudge b{font-weight:500;color:var(--ink)}
+:root[data-theme="nocturne"] .tnm .flagn{font-weight:500;font-size:13px;color:var(--gold)}
+:root[data-theme="nocturne"] .tnm .hr{gap:14px;padding-top:0}
+:root[data-theme="nocturne"] .fpill{height:32px;padding:0 14px;font-size:12.5px;font-weight:500;color:var(--ink2);gap:9px}
+:root[data-theme="nocturne"] .fpill .fdot{width:6px;height:6px;box-shadow:0 0 8px rgba(143,191,143,.7)}
+:root[data-theme="nocturne"] .fpill.ferr{color:var(--ink)}
+:root[data-theme="nocturne"] .fpill.ferr .fdot{background:var(--late);box-shadow:0 0 8px rgba(242,102,106,.7)}
+:root[data-theme="nocturne"] .fpill.stale{background:var(--card);color:var(--ink);border-color:var(--bc)}
+:root[data-theme="nocturne"] .fpill.stale .fdot{background:var(--gold);box-shadow:0 0 8px rgba(233,210,122,.7)}
+:root[data-theme="nocturne"] .fpill.fsync .fdot{background:var(--mut);box-shadow:none;animation:h_pulse var(--dur-loop) ease-in-out infinite}
+:root[data-theme="nocturne"] .fpill.fsync::after{height:1px;background:linear-gradient(90deg,transparent,var(--moon),transparent);animation-duration:var(--dur-loop)}
+@keyframes h_pulse{50%{opacity:.35}}
+:root[data-theme="nocturne"] .refresh{width:32px;height:32px;color:var(--mut)}
+:root[data-theme="nocturne"] .refresh:hover{color:var(--ink)}
+:root[data-theme="nocturne"] .refresh svg{width:15px;height:15px;stroke-width:1.8}
+:root[data-theme="nocturne"] .tnm .tprog{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12.5px;color:var(--mut);font-weight:400}
+:root[data-theme="nocturne"] .tnm .nsk{display:block;width:236px;height:100px;margin:4px -8px 2px 0}
+:root[data-theme="nocturne"] .tnm .hdone .nsk{width:300px;height:128px;margin-top:8px}
+:root[data-theme="nocturne"] .tnm .thero.hdone{align-items:center;padding-bottom:20px}
+:root[data-theme="nocturne"] .tnm .hdone .hr{gap:10px}
+:root[data-theme="nocturne"] .tnm .tprog .tpt b{font-weight:600;color:var(--ink)}
+:root[data-theme="nocturne"] .tnm .nstreak{display:flex;align-items:center;gap:8px;color:var(--mut3);font-size:12px}
+:root[data-theme="nocturne"] .tnm .nstreak b{font-weight:600;color:var(--ink2)}
+:root[data-theme="nocturne"] .tnm .ndots{display:inline-flex;gap:3px}
+:root[data-theme="nocturne"] .tnm .ndots i{width:4px;height:4px;border-radius:50%;background:var(--moon);box-shadow:0 0 5px rgba(243,231,184,.6)}
+@keyframes h_cdraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes h_sin{from{opacity:0}}
+@keyframes h_shin{0%{opacity:0;transform:scale(.3)}45%{opacity:1;transform:scale(1.6)}100%{opacity:.9;transform:none}}
+@keyframes h_tw2{40%{opacity:.55}}
+:root[data-theme="nocturne"] .banner{padding:14px 16px 14px 18px;border:1px solid var(--bc);background:var(--card);box-shadow:var(--sh);font-size:13.5px;line-height:20px;margin:0 0 8px;color:var(--ink)}
+:root[data-theme="nocturne"] .banner b{font-weight:500}
+:root[data-theme="nocturne"] .banner .bt{position:relative;padding-left:18px}
+:root[data-theme="nocturne"] .banner .bt::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;background:var(--late);box-shadow:0 0 8px rgba(242,102,106,.7)}
+:root[data-theme="nocturne"] .banner.stale .bt::before{background:var(--gold);box-shadow:0 0 8px rgba(233,210,122,.7)}
+:root[data-theme="nocturne"] .banner.slow .bt::before{background:var(--mut);box-shadow:none}
+:root[data-theme="nocturne"] .banner.ferr,:root[data-theme="nocturne"] .banner.stale{border-color:var(--bc);background:var(--card)}
+:root[data-theme="nocturne"] .banner .bs{font-size:12.5px;color:var(--mut)}
+:root[data-theme="nocturne"] .tnm .btn{height:34px;padding:0 16px;font-weight:600;font-size:13px;box-shadow:0 0 22px -8px rgba(243,231,184,.6)}
+:root[data-theme="nocturne"] .tnm .btn.ghost{background:var(--card);border-color:var(--bc);color:var(--ink);box-shadow:var(--shs)}
+:root[data-theme="nocturne"] .tnm .btn.ghost:hover{border-color:rgba(255,255,255,.18)}
+:root[data-theme="nocturne"] .tnm .lnk{font-weight:500;color:var(--ink);text-decoration-color:rgba(242,238,230,.35);text-underline-offset:3px}
+:root[data-theme="nocturne"] .tnm .sec{margin-top:32px}
+:root[data-theme="nocturne"] .tnm .sh{margin:0 0 12px;gap:10px;min-height:28px;align-items:baseline}
+:root[data-theme="nocturne"] .tnm .sh h2{font:italic 400 25px/28px var(--fh);color:var(--ink)}
+:root[data-theme="nocturne"] .tnm .sh .cnt{min-width:0;height:auto;padding:0;display:inline;background:none;font-size:12.5px;font-weight:500;color:var(--mut3)}
+:root[data-theme="nocturne"] .tnm .dofirst .sh .cnt{background:none;color:var(--redt)}
+:root[data-theme="nocturne"] .tnm .sh .meta{font-size:12.5px;color:var(--mut3)}
+:root[data-theme="nocturne"] .tnm .list{gap:10px}
+:root[data-theme="nocturne"] .tnm .trow{padding:15px 18px 15px 16px;gap:14px;align-items:center;transition:transform var(--dur-fast) cubic-bezier(.2,.8,.2,1),box-shadow var(--dur-fast),border-color var(--dur-fast),opacity var(--dur-mid)}
+:root[data-theme="nocturne"] .tnm .trow,:root[data-theme="nocturne"] .tnm .cug,:root[data-theme="nocturne"] .tnm .peek ul,:root[data-theme="nocturne"] .banner{background-image:linear-gradient(180deg,rgba(255,255,255,.022),transparent 55%)}
+:root[data-theme="nocturne"] .tnm .trow:hover{border-color:rgba(255,255,255,.13)}
+:root[data-theme="nocturne"] .tnm .trow.lift{background:rgba(28,26,64,.92)}
+:root[data-theme="nocturne"] .tnm .trow.tlate{border-color:var(--lateB);background-image:linear-gradient(90deg,rgba(242,102,106,.06),transparent 38%),linear-gradient(180deg,rgba(255,255,255,.022),transparent 55%)}
+:root[data-theme="nocturne"] .tnm .trow.tlate::before{content:"";position:absolute;left:-1px;top:16px;bottom:16px;width:2px;border-radius:0 2px 2px 0;background:var(--late);box-shadow:0 0 8px rgba(242,102,106,.6)}
+:root[data-theme="nocturne"] .tnm .trow.tlate .due{color:var(--redt);font-weight:400}
+:root[data-theme="nocturne"] .tnm .trow.flagged{border-color:var(--flagB)}
+:root[data-theme="nocturne"] .tnm .grip{color:var(--mut3);opacity:.5;margin:0 -8px 0 -6px}
+:root[data-theme="nocturne"] .tnm .bigchk{position:relative;width:24px;height:24px;transition:background var(--dur-fast),border-color var(--dur-fast),box-shadow var(--dur-mid)}
+:root[data-theme="nocturne"] .tnm .bigchk::after{content:"";position:absolute;inset:-10px}
+:root[data-theme="nocturne"] .tnm .bigchk .ck{width:15px;height:15px;stroke-width:2.6}
+:root[data-theme="nocturne"] .tnm .bigchk:hover{border-color:var(--moon)}
+:root[data-theme="nocturne"] .tnm .bigchk:hover .ck{opacity:0}
+:root[data-theme="nocturne"] .tnm .bigchk[aria-pressed=true]{box-shadow:0 0 14px rgba(243,231,184,.5)}
+:root[data-theme="nocturne"] .tnm .bigchk[aria-pressed=true] .ck{opacity:1}
+:root[data-theme="nocturne"] .tnm .bigchk:active{transform:scale(.94)}
+:root[data-theme="nocturne"] .tnm .rt{font-size:15px;line-height:21px;font-weight:500;background:linear-gradient(currentColor,currentColor) 0 56%/0 1px no-repeat;transition:background-size var(--dur-fast) ease-out,color var(--dur-fast)}
+:root[data-theme="nocturne"] .tnm .rt .ex{opacity:0}
+:root[data-theme="nocturne"] .tnm .rt:hover{text-decoration:none}
+:root[data-theme="nocturne"] .tnm .rt:hover .ex{opacity:.6}
+:root[data-theme="nocturne"] .tnm .trow.is-done{opacity:.62}
+:root[data-theme="nocturne"] .tnm .trow.is-done .rt,:root[data-theme="nocturne"] .tnm .trow.tdone .rt{background-size:100% 1px;color:var(--mut);text-decoration:none}
+:root[data-theme="nocturne"] .tnm .rm{margin-top:5px;gap:4px 14px;font-size:12.5px;line-height:17px;color:var(--mut)}
+:root[data-theme="nocturne"] .tnm .rcls{font-weight:400;font-size:12.5px;color:var(--ink2);gap:7px}
+:root[data-theme="nocturne"] .tnm .rcls::before,:root[data-theme="nocturne"] .tnm .cdot{width:6px;height:6px;box-shadow:0 0 8px color-mix(in srgb,var(--c) 60%,transparent)}
+:root[data-theme="nocturne"] .tnm .due{font-weight:400}
+:root[data-theme="nocturne"] .tnm .q{background:var(--gold);color:#14122B}
+:root[data-theme="nocturne"] .tnm .pin{background:rgba(243,231,184,.08);color:var(--moon);font-weight:500;letter-spacing:.08em;font-size:10px}
+:root[data-theme="nocturne"] .tnm .estb{height:28px;min-width:48px;padding:0 10px;font-size:12.5px;font-weight:500;color:var(--ink);background:transparent;border-color:rgba(255,255,255,.12)}
+:root[data-theme="nocturne"] .tnm .estb.guess{border-color:rgba(255,255,255,.2);color:var(--mut)}
+:root[data-theme="nocturne"] .tnm .estb:hover{color:var(--moon);border-color:rgba(243,231,184,.45);border-style:solid}
+:root[data-theme="nocturne"] .tnm .legend{font-size:12px;color:var(--mut3);margin:12px 2px 0}
+:root[data-theme="nocturne"] .tnm .legend .lg{border-color:rgba(255,255,255,.3);border-width:1px;width:20px;height:12px}
+:root[data-theme="nocturne"] .tnm .flagbox{border:1px dashed var(--flagB);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:18px;margin-top:10px;background:var(--flagBg)}
+:root[data-theme="nocturne"] .tnm .fl-h{font-weight:500;color:var(--gold)}
+:root[data-theme="nocturne"] .tnm .fl-h svg,:root[data-theme="nocturne"] .tnm .cflag svg,:root[data-theme="nocturne"] .tnm .flagn svg{width:15px;height:15px;stroke-width:1.7}
+:root[data-theme="nocturne"] .tnm .flagbox p{color:var(--ink2)}
+:root[data-theme="nocturne"] .tnm .fl-a a{font-weight:500}
+:root[data-theme="nocturne"] .tnm .trow.tdone{opacity:1;padding-top:11px;padding-bottom:11px}
+:root[data-theme="nocturne"] .tnm .trow.tdone .bigchk{opacity:.8}
+:root[data-theme="nocturne"] .tnm .trow.tdone .bigchk{width:22px;height:22px;box-shadow:none}
+:root[data-theme="nocturne"] .tnm .trow.arrive{animation:h_arrive var(--dur-celebrate) ease-out}
+@keyframes h_arrive{from{opacity:0;transform:translateY(6px)}}
+:root[data-theme="nocturne"] .tnm .trow.celebrate{border-color:rgba(243,231,184,.3)}
+:root[data-theme="nocturne"] .tnm .hid{font-size:12.5px;font-weight:400;color:var(--mut3);margin-top:16px}
+:root[data-theme="nocturne"] .tnm .cuw{gap:16px;align-items:start}
+:root[data-theme="nocturne"] .tnm .cug{background:var(--card);border:1px solid var(--bc);box-shadow:var(--sh);border-radius:16px;padding:14px 16px 6px}
+:root[data-theme="nocturne"] .tnm .cug h3{font:italic 400 19px/22px var(--fh);margin:0 0 4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+:root[data-theme="nocturne"] .tnm .cug h3 em{font:500 11.5px/1 var(--fb);color:var(--mut3)}
+:root[data-theme="nocturne"] .tnm .cug ul,:root[data-theme="nocturne"] .tnm .peek ul{gap:0}
+:root[data-theme="nocturne"] .tnm .cu{background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 0;gap:10px;align-items:flex-start}
+:root[data-theme="nocturne"] .tnm .cu:last-child{border-bottom:0}
+:root[data-theme="nocturne"] .tnm .cdot{margin-top:7px}
+:root[data-theme="nocturne"] .tnm .ct{font-weight:500;font-size:13.5px;line-height:20px}
+:root[data-theme="nocturne"] .tnm .cm{font-size:12px;line-height:17px;color:var(--mut)}
+:root[data-theme="nocturne"] .tnm .cflag{border:1px dashed var(--flagB);background:var(--flagBg);border-radius:8px}
+:root[data-theme="nocturne"] .tnm .cfh{font-weight:500;color:var(--gold)}
+:root[data-theme="nocturne"] .tnm .cflag a{font-weight:500}
+:root[data-theme="nocturne"] .tnm .pull{height:28px;padding:0 10px 0 8px;background:transparent;border-color:rgba(255,255,255,.12);color:var(--mut);font-weight:500;font-size:12px}
+:root[data-theme="nocturne"] .tnm .pull svg{width:13px;height:13px;stroke-width:2}
+:root[data-theme="nocturne"] .tnm .pull:hover{background:rgba(243,231,184,.08);color:var(--moon);border-color:rgba(243,231,184,.4)}
+:root[data-theme="nocturne"] .tnm .cdone{font-weight:500;color:var(--mut3)}
+:root[data-theme="nocturne"] .tnm .free{background:none;border:0;box-shadow:none;padding:0;text-align:left}
+:root[data-theme="nocturne"] .tnm .art,:root[data-theme="nocturne"] .tnm .free .fl{display:none}
+:root[data-theme="nocturne"] .tnm .peek{max-width:none;margin:8px 0 0;padding:0;border:0}
+:root[data-theme="nocturne"] .tnm .peek .sh h2{font-size:25px}
+:root[data-theme="nocturne"] .tnm .peek ul{background:var(--card);border:1px solid var(--bc);box-shadow:var(--sh);border-radius:16px;padding:4px 16px}
+:root[data-theme="nocturne"] .tnm .then{font-size:12.5px;font-weight:400;color:var(--mut3);margin:12px 2px 0}
+:root[data-theme="nocturne"] .tnm .free.empty .peek{margin-top:0}
+:root[data-theme="nocturne"] .tnm .nsk{position:relative}
+:root[data-theme="nocturne"] .tnm .sk{border-radius:6px}
+:root[data-theme="nocturne"] .tnm .sk::after{animation-duration:var(--dur-loop)}
+:root[data-theme="nocturne"] .tnm .skrow{opacity:1;padding:15px 18px 15px 16px;box-shadow:var(--sh)}
+:root[data-theme="nocturne"] .tnm .skrow+.skrow{margin-top:10px}
+:root[data-theme="nocturne"] .tnm .sk.ckk{width:24px;height:24px;border-radius:50%}
+:root[data-theme="nocturne"] .tnm .skb{gap:9px}
+:root[data-theme="nocturne"] .tnm .skb .sk{height:12px}
+:root[data-theme="nocturne"] .tnm .skb .sk.s2{height:9px}
+:root[data-theme="nocturne"] .tnm .sk.skchip{width:48px;height:28px}
+:root[data-theme="nocturne"] .tnm .sk.vb{height:40px;width:min(460px,80vw);border-radius:8px}
+:root[data-theme="nocturne"] .tnm .sk.nb{height:13px}
+:root[data-theme="nocturne"] .tnm .sk.hb{height:20px;width:120px}
+:root[data-theme="nocturne"] .tnm .cug.sk-g{padding:8px 12px}
+:root[data-theme="nocturne"] .tnm .cug.sk-g .skrow+.skrow{margin-top:0;border-top:1px solid var(--line)}
+:root[data-theme="nocturne"] .tnm .cug.sk-g .sk.ckk{width:6px;height:6px}
+:root[data-theme="nocturne"] .tnm .stub{border-radius:20px;padding:56px 32px}
+:root[data-theme="nocturne"] .tnm .stub h1{font:italic 400 44px/48px var(--fh)}
+:root[data-theme="nocturne"] .tnm .stub .soon{background:rgba(243,231,184,.1);color:var(--moon);font-size:10px;padding:4px 10px;border-radius:999px}
+:root[data-theme="nocturne"] #estpop{border-radius:999px;padding:5px;gap:3px}
+:root[data-theme="nocturne"] #estpop .eh{font:italic 400 15px/1 var(--fh);color:var(--ink2);padding:0 8px 0 10px}
+:root[data-theme="nocturne"] #estpop button{height:30px;min-width:44px;border-radius:999px;border:1px solid transparent;background:none;font-weight:500;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink)}
+:root[data-theme="nocturne"] #estpop button:hover{border-color:rgba(255,255,255,.14)}
+:root[data-theme="nocturne"] #estpop button.on{background:rgba(243,231,184,.12);color:var(--moon);border-color:rgba(243,231,184,.4)}
+:root[data-theme="nocturne"] .tnm .tst{border-radius:999px;font-weight:500;font-size:13.5px;padding:10px 12px 10px 20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 40px -16px rgba(0,0,0,.8);animation:h_tin var(--dur-mid) cubic-bezier(.2,.7,.2,1)}
+@keyframes h_tin{from{opacity:0;transform:translateY(6px)}}
+:root[data-theme="nocturne"] .tnm .tst button{font-weight:600;text-underline-offset:3px}
+:root[data-theme="nocturne"] .tnm .linkbtn{height:40px;padding:0 20px;font-size:14px}
+:root[data-theme="nocturne"] .tnm .unl .verdict{max-width:520px}
+@media (max-width:900px){
+:root[data-theme="nocturne"] .topbar{padding:16px 16px 4px}
+:root[data-theme="nocturne"] .brand{font-size:19px}
+:root[data-theme="nocturne"] .ib{width:36px;height:36px}
+:root[data-theme="nocturne"] main.tnm{padding:0 16px 112px}
+:root[data-theme="nocturne"] .tnm .thero{padding:20px 0 12px;gap:18px}
+:root[data-theme="nocturne"] .tnm .verdict{font-size:36px;line-height:40px}
+:root[data-theme="nocturne"] .tnm .hr{flex-direction:column;align-items:stretch;gap:12px}
+:root[data-theme="nocturne"] .fresh{justify-content:space-between}
+:root[data-theme="nocturne"] .tnm .tprog{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"sky pt" "sky st";align-items:center;column-gap:16px;row-gap:2px;text-align:left}
+:root[data-theme="nocturne"] .tnm .nsk{grid-area:sky;width:150px;height:64px;margin:0}
+:root[data-theme="nocturne"] .tnm .tprog .tpt{grid-area:pt;align-self:end}
+:root[data-theme="nocturne"] .tnm .nstreak{grid-area:st;align-self:start}
+:root[data-theme="nocturne"] .tnm .hdone .tprog{grid-template-columns:auto 1fr;grid-template-areas:"sky sky" "pt st";row-gap:6px}
+:root[data-theme="nocturne"] .tnm .hdone .nsk{width:min(300px,100%);height:auto;aspect-ratio:216/92;margin:4px 0 0}
+:root[data-theme="nocturne"] .tnm .hdone .nstreak{justify-self:end;align-self:end}
+:root[data-theme="nocturne"] .tnm .sh h2{font-size:23px}
+:root[data-theme="nocturne"] .tnm .trow{padding:13px 14px;gap:12px}
+:root[data-theme="nocturne"] .tnm .rt{font-size:15px}
+:root[data-theme="nocturne"] .tnm .cuw{gap:12px}
+:root[data-theme="nocturne"] .botnav{border-top:1px solid rgba(255,255,255,.08);box-shadow:none}
+:root[data-theme="nocturne"] .botnav a{font-weight:500;color:var(--mut)}
+:root[data-theme="nocturne"] .botnav a svg{width:21px;height:21px;stroke-width:1.6}
+:root[data-theme="nocturne"] .botnav a[aria-current=page]{color:var(--moon)}
+:root[data-theme="nocturne"] .botnav a[aria-current=page] svg{stroke-width:1.9;filter:drop-shadow(0 0 6px rgba(243,231,184,.45))}
+:root[data-theme="nocturne"] .botnav a{gap:3px;position:relative}
+:root[data-theme="nocturne"] .botnav a .soon{position:absolute;top:1px;left:calc(50% + 12px);font-size:7.5px;letter-spacing:.08em;margin:0;color:var(--mut3)}}
+/* ---- sky: dusk gradient, grain, 40 faint static stars, crescent moon (drawn by board.js into #sb-sky) ---- */
+:root[data-theme="nocturne"] body{background:transparent}
+:root[data-theme="nocturne"] .nsky{display:block;position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+:root[data-theme="nocturne"] .nglow{position:absolute;inset:0;background:radial-gradient(120% 55% at 50% 108%,rgba(110,86,207,.16),rgba(110,86,207,.06) 45%,transparent 75%)}
+:root[data-theme="nocturne"] .nstars{position:absolute;inset:0;width:100%;height:100%;fill:var(--ink)}
+:root[data-theme="nocturne"] .ngrain{position:absolute;inset:-50%;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+:root[data-theme="nocturne"] .nmoon{position:absolute;top:22px;right:clamp(0px,calc((100vw - 820px)/4 - 70px),130px);width:180px;height:180px}
+:root[data-theme="nocturne"] .nmoon svg{width:100%;height:100%;overflow:visible}
+:root[data-theme="nocturne"] .nmoon stop{stop-color:var(--moon)}
+:root[data-theme="nocturne"] .nmoon .disc,:root[data-theme="nocturne"] .nmoon .lit{fill:var(--moon)}
+:root[data-theme="nocturne"] .nmoon .lit{filter:drop-shadow(0 0 6px rgba(243,231,184,.35))}
+:root.lowfx[data-theme="nocturne"] .ngrain{display:none}
+/* the board is full width: a smaller moon tucked into the corner, clear of the header */
+:root[data-theme="nocturne"] body[data-view=board] .nmoon{top:-34px;right:24px;width:110px;height:110px}
+/* phones: the top bar has a labelled button, so the moon sits beside the verdict instead */
+@media (max-width:900px){:root[data-theme="nocturne"] .nmoon{top:56px;right:4px;width:72px;height:72px}:root[data-theme="nocturne"] body[data-view=board] .nmoon{display:none}:root[data-theme="nocturne"] .tnm .thero.hdone{align-items:stretch}}
+/* ---- glass: frosted cards; solid #12142B when blur is unsupported, unwanted or too costly ---- */
+:root[data-theme="nocturne"] .tnm .trow,:root[data-theme="nocturne"] .tnm .banner,:root[data-theme="nocturne"] .tnm .cug,:root[data-theme="nocturne"] .tnm .peek ul,:root[data-theme="nocturne"] .tnm .stub,:root[data-theme="nocturne"] .tnm .skrow,:root[data-theme="nocturne"] .navt,:root[data-theme="nocturne"] .fpill,:root[data-theme="nocturne"] .ib,:root[data-theme="nocturne"] .refresh,:root[data-theme="nocturne"] .card,:root[data-theme="nocturne"] .chip,:root[data-theme="nocturne"] .bhead .prog{background-color:var(--card);border-color:var(--bc)}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+:root[data-theme="nocturne"] .tnm .trow,:root[data-theme="nocturne"] .tnm .banner,:root[data-theme="nocturne"] .tnm .cug,:root[data-theme="nocturne"] .tnm .peek ul,:root[data-theme="nocturne"] .tnm .stub,:root[data-theme="nocturne"] .tnm .skrow,:root[data-theme="nocturne"] .navt,:root[data-theme="nocturne"] .fpill,:root[data-theme="nocturne"] .ib,:root[data-theme="nocturne"] .refresh,:root[data-theme="nocturne"] .card,:root[data-theme="nocturne"] .chip,:root[data-theme="nocturne"] .bhead .prog{-webkit-backdrop-filter:blur(18px) saturate(120%);backdrop-filter:blur(18px) saturate(120%)}
+:root[data-theme="nocturne"] .menu,:root[data-theme="nocturne"] [role=menu],:root[data-theme="nocturne"] .toast,:root[data-theme="nocturne"] .botnav,:root[data-theme="nocturne"] dialog{background:rgba(18,20,43,.74);-webkit-backdrop-filter:blur(18px) saturate(120%);backdrop-filter:blur(18px) saturate(120%)}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){:root[data-theme="nocturne"]{--card:#12142B;--navbg:#12142B}:root[data-theme="nocturne"] .menu,:root[data-theme="nocturne"] [role=menu],:root[data-theme="nocturne"] .toast,:root[data-theme="nocturne"] .botnav,:root[data-theme="nocturne"] dialog{background:#12142B}}
+@media (prefers-reduced-transparency:reduce){:root[data-theme="nocturne"]{--card:#12142B;--navbg:#12142B}:root[data-theme="nocturne"] .tnm .trow,:root[data-theme="nocturne"] .tnm .banner,:root[data-theme="nocturne"] .tnm .cug,:root[data-theme="nocturne"] .tnm .peek ul,:root[data-theme="nocturne"] .tnm .stub,:root[data-theme="nocturne"] .tnm .skrow,:root[data-theme="nocturne"] .navt,:root[data-theme="nocturne"] .fpill,:root[data-theme="nocturne"] .ib,:root[data-theme="nocturne"] .refresh,:root[data-theme="nocturne"] .card,:root[data-theme="nocturne"] .chip,:root[data-theme="nocturne"] .bhead .prog,:root[data-theme="nocturne"] .menu,:root[data-theme="nocturne"] [role=menu],:root[data-theme="nocturne"] .toast,:root[data-theme="nocturne"] .botnav,:root[data-theme="nocturne"] dialog{background-color:#12142B!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
+:root.lowfx[data-theme="nocturne"]{--card:#12142B;--navbg:#12142B}
+:root.lowfx[data-theme="nocturne"] .tnm .trow,:root.lowfx[data-theme="nocturne"] .tnm .banner,:root.lowfx[data-theme="nocturne"] .tnm .cug,:root.lowfx[data-theme="nocturne"] .tnm .peek ul,:root.lowfx[data-theme="nocturne"] .tnm .stub,:root.lowfx[data-theme="nocturne"] .tnm .skrow,:root.lowfx[data-theme="nocturne"] .navt,:root.lowfx[data-theme="nocturne"] .fpill,:root.lowfx[data-theme="nocturne"] .ib,:root.lowfx[data-theme="nocturne"] .refresh,:root.lowfx[data-theme="nocturne"] .card,:root.lowfx[data-theme="nocturne"] .chip,:root.lowfx[data-theme="nocturne"] .bhead .prog,:root.lowfx[data-theme="nocturne"] .menu,:root.lowfx[data-theme="nocturne"] [role=menu],:root.lowfx[data-theme="nocturne"] .toast,:root.lowfx[data-theme="nocturne"] .botnav,:root.lowfx[data-theme="nocturne"] dialog{background-color:#12142B!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* ---- constellation (Tonight hero and board header): one star per finished thing ---- */
+:root[data-theme="nocturne"] .cst{width:100%;height:100%;overflow:visible;display:block}
+:root[data-theme="nocturne"] .cst stop{stop-color:var(--moon)}
+:root[data-theme="nocturne"] .cst .su{fill:#8D8AA6;opacity:.85}
+:root[data-theme="nocturne"] .cst .cg{fill:none;stroke:rgba(242,238,230,.13);stroke-width:.7;stroke-dasharray:1.2 3.2;stroke-linecap:round}
+:root[data-theme="nocturne"] .cst .sc{fill:var(--moon)}
+:root[data-theme="nocturne"] .cst .sh{opacity:.9}
+:root[data-theme="nocturne"] .cst .cl{fill:none;stroke:rgba(243,231,184,.45);stroke-width:.9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 1}
+:root[data-theme="nocturne"] .cst.draw .cl{animation:h_cdraw var(--dur-loop) cubic-bezier(.45,.05,.25,1) both}
+@keyframes h_cdraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+:root[data-theme="nocturne"] .cst .sl.fresh .sc{animation:h_sin var(--dur-celebrate) ease-out both}
+:root[data-theme="nocturne"] .cst .sl.fresh .sh{animation:h_shin var(--dur-celebrate) ease-out both;transform-box:fill-box;transform-origin:center}
+@keyframes h_sin{from{opacity:0}}
+@keyframes h_shin{0%{opacity:0;transform:scale(.3)}45%{opacity:1;transform:scale(1.6)}100%{opacity:.9;transform:none}}
+:root[data-theme="nocturne"] .cst.full .sc{filter:drop-shadow(0 0 2.5px rgba(243,231,184,.95))}
+:root[data-theme="nocturne"] .cst.draw .sl .sc{animation:h_tw2 var(--dur-loop) ease-in-out both;animation-delay:calc(var(--i)*.05s)}
+@keyframes h_tw2{40%{opacity:.55}}
+:root[data-theme="nocturne"] .tnm .nsk{position:relative}
+:root[data-theme="nocturne"] .tnm .tprog .pbar{display:none}
+:root[data-theme="nocturne"] .hsky{display:block;width:168px;height:48px;flex:none}
+:root[data-theme="nocturne"] .bhead .prog{border:1px solid var(--bc);border-radius:999px;padding:4px 14px 4px 8px;gap:10px}
+:root[data-theme="nocturne"] .bhead .progbar{display:none}
+@media (max-width:900px){:root[data-theme="nocturne"] .hsky{display:none}:root[data-theme="nocturne"] .bhead .prog{border:0;padding:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}}
+/* ---- board ---- */
+:root[data-theme="nocturne"] .card{background-image:linear-gradient(180deg,rgba(255,255,255,.022),transparent 55%);border:1px solid var(--bc);border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);transition:border-color var(--dur-mid)}
+:root[data-theme="nocturne"] .card:hover{border-color:rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+:root[data-theme="nocturne"] .card::before{content:"";position:absolute;left:-1px;top:14px;bottom:14px;width:2px;border-radius:0 2px 2px 0;background:var(--c,var(--swatch-0));box-shadow:0 0 8px color-mix(in srgb,var(--c,var(--swatch-0)) 60%,transparent);pointer-events:none}
+:root[data-theme="nocturne"] .card .t{font-weight:500;display:inline;background:linear-gradient(currentColor,currentColor) 0 56%/0 1px no-repeat;transition:background-size var(--dur-mid) ease-out,color var(--dur-mid)}
+:root[data-theme="nocturne"] .done .card .t{text-decoration:none;background-size:100% 1px;color:var(--mut3)}
+:root[data-theme="nocturne"] .card .tm{font-variant-numeric:tabular-nums;color:var(--ink2)}
+:root[data-theme="nocturne"] .tag{background:none;color:var(--ink2);padding:0;border:0;border-radius:0;font-size:12.5px;line-height:17px;display:inline-flex;align-items:center;gap:7px;max-width:180px}
+:root[data-theme="nocturne"] .tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c,var(--swatch-0));box-shadow:0 0 8px color-mix(in srgb,var(--c,var(--swatch-0)) 60%,transparent);flex:none}
+:root[data-theme="nocturne"] .card .chk{border-radius:50%;border:1.5px solid rgba(242,238,230,.38);background:transparent;transition:background var(--dur-fast),border-color var(--dur-fast)}
+:root[data-theme="nocturne"] .card .chk:hover{border-color:var(--moon)}
+:root[data-theme="nocturne"] .card .chk .ck{stroke:var(--onmoon)}
+:root[data-theme="nocturne"] .done .card .chk,:root[data-theme="nocturne"] .card .chk[aria-checked=true]{background:var(--moon);border-color:var(--moon)}
+:root[data-theme="nocturne"] .card.overdue{background-image:linear-gradient(90deg,rgba(242,102,106,.07),transparent 42%);border-color:rgba(242,102,106,.28)}
+:root[data-theme="nocturne"] .card.overdue::before{background:var(--late);box-shadow:0 0 8px rgba(242,102,106,.6)}
+:root[data-theme="nocturne"] .card.overdue .tm{color:var(--redt);font-weight:400}
+:root[data-theme="nocturne"] .done .card{background-color:var(--card)}
+:root[data-theme="nocturne"] .done .card::before{opacity:.35}
+:root[data-theme="nocturne"] .done .card .m{filter:none;opacity:1;color:var(--mut3)}
+:root[data-theme="nocturne"] .col{background:transparent;border:0}
+:root[data-theme="nocturne"] .col h2{font:italic 400 21px/1 var(--fh);letter-spacing:0;text-transform:none;color:var(--ink);border-bottom:1px solid var(--hair);padding-bottom:10px;margin:0 0 10px}
+:root[data-theme="nocturne"] .col h2 span{font:500 12px/1 var(--fb);color:var(--mut3)}
+:root[data-theme="nocturne"] .day,:root[data-theme="nocturne"] .day.dgrp{font:italic 400 15px/18px var(--fh);letter-spacing:0;text-transform:none;color:var(--ink2)}
+:root[data-theme="nocturne"] .day.dgrp.over{color:var(--redt)}
+:root[data-theme="nocturne"] .day.dgrp.today{color:var(--moon)}
+:root[data-theme="nocturne"] .todayl{background:none;color:var(--moon);padding:0;border:0}
+:root[data-theme="nocturne"] .chip{border:1px solid var(--bc);color:var(--ink2);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+:root[data-theme="nocturne"] .chip:hover{color:var(--ink);border-color:rgba(255,255,255,.14)}
+:root[data-theme="nocturne"] .chip .cdot{box-shadow:0 0 8px color-mix(in srgb,var(--c) 60%,transparent)}
+:root[data-theme="nocturne"] .chip[aria-pressed=true]{background:rgba(243,231,184,.07);border-color:rgba(243,231,184,.4);color:var(--moon)}
+:root[data-theme="nocturne"] .seg{border:1px solid var(--bc);background:var(--card)}
+:root[data-theme="nocturne"] .btn{box-shadow:none}
+:root[data-theme="nocturne"] .btn.primary{box-shadow:0 0 22px -8px rgba(243,231,184,.6)}
+:root[data-theme="nocturne"] .brand{font:400 21px/1 var(--fh)}
+:root[data-theme="nocturne"] .brand i{width:7px;height:7px;border:0;border-radius:50%;background:var(--moon);box-shadow:0 0 10px 1px rgba(243,231,184,.6)}
+:root[data-theme="nocturne"] .bh-t{font:400 34px/38px var(--fh)}
+:root[data-theme="nocturne"] .colnav{border-bottom:1px solid var(--hair)}
+:root[data-theme="nocturne"] dialog{border:1px solid rgba(255,255,255,.1);color:var(--ink)}
+:root[data-theme="nocturne"] .fpill.linkb{border:1px solid rgba(243,231,184,.4);color:var(--moon)}
+:root[data-theme="nocturne"] .tnm .tchip{border-color:rgba(255,255,255,.14)}
+:root[data-theme="nocturne"] .thp-pv{color:var(--moon)}
