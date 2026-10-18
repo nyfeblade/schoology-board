@@ -2627,6 +2627,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, week: function () { var now = new Date(); return plan.weekAhead(allItems(), pctx(), ics.defaultWeekStart(now), now); }, version: '1.8.0' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, week: function () { var now = new Date(); return plan.weekAhead(allItems(), pctx(), ics.defaultWeekStart(now), now); }, version: '1.9.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

@@ -1318,13 +1318,13 @@ await octx.close();
   ok('Save image: sunday-plan-2026-10-19.png, 1080×1350, drawn (not blank)', dl.suggestedFilename() === 'sunday-plan-2026-10-19.png' && png.width === 1080 && png.height === 1350 && cols.size > 8, dl.suggestedFilename() + ' ' + cols.size);
   // themes: all variants render, no cyan/teal/orange, no overflow, the card still draws
   const bad = [];
-  for (const t of ['sticker', 'arcade', 'notebook', 'notebook-dark', 'varsity', 'riso', 'cafe', 'minimal', 'minimal-dark']) {
+  for (const t of ['sticker', 'arcade', 'notebook', 'notebook-dark', 'varsity', 'riso', 'cafe', 'minimal', 'minimal-dark', 'nocturne']) {
     await pg.evaluate((t) => window.SchoologyBoard.theme(t.replace('-dark', ''), /-dark/.test(t) ? 'dark' : ''), t); await open(pg); await pg.waitForTimeout(250);
     const cy = await noCyan(pg); const ov = await pg.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     const blob = await pg.evaluate(() => new Promise((r) => { const b = document.querySelector('#wk-img'); const orig = URL.createObjectURL; URL.createObjectURL = (x) => { r(x.size); URL.createObjectURL = orig; return orig(x); }; b.click(); }));
     if (cy.length || ov || !(blob > 20000)) bad.push(`${t}: cyan ${cy.length} overflow ${ov} card ${blob}`);
   }
-  ok('Sunday plan in all 9 theme variants: no cyan/teal/orange, no sideways scroll, share card draws', bad.length === 0, bad.join('; '));
+  ok('Sunday plan in all 10 theme variants (Nocturne included): no cyan/teal/orange, no sideways scroll, share card draws', bad.length === 0, bad.join('; '));
   await pg.evaluate(() => window.SchoologyBoard.theme('sticker', ''));
   // motion: UI transitions ≤ 0.4 s
   const mot = await pg.evaluate(() => { let m = 0; document.querySelectorAll('.wkm, .wkm *').forEach((e) => { const cs = getComputedStyle(e); (cs.transitionDuration + ',' + cs.animationDuration).split(',').forEach((v) => { m = Math.max(m, parseFloat(v) * (/ms/.test(v) ? 0.001 : 1) || 0); }); }); return m; });
@@ -1365,6 +1365,79 @@ await octx.close();
     ok('offline backup: the Sunday plan is the same and Save image works with no network', JSON.stringify(await wk(p4)) === JSON.stringify(want) && /\.png$/.test(d4.suggestedFilename()) && net === 0, 'requests ' + net);
     await c4.close();
   }
+}
+// ---------- 21. H · Nocturne (preview only) ----------
+{
+  const HNOW = new Date('2026-10-19T17:02:00-04:00');
+  const c = await newCtx({ now: HNOW }); const pg = await c.newPage(); watch(pg, 'nocturne');
+  await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+  await pg.click('#sb-theme'); await pg.waitForSelector('dialog.themes');
+  ok('Nocturne is hidden from the picker by default (7 themes)', await pg.locator('dialog.themes .thp').count() === 7 && await pg.locator('dialog.themes .thp[data-theme=nocturne]').count() === 0);
+  await pg.keyboard.press('Escape');
+  await pg.goto(BASE + '/?preview=nocturne'); await pg.waitForSelector('#tnList .trow');
+  await pg.click('#sb-theme'); await pg.waitForSelector('dialog.themes');
+  ok('?preview=nocturne adds it to the picker, marked Preview', await pg.locator('dialog.themes .thp').count() === 8 && /preview/i.test(await pg.locator('dialog.themes .thp[data-theme=nocturne]').innerText()));
+  await pg.click('dialog.themes .thp[data-theme=nocturne]'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
+  const sky = await pg.evaluate(async () => { await document.fonts.ready; return { theme: document.documentElement.dataset.theme, stars: document.querySelectorAll('#sb-sky .nstars circle').length, tw: document.querySelectorAll('#sb-sky .tw').length, moon: !!document.querySelector('#sb-sky .nmoon .lit'), grain: !!document.querySelector('#sb-sky .ngrain'), serif: document.fonts.check('italic 25px "Instrument Serif"') && document.fonts.check('44px "Instrument Serif"'), vf: getComputedStyle(document.querySelector('#verdict')).fontFamily, h2: getComputedStyle(document.querySelector('.tnm .sh h2')).fontStyle, anim: [...document.querySelectorAll('#sb-sky *')].filter((e) => getComputedStyle(e).animationName !== 'none').length }; });
+  ok('Nocturne: dusk sky with 40 static stars (no twinkle), a crescent moon and grain; Instrument Serif verdict and italic section names', sky.theme === 'nocturne' && sky.stars === 40 && sky.tw === 0 && sky.anim === 0 && sky.moon && sky.grain && sky.serif && /Instrument Serif/.test(sky.vf) && sky.h2 === 'italic', JSON.stringify(sky));
+  const glass = await pg.evaluate(() => { const r = getComputedStyle(document.querySelector('#tnList .trow')); return { bf: r.backdropFilter, bg: r.backgroundColor }; });
+  ok('Nocturne: Tonight rows are frosted glass (18px blur over a 4% white tint)', /blur\(18px\)/.test(glass.bf) && glass.bg === 'rgba(255, 255, 255, 0.04)', JSON.stringify(glass));
+  // every text color on every view is one of the contrast-checked ones (src/contrast.py: all AA)
+  const OKC = new Set(['rgb(242, 238, 230)', 'rgb(169, 166, 184)', 'rgb(156, 153, 180)', 'rgb(243, 231, 184)', 'rgb(244, 126, 129)', 'rgb(233, 210, 122)', 'rgb(20, 18, 43)']);
+  const seen = new Set();
+  for (const v of ['now', 'board', 'ahead', 'cal']) {
+    await tab(pg, v); await pg.waitForTimeout(250);
+    (await pg.evaluate(() => { const r = new Set(); const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) { if (!n.textContent.trim()) continue; const e = n.parentElement; if (!e.offsetParent && getComputedStyle(e).position !== 'fixed') continue; const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || +cs.opacity === 0) continue; r.add(cs.color); } return [...r]; })).forEach((x) => seen.add(x));
+    const cy = await noCyan(pg); if (cy.length) seen.add('CYAN ' + cy[0]);
+  }
+  const off = [...seen].filter((x) => !OKC.has(x));
+  ok('Nocturne: every text color is a contrast-checked one (ivory, #A9A6B8, #9C99B4, moonlight, #F47E81, gold, ink on moonlight); no cyan/teal/orange', off.length === 0, off.join(' | ') || [...seen].length + ' colors');
+  await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card');
+  const bd = await pg.evaluate(() => { const card = document.querySelector('#sb-board .card'), cs = getComputedStyle(card); return { bf: cs.backdropFilter, hsky: document.querySelectorAll('#sb-hsky .cst circle').length, h2: getComputedStyle(document.querySelector('.col h2')).fontFamily, chk: getComputedStyle(card.querySelector('.chk')).borderTopLeftRadius }; });
+  ok('Nocturne board: header constellation, serif column names, round checkboxes; cards are tinted glass without blur (cheaper with many cards)', bd.hsky >= 2 && /Instrument Serif/.test(bd.h2) && bd.chk === '50%' && bd.bf === 'none', JSON.stringify(bd));
+  // Orchid (swatch 8) is never handed out automatically
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(), n = Date.now(); ['Art', 'Music', 'Health', 'Latin', 'Drama', 'Debate'].forEach((cl, i) => { S.custom['h' + i] = { id: 'h' + i, title: cl + ' homework', course: cl, due: n + (3 + i) * 864e5, allDay: false, source: 'custom' }; }); window.SchoologyBoard.render(); });
+  await pg.waitForTimeout(200);
+  const auto = await pg.evaluate(() => window.SchoologyBoard.state().colorAuto.nocturne);
+  ok('Nocturne: Orchid (swatch 8) is never auto-assigned; 11 classes share swatches 1–7', Object.keys(auto).length >= 11 && Object.values(auto).every((n) => n >= 1 && n <= 7), JSON.stringify(auto));
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(); for (let i = 0; i < 6; i++) delete S.custom['h' + i]; window.SchoologyBoard.render(); });
+  // the constellation: one star per thing tonight, lit as each is finished; all done draws the lines in 1.2 s
+  await tab(pg, 'now'); await pg.waitForSelector('#tnList .trow');
+  const st0 = await pg.evaluate(() => ({ all: document.querySelectorAll('.nsk .cst .sl, .nsk .cst .su').length, lit: document.querySelectorAll('.nsk .cst .sl').length, label: document.querySelector('.tprog').getAttribute('aria-label') }));
+  const m = /(\d+) of (\d+)/.exec(st0.label);
+  ok('Nocturne: the hero constellation has one star per thing tonight, lit for each one done', m && st0.all === +m[2] && st0.lit === +m[1], JSON.stringify(st0));
+  await pg.locator('#tnList .trow:not(.tdone) .bigchk').first().click(); await pg.waitForTimeout(1100);
+  const st1 = await pg.evaluate(() => ({ lit: document.querySelectorAll('.nsk .cst .sl').length, fresh: document.querySelectorAll('.nsk .cst .sl.fresh').length }));
+  ok('Nocturne: a check-off lights the next star (with a short glow)', st1.lit === st0.lit + 1 && st1.fresh === 1, JSON.stringify(st1));
+  let k = 0, sawCel = false;
+  while (await pg.locator('#tnList .trow:not(.tdone) .bigchk').count() && k++ < 8) { await pg.locator('#tnList .trow:not(.tdone) .bigchk').first().click(); await pg.waitForTimeout(120); sawCel = sawCel || await pg.locator('#cel').count() > 0; await pg.waitForTimeout(900); }
+  const fin = await pg.evaluate(() => { const s = document.querySelector('.nsk .cst'), l = s && s.querySelector('.cl'); return { full: s && s.classList.contains('full'), draw: s && s.classList.contains('draw'), dur: l ? getComputedStyle(l).animationDuration : null, verdict: document.querySelector('#verdict').textContent }; });
+  ok('Nocturne all done: the lines draw in 1.2 s, "The sky’s clear tonight.", Undo offered, no overlay', fin.full && fin.draw && fin.dur === '1.2s' && fin.verdict === 'The sky’s clear tonight.' && !sawCel && await pg.locator('.toast', { hasText: 'The sky’s clear tonight.' }).count() >= 1, JSON.stringify(fin));
+  const [dl] = await Promise.all([pg.waitForEvent('download'), more(pg, '#sb-backup')]);
+  const p2 = join(SHOTS, 'nocturne-offline.html'); await dl.saveAs(p2); const html = readFileSync(p2, 'utf8');
+  ok('the backup file keeps Nocturne with Instrument Serif inlined (no font requests)', /data-theme="nocturne"/.test(html) && /Instrument Serif/.test(html) && !/url\(fonts\//.test(html));
+  await c.close();
+}
+// Nocturne falls back to solid #12142B: ?lite, 2 or fewer cores, Save-Data, reduced transparency; and reduced motion
+{
+  const solid = async (name, init, url = '/?preview=nocturne', media) => {
+    const c = await newCtx({ now: new Date('2026-10-19T17:02:00-04:00') }); if (init) await c.addInitScript(init);
+    const pg = await c.newPage(); watch(pg, 'nocturne-' + name);
+    if (media) { const cdp = await c.newCDPSession(pg); await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }] }); }
+    await pg.goto(BASE + url); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow'); await pg.evaluate(() => window.SchoologyBoard.theme('nocturne', '')); await pg.waitForTimeout(200);
+    const r = await pg.evaluate(() => { const cs = getComputedStyle(document.querySelector('#tnList .trow')); return { bf: cs.backdropFilter, bg: cs.backgroundColor, rt: matchMedia('(prefers-reduced-transparency: reduce)').matches }; });
+    await c.close(); return r;
+  };
+  const res = { lite: await solid('lite', null, '/?preview=nocturne&lite'), cores: await solid('cores', () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { get: () => 2 })),
+    saveData: await solid('savedata', () => Object.defineProperty(Navigator.prototype, 'connection', { get: () => ({ saveData: true }) })), transparency: await solid('rt', null, '/?preview=nocturne', true) };
+  const isSolid = (r) => r.bf === 'none' && r.bg === 'rgb(18, 20, 43)';
+  ok('Nocturne: solid #12142B cards (no blur) with ?lite, 2 CPU cores, Save-Data' + (res.transparency.rt ? ' and prefers-reduced-transparency' : ' (reduced transparency not emulated by this browser)'), isSolid(res.lite) && isSolid(res.cores) && isSolid(res.saveData) && (!res.transparency.rt || isSolid(res.transparency)), JSON.stringify(res));
+  const c = await newCtx({ now: new Date('2026-10-19T17:02:00-04:00'), reducedMotion: 'reduce' }); const pg = await c.newPage(); watch(pg, 'nocturne-rm');
+  await pg.goto(BASE + '/?preview=nocturne'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow'); await pg.evaluate(() => window.SchoologyBoard.theme('nocturne', ''));
+  while (await pg.locator('#tnList .trow:not(.tdone) .bigchk').count()) { await pg.locator('#tnList .trow:not(.tdone) .bigchk').first().click(); await pg.waitForTimeout(250); }
+  const rm = await pg.evaluate(() => { let n = 0; document.querySelectorAll('*').forEach((e) => { const cs = getComputedStyle(e); if (cs.animationName !== 'none' && parseFloat(cs.animationDuration) > 0.01) n++; }); return { n, verdict: document.querySelector('#verdict').textContent, full: !!document.querySelector('.nsk .cst.full') }; });
+  ok('Nocturne with reduced motion: the finished constellation shows without animation', rm.n === 0 && rm.full && /sky’s clear/.test(rm.verdict), JSON.stringify(rm));
+  await c.close();
 }
 await browser.close();
 ok('no page errors', errors.length === 0, errors.slice(0, 5).join(' | '));

@@ -35,7 +35,7 @@ picker draw live previews of every theme inside one page. A dark variant uses `[
   chroma, and no pink class colors. Every theme's 8 swatches must be clearly different (OKLab distance ≥ 0.11, and
   two colorful swatches need ≥ 30° of hue apart unless their lightness differs by ≥ 0.22), each with readable text
   (≥ 4.5:1 against its `-ink`). New classes get the next unused swatch in order of first appearance; a student's pick wins.
-- A theme can keep a swatch out of automatic assignment (`NO_AUTO` in board.js; Minimal's Rose). Themes listed in
+- A theme can keep a swatch out of automatic assignment (`NO_AUTO` in board.js; Minimal's Rose, Nocturne's Orchid). A theme marked `'preview'` in `THEMES` (Nocturne) stays out of the picker until `?preview=<name>` is opened on that device. Themes listed in
   `MODES` get a Light / Dark switch (`data-mode="dark"`), and a dark block may swap swatches (the test checks it too).
 - Overdue is the only red state: a 4px `--overdue` (#E5484D) left stripe plus red due text on a normal card. Today and
   tomorrow are never tinted.
