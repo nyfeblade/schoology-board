@@ -95,6 +95,7 @@ Deploy to Vercel as a standard Next.js project; no environment variables are nee
 
 ### How it's built
 
+- `public/board/theme/default.css`: every color, font, radius, shadow, texture and motion value as CSS variables. `board.css` only references them. See [THEMING.md](THEMING.md) for adding a theme.
 - `public/board/board.js`, `board.css`: the whole board UI, framework-free. The website (`public/index.html`) and the backup file run **the same files**. The backup inlines them along with pdf.js.
 - `public/board/ics.js`: the iCal parser (no dependencies; runs in the browser and Node).
 - `public/board/cas.js`: the CAS parser. It works on pdf.js text positions: it finds the *Class Dates* and *Assignments* columns, assigns each task to its class day (including rows that run onto the next page), and pulls out explicit due dates like "Due Saturday 09/12/26 at 12:00 pm ET" or "by midnight the evening prior to class".

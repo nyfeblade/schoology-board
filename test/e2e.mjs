@@ -157,7 +157,7 @@ await page.click('dialog [data-close]');
 await page.keyboard.press('n'); await page.waitForSelector('#ed-title');
 await page.fill('#ed-title', 'Read Animal Farm ch 1-3');
 await page.selectOption('#ed-cat', 'Reading list');
-const soon = new Date(Date.now() + 10 * 36e5);
+const soon = new Date(NOW.getTime() + 10 * 36e5); // relative to the frozen page clock
 const pad = (n) => String(n).padStart(2, '0');
 await page.fill('#ed-date', `${soon.getFullYear()}-${pad(soon.getMonth() + 1)}-${pad(soon.getDate())}`);
 await page.fill('#ed-time', `${pad(soon.getHours())}:${pad(soon.getMinutes())}`);
@@ -218,7 +218,7 @@ ok('rename category updates tasks', st.cats.includes('Reading') && !st.cats.incl
 ok('delete category removes it', !st.cats.includes('Temp category'));
 // filters
 await page.click('.seg button[data-view="today"]');
-ok('Due today view shows the task due within 10h or overdue items', await page.locator('.card', { hasText: 'Animal Farm' }).count() === (new Date(soon).toDateString() === new Date().toDateString() ? 1 : 0));
+ok('Due today view shows the task due within 10h or overdue items', await page.locator('.card', { hasText: 'Animal Farm' }).count() === 1);
 await page.click('.seg button[data-view="all"]');
 await page.click('#sb-filter'); await page.check('#sb-hidepast');
 const hp = await page.locator('#sb-board .card').count();
@@ -258,6 +258,7 @@ const [dl] = await Promise.all([page.waitForEvent('download'), more(page, '#sb-b
 const offlinePath = join(SHOTS, 'schoology-board-offline.html');
 await dl.saveAs(offlinePath);
 ok('offline file downloads', !!offlinePath);
+{ const h = readFileSync(offlinePath, 'utf8'); ok('backup inlines the active theme (tokens + data-theme)', /<html lang="en" data-theme="default">/.test(h) && /<style id="sb-theme">[\s\S]*--accent:#FF3E51/.test(h)); }
 await ctx.close();
 
 const octx = await newCtx();

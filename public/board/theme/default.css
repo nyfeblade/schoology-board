@@ -1,0 +1,112 @@
+/* Schoology Board theme: "default" (true black + one red).
+   Every visual value the board uses lives here as a CSS custom property. Layout CSS (board.css)
+   only references these. To make a new theme, copy this file, change the values, and scope it
+   with :root[data-theme="<name>"] (see THEMING.md). */
+:root{
+  color-scheme:dark;
+
+  /* ---- palette ---- */
+  --bg:#000;
+  --surface-1:#0E0E10;   /* columns, dialogs */
+  --surface-2:#16161A;   /* cards, buttons, inputs, menus */
+  --surface-3:#1C1C21;   /* hover rows */
+  --border-1:#232327;
+  --border-2:#2E2E33;
+  --border-3:#3A3A40;
+  --text-1:#F2F2F3;
+  --text-2:#A1A1A8;
+  --text-3:#6E6E76;
+  --accent:#FF3E51;
+  --accent-hover:#FF5A6A;
+  --accent-pressed:#E02135;
+  --accent-soft:rgba(255,62,81,.12);
+  --accent-softer:rgba(255,62,81,.06);
+  --on-accent:#fff;
+  --note-color:var(--text-3);
+  --meta-theme-color:#000000;   /* browser UI color (mobile address bar) */
+
+  /* component colors */
+  --btn-active-bg:#222228;
+  --seg-active-bg:#26262C;
+  --header-bg:rgba(0,0,0,.9);
+  --colnav-bg:rgba(0,0,0,.92);
+  --col-bg:var(--surface-1);
+  --col-border:var(--border-1);
+  --col-over-bg:#110A0C;          /* column under a dragged card */
+  --card-bg:var(--surface-2);
+  --card-hover-bg:#18181D;
+  --card-border:var(--border-1);
+  --card-edge:var(--border-2);    /* left edge; turns --accent when due soon */
+  --tag-bg:var(--border-1);       /* class pill; var(--ci) is this card's class color */
+  --tag-color:var(--text-2);
+  --scrim:rgba(0,0,0,.6);
+  --backdrop:rgba(0,0,0,.72);
+  --qr-dark:#000;                 /* keep QR codes high-contrast whatever the theme */
+  --qr-light:#fff;
+
+  /* class colors: each class gets one of these as --ci (Unsorted gets --class-0) */
+  --class-0:var(--border-1);
+  --class-1:var(--border-1); --class-2:var(--border-1); --class-3:var(--border-1); --class-4:var(--border-1);
+  --class-5:var(--border-1); --class-6:var(--border-1); --class-7:var(--border-1); --class-8:var(--border-1);
+
+  /* ---- type ---- */
+  --font-body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-display:var(--font-body);     /* board title, hero, column and dialog headings */
+  --font-card-title:var(--font-body);
+  --font-hand:var(--font-body);        /* optional handwritten accent */
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --font-size:14px;
+  --line-height:1.4;
+
+  /* ---- shape ---- */
+  --bw:1px;            /* default border width */
+  --bw-drop:1.5px;     /* file drop zone */
+  --card-edge-w:3px;
+  --r-2xs:2px; --r-xs:4px; --r-sm:6px; --r-md:8px; --r-lg:10px; --r-xl:12px; --r-2xl:16px; --r-pill:999px;
+  --radius-btn:var(--r-md);
+  --radius-input:var(--r-md);
+  --radius-card:var(--r-md);
+  --radius-col:var(--r-xl);
+  --radius-chip:var(--r-pill);
+  --radius-tag:var(--r-pill);
+  --radius-menu:var(--r-xl);
+  --radius-dialog:var(--r-xl);
+  --radius-toast:var(--r-lg);
+  --h:32px;            /* control height */
+
+  /* ---- depth ---- */
+  --ring:0 0 0 3px rgba(255,62,81,.35);
+  --ring-inset:inset 0 0 0 2px rgba(255,62,81,.5);
+  --card-shadow:none;
+  --col-shadow:none;
+  --shadow-drag:0 16px 40px rgba(0,0,0,.6);
+  --shadow-menu:0 16px 48px rgba(0,0,0,.65);
+  --shadow-toast:0 12px 32px rgba(0,0,0,.6);
+  --shadow-dialog:0 32px 80px rgba(0,0,0,.7);
+  --shadow-hero:0 32px 80px rgba(0,0,0,.7);
+  --hero-tilt:rotate(-1deg);
+
+  /* ---- backgrounds and textures ---- */
+  --bg-image:none;                /* e.g. a notebook grid: linear-gradient(...) */
+  --bg-image-size:auto;
+  --bg-image-attachment:scroll;
+  --col-bg-image:none;
+
+  /* ---- motion ---- */
+  --dur-fast:.12s;
+  --dur-slow:.3s;
+  --anim-menu:pop .12s ease-out;
+  --anim-sheet:sheet .2s ease-out;
+  --anim-scrim:fade .15s;
+  --anim-toast:up .18s ease-out;
+  --anim-spin:spin .7s linear infinite;
+  --anim-card-landed:none;        /* a card that was just moved */
+  --anim-card-done:none;          /* a card that was just marked done */
+
+  /* ---- illustration / emoji slots (content values: none, "🎉", url(...)) ---- */
+  --slot-logo:none;               /* before the board title */
+  --slot-empty:none;              /* above empty-state messages */
+  --slot-col-empty:none;          /* inside an empty column */
+  --slot-done:none;               /* after the Completed heading */
+}
+@media (pointer:coarse){:root{--h:40px}}

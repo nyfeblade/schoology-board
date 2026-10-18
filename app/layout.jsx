@@ -1,8 +1,10 @@
 // Only used by Next's built-in pages (e.g. 404). The board itself is public/index.html.
+// Colors and fonts come from the theme file, like everywhere else.
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body style={{ background: '#000', color: '#eee', fontFamily: 'system-ui, sans-serif' }}>{children}</body>
+    <html lang="en" data-theme="default">
+      <head><link rel="stylesheet" href="/board/theme/default.css" /></head>
+      <body style={{ margin: 0, background: 'var(--bg)', color: 'var(--text-1)', fontFamily: 'var(--font-body)' }}>{children}</body>
     </html>
   );
 }

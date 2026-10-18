@@ -434,6 +434,12 @@
     save(); renderBoard();
   }
 
+  // Each class gets a stable slot in the theme's class palette (--class-1..8; Unsorted is --class-0).
+  function classIndex(name) { return !name || name === UNSORTED ? 0 : parseInt(ics.hash(name), 36) % 8 + 1; }
+  function themeVar(name, fallback) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
   function cardHtml(it, colId) {
     var h = (it.d - new Date()) / 36e5, done = colId === 'done';
     var cls = done ? '' : (h < 0 ? ' late overdue' : h < 36 ? ' late' : '');
@@ -446,7 +452,7 @@
     return '<div class="card' + cls + '" tabindex="0" data-id="' + esc(it.id) + '" aria-label="' + esc(label) + '">' +
       (url ? '<a class="t" href="' + esc(url) + '" target="_blank" rel="noopener" draggable="false" tabindex="-1">' + esc(it.title) + '</a>' : '<span class="t">' + esc(it.title) + '</span>') +
       (it.note ? '<div class="note">' + esc(it.note) + '</div>' : '') +
-      '<div class="m"><span class="l"><span class="tag">' + esc(it.course) + '</span>' + src + '</span><span class="tm">' + esc(when) + '</span></div>' +
+      '<div class="m"><span class="l"><span class="tag" style="--ci:var(--class-' + classIndex(it.course) + ')">' + esc(it.course) + '</span>' + src + '</span><span class="tm">' + esc(when) + '</span></div>' +
       '<button class="more" type="button" tabindex="-1" aria-label="Card actions" aria-haspopup="menu" aria-expanded="false" title="Actions (M)">' + ICON.more + '</button></div>';
   }
   function cardMenu(el) {
@@ -559,10 +565,18 @@
     if (prev === col) return;
     S.status[id] = col; save(); renderBoard();
     focusCard(id);
+    markMoved(id, col === 'done' ? 'sb-done-now' : 'sb-landed');
     if (!quiet) {
       var name = COLS.filter(function (c) { return c[0] === col; })[0][1];
       toast('Moved to ' + name, 'Undo', function () { S.status[id] = prev; save(); renderBoard(); focusCard(id); }, 4000);
     }
+  }
+  // Hooks for theme motion (--anim-card-landed / --anim-card-done); no-ops in the default theme.
+  function markMoved(id, cls) {
+    var el = $('.card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
+    if (!el) return;
+    el.classList.add(cls);
+    setTimeout(function () { el.classList.remove(cls); }, 900);
   }
   function focusCard(id) {
     var el = $('.card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
@@ -1078,8 +1092,8 @@
     var dpr = Math.max(1, Math.round(window.devicePixelRatio || 1)), scale = k * dpr, size = cells * scale, ctx = canvas.getContext('2d');
     canvas.width = canvas.height = size;
     canvas.style.width = canvas.style.height = cells * k + 'px';
-    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = themeVar('--qr-light', 'white'); ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = themeVar('--qr-dark', 'black');
     for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
     canvas.dataset.modules = n;
     return true;
@@ -1484,6 +1498,32 @@
 
   // ---------- offline download ----------
   function scriptSafe(s) { return String(s).replace(/<\/(script)/gi, '<\\/$1').replace(/<!--/g, '<\\!--'); }
+  // ---------- theme ----------
+  function activeTheme() { return document.documentElement.getAttribute('data-theme') || 'default'; }
+  // The backup carries the theme in use: the default tokens plus the active theme, with any
+  // url(...) assets (fonts, textures) turned into data: URIs so the file works offline.
+  function themeCss() {
+    var baked = document.getElementById('sb-theme');
+    if (baked) return Promise.resolve(baked.textContent);
+    var name = activeTheme(), names = ['theme/default.css'];
+    if (name !== 'default') names.push('theme/' + name + '.css');
+    return Promise.all(names.map(function (n) { return getSrc(n).then(function (css) { return inlineUrls(css, BASE + n); }); }))
+      .then(function (parts) { return parts.join('\n'); }, function () { return ''; });
+  }
+  function inlineUrls(css, from) {
+    css = css.replace(/\/\*[\s\S]*?\*\//g, ''); // comments may mention url(...)
+    var refs = [], re = /url\((['"]?)([^'")]+)\1\)/g, m;
+    while ((m = re.exec(css))) if (!/^(data:|#)/.test(m[2])) refs.push(m[2]);
+    return Promise.all(refs.map(function (u) {
+      var abs = new URL(u, new URL(from, location.href)).href;
+      return fetch(abs).then(function (r) { if (!r.ok) throw new Error(); return r.blob(); }).then(function (b) {
+        return new Promise(function (res) { var fr = new FileReader(); fr.onload = function () { res([u, fr.result]); }; fr.readAsDataURL(b); });
+      }).catch(function () { return [u, null]; });
+    })).then(function (pairs) {
+      pairs.forEach(function (p) { if (p[1]) css = css.split(p[0]).join(p[1]); });
+      return css;
+    });
+  }
   function getSrc(name, id) {
     var el = id && document.getElementById(id);
     if (el) return Promise.resolve(el.textContent);
@@ -1493,6 +1533,7 @@
     var files = {};
     return Promise.all([
       getSrc('board.css', 'sb-css').then(function (t) { files.css = t; }),
+      themeCss().then(function (t) { files.theme = t; }),
       getSrc('ics.js', 'sb-src-ics').then(function (t) { files.ics = t; }),
       getSrc('cas.js', 'sb-src-cas').then(function (t) { files.cas = t; }),
       getSrc('board.js', 'sb-src-board').then(function (t) { files.board = t; }),
@@ -1510,8 +1551,9 @@
         home: MODE === 'web' ? location.origin : CFG.home
       };
       var j = function (o) { return JSON.stringify(o).replace(/</g, '\\u003c'); };
-      return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-        '<title>Schoology Board (backup)</title><meta name="color-scheme" content="dark"><style id="sb-css">' + files.css.replace(/<\/style/gi, '<\\/style') + '</style></head><body>' +
+      return '<!doctype html>\n<html lang="en" data-theme="' + esc(activeTheme()) + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<title>Schoology Board (backup)</title><meta name="color-scheme" content="dark"><meta name="theme-color" content="">' +
+        '<style id="sb-theme">' + files.theme.replace(/<\/style/gi, '<\\/style') + '</style><style id="sb-css">' + files.css.replace(/<\/style/gi, '<\\/style') + '</style></head><body>' +
         '<div id="app"><div class="loading">Loading your board\u2026</div></div>\n' +
         '<script id="sb-config" type="application/json">' + j(cfg) + '</script>\n' +
         '<script id="sb-data" type="application/json">' + j(snap) + '</script>\n' +
@@ -1542,6 +1584,8 @@
   function init() {
     app = document.getElementById('app');
     if (!app) return;
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', themeVar('--meta-theme-color', ''));
     S = load();
     var migrated = S._migrated; delete S._migrated;
     if (S._needsProctorCheck) { // boards from before the column was optional keep it if they use it
@@ -1559,6 +1603,6 @@
     setInterval(function () { if (!drag && !document.querySelector('dialog[open]') && $('#sb-board') && !(document.activeElement && document.activeElement.classList.contains('card'))) renderBoard(); }, 60000);
     window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; delete S._needsProctorCheck; render(); } });
   }
-  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, version: '1.3.1' };
+  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, version: '1.4.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
