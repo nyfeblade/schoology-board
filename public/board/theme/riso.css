@@ -3,10 +3,10 @@
    Class swatches: Riso blue #3255A4, Yellow #FFE800, Bright red #F15060, Green overprint #5B9A3C, Blue tint #9FB2E6, Purple overprint #8B4FB0, Warm grey #A39E93, Fluoro pink #FF48B0 (the last one is optional and never a default). */
 @font-face{font-family:Anton;src:url(fonts/Anton.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:SpaceGrotesk;src:url(fonts/SpaceGrotesk.woff2) format("woff2");font-weight:300 700;font-display:swap}
-:root[data-theme="riso"],.thp[data-theme="riso"]{color-scheme:light;--meta-theme-color:#F5F1E8;--bgs:6px 6px;--hair:rgba(50,85,164,.25);--swatch-1:#3255A4;--swatch-1-ink:#FFFFFF;--swatch-2:#FFE800;--swatch-2-ink:#1F2A55;--swatch-3:#F15060;--swatch-3-ink:#FFFFFF;--swatch-4:#5B9A3C;--swatch-4-ink:#FFFFFF;--swatch-5:#9FB2E6;--swatch-5-ink:#1F2A55;--swatch-6:#8B4FB0;--swatch-6-ink:#FFFFFF;--swatch-7:#A39E93;--swatch-7-ink:#1F2A55;--swatch-8:#FF48B0;--swatch-8-ink:#FFFFFF;--swatch-0:#D9D2C2;--swatch-0-ink:#1F2A55;--confetti-1:#3255A4;--confetti-2:#F15060;--confetti-3:#FFE800;--confetti-4:#5B9A3C;--confetti-5:#8B4FB0;--confetti-stroke:#1F2A55;--art-1:#FFE800;--art-2:#F15060;--art-ink:#3255A4;
+:root[data-theme="riso"],.thp[data-theme="riso"]{color-scheme:light;--meta-theme-color:#F5F1E8;--bgs:6px 6px;--hair:rgba(50,85,164,.25);--swatch-1:#3255A4;--swatch-1-ink:#FFFFFF;--swatch-2:#FFE800;--swatch-2-ink:#1F2A55;--swatch-3:#FF6B78;--swatch-3-ink:#1F2A55;--swatch-4:#6FAE4E;--swatch-4-ink:#1F2A55;--swatch-5:#A9BCEB;--swatch-5-ink:#1F2A55;--swatch-6:#8B4FB0;--swatch-6-ink:#FFFFFF;--swatch-7:#A39E93;--swatch-7-ink:#1F2A55;--swatch-8:#7A2430;--swatch-8-ink:#FFFFFF;--swatch-0:#D9D2C2;--swatch-0-ink:#1F2A55;--confetti-1:#3255A4;--confetti-2:#F15060;--confetti-3:#FFE800;--confetti-4:#5B9A3C;--confetti-5:#8B4FB0;--confetti-stroke:#1F2A55;--art-1:#FFE800;--art-2:#F15060;--art-ink:#3255A4;
  --bgc:#F5F1E8;--bgi:radial-gradient(rgba(50,85,164,.06) 1px,transparent 1.2px);--ink:#1F2A55;--ink2:#2E3A6B;--mut:#5B6385;--card:#FBF8F1;--line:#3255A4;--soft:#ECE6D8;--well:transparent;--bc:#3255A4;--bw:1.5px;--bwc:1.5px;--r:0px;--rs:0px;--rb:0px;--sh:3px 3px 0 rgba(241,80,96,.85);--shs:2px 2px 0 rgba(241,80,96,.85);--lift:6px 7px 0 rgba(241,80,96,.9);--pop:4px 4px 0 rgba(241,80,96,.85);
  --fh:Anton,Bebas,Impact,sans-serif;--fb:SpaceGrotesk,system-ui,sans-serif;--fwh:400;--lsh:.01em;--tth:uppercase;--lsg:.14em;--ttg:uppercase;--fwt:700;
- --acc:#FFE800;--accInk:#1F2A55;--acc2:#F15060;--okc:#3255A4;--late:#C93040;--lateBg:rgba(241,80,96,.1);--lateB:#F15060;--warn:#FFE800;--warnInk:#1F2A55;--warnB:#3255A4;--warnSoft:rgba(255,232,0,.25);--flagInk:#1F2A55;--flagBg:rgba(255,232,0,.3);--flagB:#3255A4;
+ --acc:#FFE800;--accInk:#1F2A55;--acc2:#F15060;--okc:#3255A4;--late:#C93040;--lateBg:var(--card);--lateB:#F15060;--warn:#FFE800;--warnInk:#1F2A55;--warnB:#3255A4;--warnSoft:rgba(255,232,0,.25);--flagInk:#1F2A55;--flagBg:rgba(255,232,0,.3);--flagB:#3255A4;
  --navbg:transparent;--navb:transparent;--navon:#3255A4;--navonInk:#FBF8F1;--cnt:#F15060;--cntInk:#fff;--btnBg:#3255A4;--btnInk:#FBF8F1;--btnB:#3255A4;--focus:#F15060;
  --chr:0;--chb:2px;--chc:#3255A4;--chbg:#FBF8F1;--ckInk:#fff;--ckBg:#F15060;--ckB:#3255A4;--skel:#E8E1D1;--skelHi:rgba(255,255,255,.6);--tbg:#3255A4;--tink:#FBF8F1;--tacc:#FFE800;--tb:0}
 :root[data-theme="riso"] body{background-size:6px 6px}
@@ -16,7 +16,6 @@
 :root[data-theme="riso"] .tnm .greet{display:inline-block;background:#FFE800;color:#1F2A55;padding:3px 8px;transform:rotate(-1.5deg);font-size:12px}
 :root[data-theme="riso"] .tnm .rcls{background:var(--c);color:var(--ci);padding:2px 7px;text-transform:uppercase;font-family:Bebas,sans-serif;font-size:14px;letter-spacing:.04em;font-weight:400;mix-blend-mode:multiply}
 :root[data-theme="riso"] .tnm .rcls::before{display:none}
-:root[data-theme="riso"] .tnm .trow.tlate{background:repeating-linear-gradient(-45deg,rgba(241,80,96,.08) 0 6px,transparent 6px 12px),#FBF8F1}
 :root[data-theme="riso"] .tnm .estb,:root[data-theme="riso"] .fpill,:root[data-theme="riso"] .refresh,:root[data-theme="riso"] .tnm .pull{border-radius:0}
 :root[data-theme="riso"] .tnm .stamp{font:400 26px/1 Anton;color:#F15060;border:3px solid #F15060;padding:3px 10px;letter-spacing:.04em;transform:translateY(-50%) rotate(-8deg);background:radial-gradient(rgba(241,80,96,.35) 1px,transparent 1.3px) 0 0/4px 4px;mix-blend-mode:multiply;animation:e_st var(--dur-mid) cubic-bezier(.2,1.5,.4,1) both}
 @keyframes e_st{from{transform:translateY(-50%) rotate(-20deg) scale(2);opacity:0}}
@@ -35,6 +34,7 @@
 :root[data-theme="riso"] .tag{color:var(--ci);text-transform:uppercase;font-family:var(--fh);letter-spacing:.05em;font-weight:400;border-radius:0;mix-blend-mode:multiply;padding:1px 7px}
 :root[data-theme="riso"] .col{border:1.5px dashed var(--bc);background:transparent}
 :root[data-theme="riso"] .col h2{font-family:var(--fh);font-weight:400;font-size:18px;letter-spacing:.02em;color:var(--bc);text-shadow:1.5px 1px 0 rgba(241,80,96,.85)}
-:root[data-theme="riso"] .card.late{background:repeating-linear-gradient(-45deg,rgba(241,80,96,.08) 0 6px,transparent 6px 12px),var(--card)}
 :root[data-theme="riso"] .brand{font-family:var(--fh);font-size:18px;color:var(--bc);text-transform:uppercase;letter-spacing:.02em}
 :root[data-theme="riso"] .brand i{background:#F15060;border-color:var(--bc);border-radius:0;box-shadow:2px 2px 0 var(--acc)}
+/* QA v1.6.2: overdue is a red stripe on a normal card (no tint) */
+:root[data-theme="riso"] .tnm .trow.tlate{background:#FBF8F1}

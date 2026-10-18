@@ -20,7 +20,7 @@
   --fh:Fredoka,Nunito,system-ui,sans-serif; --fb:Nunito,system-ui,sans-serif;
   --fwh:600; --fwt:800; --lsh:0; --tth:none; --lsb:0; --lsg:0; --ttg:none;
   --acc:#FFE14D; --accInk:#1B1B1F; --acc2:#5BC25B; --okc:#5BC25B;
-  --late:#E23B4A; --lateBg:#FFECEC; --lateB:#1B1B1F; --on-late:#FFFFFF;
+  --late:#CF2E3A; --lateBg:var(--card); --lateB:#1B1B1F; --on-late:#FFFFFF; --overdue:#E5484D; --botnav-h:64px;
   --warn:#FFE066; --warnInk:#3D3300; --warnB:#1B1B1F; --warnSoft:#FFF4BF;
   --flagInk:#6E5E00; --flagBg:#FFF6CC; --flagB:#1B1B1F;
   --navbg:#FFFFFF; --navb:#1B1B1F; --navon:#1B1B1F; --navonInk:#FFFFFF;
@@ -34,12 +34,12 @@
   /* class palette: 8 swatches per theme; --swatch-8 is the optional pink. Each has an ink for text on it. */
   --swatch-1:#6FA3FF; --swatch-1-ink:#1B1B1F;  /* Sky */
   --swatch-2:#FFE14D; --swatch-2-ink:#1B1B1F;  /* Lemon */
-  --swatch-3:#E0C3FF; --swatch-3-ink:#1B1B1F;  /* Lilac */
-  --swatch-4:#A8E05F; --swatch-4-ink:#1B1B1F;  /* Lime */
+  --swatch-3:#DDB8FF; --swatch-3-ink:#1B1B1F;  /* Lilac */
+  --swatch-4:#5BC25B; --swatch-4-ink:#1B1B1F;  /* Grass */
   --swatch-5:#FF5A5F; --swatch-5-ink:#1B1B1F;  /* Cherry */
-  --swatch-6:#A98BFF; --swatch-6-ink:#1B1B1F;  /* Grape */
-  --swatch-7:#5BC25B; --swatch-7-ink:#1B1B1F;  /* Grass */
-  --swatch-8:#FF8FC7; --swatch-8-ink:#1B1B1F;  /* Bubblegum (optional, never a default) */
+  --swatch-6:#3049B8; --swatch-6-ink:#FFFFFF;  /* Navy */
+  --swatch-7:#B8B2A7; --swatch-7-ink:#1B1B1F;  /* Pebble */
+  --swatch-8:#7A3A9E; --swatch-8-ink:#FFFFFF;  /* Plum */
   --swatch-0:#E9E1D3; --swatch-0-ink:#1B1B1F;  /* Unsorted */
 
   /* ---------- layer 2: component tokens (derived; themes rarely need to touch these) ---------- */
@@ -55,7 +55,7 @@
   --col-bg:transparent; --col-border:var(--hair); --col-border-style:dashed; --col-over-bg:var(--warnSoft);
   --card-bg:var(--card); --card-hover-bg:var(--card); --card-border:var(--bc); --card-edge:var(--bc);
   --card-late-bg:var(--lateBg); --card-done-bg:var(--soft);
-  --tag-bg:var(--c); --tag-color:var(--ci); --tag-border:var(--bw) solid var(--bc);
+  --tag-border:var(--bw) solid var(--bc); /* tag fill = the class color, set on .tag itself (var(--c) only exists on cards) */
   --scrim:rgba(20,18,16,.35); --backdrop:rgba(20,18,16,.45);
   --qr-dark:#000000; --qr-light:#FFFFFF;          /* QR codes stay dark-on-white in every theme */
   --class-0:var(--swatch-0);

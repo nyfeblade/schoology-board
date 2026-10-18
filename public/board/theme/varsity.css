@@ -3,15 +3,15 @@
    Class swatches: Royal #2F5DA8, Gold #F2C205, Maroon #6E2639, Kelly green #2E9E4F, Varsity red #B8312F, Navy #14213D, Forest #1F5C3A, Pink #F27AAE (the last one is optional and never a default). */
 @font-face{font-family:Graduate;src:url(fonts/Graduate.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:Archivo;src:url(fonts/Archivo.woff2) format("woff2");font-weight:100 900;font-display:swap}
-:root[data-theme="varsity"],.thp[data-theme="varsity"]{color-scheme:light;--meta-theme-color:#F3EDE0;--bgs:auto;--hair:rgba(20,33,61,.14);--swatch-1:#2F5DA8;--swatch-1-ink:#FFFFFF;--swatch-2:#F2C205;--swatch-2-ink:#14213D;--swatch-3:#6E2639;--swatch-3-ink:#FFFFFF;--swatch-4:#2E9E4F;--swatch-4-ink:#FFFFFF;--swatch-5:#B8312F;--swatch-5-ink:#FFFFFF;--swatch-6:#14213D;--swatch-6-ink:#FFFFFF;--swatch-7:#1F5C3A;--swatch-7-ink:#FFFFFF;--swatch-8:#F27AAE;--swatch-8-ink:#14213D;--swatch-0:#C9C2B2;--swatch-0-ink:#14213D;--confetti-1:#F2C205;--confetti-2:#14213D;--confetti-3:#1F5C3A;--confetti-4:#B8312F;--confetti-5:#2F5DA8;--confetti-stroke:#14213D;--art-1:#F2C205;--art-2:#14213D;--art-ink:#14213D;
+:root[data-theme="varsity"],.thp[data-theme="varsity"]{color-scheme:light;--meta-theme-color:#F3EDE0;--bgs:auto;--hair:rgba(20,33,61,.14);--swatch-1:#2F5DA8;--swatch-1-ink:#FFFFFF;--swatch-2:#F2C205;--swatch-2-ink:#14213D;--swatch-3:#5E1F33;--swatch-3-ink:#FFFFFF;--swatch-4:#2E9E4F;--swatch-4-ink:#14213D;--swatch-5:#D23A33;--swatch-5-ink:#FFFFFF;--swatch-6:#14213D;--swatch-6-ink:#FFFFFF;--swatch-7:#A3A9B3;--swatch-7-ink:#14213D;--swatch-8:#A88EE6;--swatch-8-ink:#14213D;--swatch-0:#C9C2B2;--swatch-0-ink:#14213D;--confetti-1:#F2C205;--confetti-2:#14213D;--confetti-3:#1F5C3A;--confetti-4:#B8312F;--confetti-5:#2F5DA8;--confetti-stroke:#14213D;--art-1:#F2C205;--art-2:#14213D;--art-ink:#14213D;
  --bgc:#F3EDE0;--bgi:linear-gradient(#14213D 0 6px,#F2C205 6px 9px,transparent 9px);--ink:#14213D;--ink2:#2A3550;--mut:#5E6577;--card:#FFFFFF;--line:rgba(20,33,61,.18);--soft:#E9E1D0;--well:#EAE2D2;--bc:rgba(20,33,61,.22);--bw:1px;--bw2:2px;--r:5px;--rs:5px;--rb:4px;--sh:0 1px 0 rgba(20,33,61,.12),0 6px 16px -12px rgba(20,33,61,.35);--shs:none;--lift:0 20px 40px -16px rgba(20,33,61,.5);--pop:0 18px 40px -14px rgba(20,33,61,.45);
  --fh:Graduate,Archivo,serif;--fb:Archivo,system-ui,sans-serif;--fwh:400;--lsh:.02em;--tth:uppercase;--lsg:.12em;--ttg:uppercase;--lsb:.04em;
- --acc:#F2C205;--accInk:#14213D;--acc2:#1F5C3A;--okc:#1F5C3A;--late:#B8312F;--lateBg:#FBEFEC;--lateB:rgba(184,49,47,.4);--warn:#F2C205;--warnInk:#14213D;--warnB:#C9A200;--warnSoft:#FBF1CF;--flagInk:#14213D;--flagBg:#FBF1CF;--flagB:#C9A200;
+ --acc:#F2C205;--accInk:#14213D;--acc2:#1F5C3A;--okc:#1F5C3A;--late:#B8312F;--lateBg:var(--card);--lateB:rgba(184,49,47,.4);--warn:#F2C205;--warnInk:#14213D;--warnB:#C9A200;--warnSoft:#FBF1CF;--flagInk:#14213D;--flagBg:#FBF1CF;--flagB:#C9A200;
  --navbg:#fff;--navb:rgba(20,33,61,.22);--navon:#14213D;--navonInk:#F2C205;--cnt:#14213D;--cntInk:#F2C205;--btnBg:#14213D;--btnInk:#fff;--btnB:#14213D;--focus:#F2C205;
  --chr:4px;--chb:2.5px;--chc:#14213D;--chbg:#fff;--ckInk:#fff;--ckBg:#1F5C3A;--ckB:#1F5C3A;--skel:#E6DECC;--skelHi:rgba(255,255,255,.7);--tbg:#14213D;--tink:#fff;--tacc:#F2C205;--tb:2px solid #F2C205}
 :root[data-theme="varsity"] body{background-repeat:no-repeat}
 :root[data-theme="varsity"] .tnm .trow{border-left:8px solid var(--c);padding-left:14px}
-:root[data-theme="varsity"] .tnm .trow.tlate{border-left-color:var(--c)}
+:root[data-theme="varsity"] .tnm .trow.tlate{border-left-color:var(--overdue)}
 :root[data-theme="varsity"] .tnm .rcls{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:800;color:var(--ink)}
 :root[data-theme="varsity"] .tnm .rcls::before{width:14px;height:4px;border-radius:0}
 :root[data-theme="varsity"] .tnm .sh h2{font-size:18px}
@@ -53,3 +53,10 @@
 :root[data-theme="varsity"] .col h2{font-family:var(--fh);font-weight:400;font-size:14px;letter-spacing:.06em;color:var(--ink)}
 :root[data-theme="varsity"] .col h2 span{background:var(--ink);color:var(--acc);border-radius:3px;padding:2px 7px;font-family:var(--fh)}
 :root[data-theme="varsity"] .brand i{background:var(--ink);border:0;box-shadow:inset 0 -5px 0 var(--acc);border-radius:3px}
+/* QA v1.6.2: filled team-color tags; overdue turns the card edge red */
+:root[data-theme="varsity"] .tag{background:var(--c);color:var(--ci);padding:0 7px}
+:root[data-theme="varsity"] .tag::before{display:none}
+:root[data-theme="varsity"] .tnm .rcls{background:var(--c);color:var(--ci);padding:1px 7px}
+:root[data-theme="varsity"] .tnm .rcls::before{display:none}
+:root[data-theme="varsity"] .card.overdue{border-left:8px solid var(--overdue)}
+:root[data-theme="varsity"] .done .card{border-left:8px solid color-mix(in srgb,var(--c) 40%,transparent)}

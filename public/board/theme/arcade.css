@@ -4,10 +4,10 @@
 @font-face{font-family:Bricolage;src:url(fonts/Bricolage.woff2) format("woff2");font-weight:200 800;font-display:swap}
 @font-face{font-family:Inter;src:url(fonts/Inter.woff2) format("woff2");font-weight:100 900;font-display:swap}
 @font-face{font-family:Pixelify;src:url(fonts/Pixelify.woff2) format("woff2");font-weight:400 700;font-display:swap}
-:root[data-theme="arcade"],.thp[data-theme="arcade"]{color-scheme:dark;--meta-theme-color:#15112B;--bgs:auto;--hair:rgba(255,255,255,.08);--on-late:#15112B;--scrim:rgba(5,3,15,.55);--backdrop:rgba(5,3,15,.65);--shadow-nav:0 -8px 24px -12px rgba(0,0,0,.8);--swatch-1:#FFD84A;--swatch-1-ink:#15112B;--swatch-2:#A78BFA;--swatch-2-ink:#15112B;--swatch-3:#E6D9FF;--swatch-3-ink:#15112B;--swatch-4:#B6F23A;--swatch-4-ink:#15112B;--swatch-5:#FF5D5D;--swatch-5-ink:#FFFFFF;--swatch-6:#6F8CFF;--swatch-6-ink:#FFFFFF;--swatch-7:#C9C6D9;--swatch-7-ink:#15112B;--swatch-8:#FF4FA3;--swatch-8-ink:#FFFFFF;--swatch-0:#4A4370;--swatch-0-ink:#FFFFFF;--confetti-1:#B6F23A;--confetti-2:#FFD84A;--confetti-3:#A78BFA;--confetti-4:#6F8CFF;--confetti-5:#FF5D5D;--confetti-stroke:#15112B;--art-1:#B6F23A;--art-2:#FFD84A;--art-ink:#15112B;
+:root[data-theme="arcade"],.thp[data-theme="arcade"]{color-scheme:dark;--meta-theme-color:#15112B;--bgs:auto;--hair:rgba(255,255,255,.08);--on-late:#15112B;--scrim:rgba(5,3,15,.55);--backdrop:rgba(5,3,15,.65);--shadow-nav:0 -8px 24px -12px rgba(0,0,0,.8);--swatch-1:#FFD84A;--swatch-1-ink:#15112B;--swatch-2:#B98CFF;--swatch-2-ink:#15112B;--swatch-3:#B6F23A;--swatch-3-ink:#15112B;--swatch-4:#FF5D5D;--swatch-4-ink:#15112B;--swatch-5:#4F86FF;--swatch-5-ink:#15112B;--swatch-6:#8A86A0;--swatch-6-ink:#15112B;--swatch-7:#F4F2FF;--swatch-7-ink:#15112B;--swatch-8:#3AAE44;--swatch-8-ink:#15112B;--swatch-0:#4A4370;--swatch-0-ink:#FFFFFF;--confetti-1:#B6F23A;--confetti-2:#FFD84A;--confetti-3:#A78BFA;--confetti-4:#6F8CFF;--confetti-5:#FF5D5D;--confetti-stroke:#15112B;--art-1:#B6F23A;--art-2:#FFD84A;--art-ink:#15112B;
  --bgc:#15112B;--bgi:radial-gradient(900px 520px at 100% -5%,rgba(182,242,58,.06),transparent 60%),radial-gradient(800px 500px at -10% 0,rgba(139,92,246,.22),transparent 60%);--ink:#F3F0FF;--ink2:#D3CDEF;--mut:#A49DCB;--card:#241E4C;--line:rgba(255,255,255,.1);--soft:rgba(255,255,255,.07);--well:rgba(255,255,255,.035);--wellB:1px solid rgba(255,255,255,.06);--bc:rgba(255,255,255,.1);--bw:1px;--r:12px;--rs:10px;--rb:10px;--sh:0 10px 30px -20px rgba(0,0,0,.8);--shs:none;--lift:0 0 0 1px #B6F23A,0 20px 40px -12px rgba(0,0,0,.8);--pop:0 20px 40px -12px rgba(0,0,0,.8);
  --fh:Bricolage,Inter,system-ui,sans-serif;--fb:Inter,system-ui,sans-serif;--fwh:800;--lsh:-.01em;--tth:none;--lsg:.12em;--ttg:uppercase;
- --acc:#B6F23A;--accInk:#15112B;--acc2:#B6F23A;--okc:#B6F23A;--late:#FF6B6B;--lateBg:rgba(255,93,93,.1);--lateB:rgba(255,93,93,.5);--warn:#FFD84A;--warnInk:#2A2400;--warnB:#FFD84A;--warnSoft:rgba(255,216,74,.1);--flagInk:#FFD84A;--flagBg:rgba(255,216,74,.08);--flagB:rgba(255,216,74,.6);
+ --acc:#B6F23A;--accInk:#15112B;--acc2:#B6F23A;--okc:#B6F23A;--late:#FF6B6B;--lateBg:var(--card);--lateB:rgba(255,93,93,.5);--warn:#FFD84A;--warnInk:#2A2400;--warnB:#FFD84A;--warnSoft:rgba(255,216,74,.1);--flagInk:#FFD84A;--flagBg:rgba(255,216,74,.08);--flagB:rgba(255,216,74,.6);
  --navbg:rgba(255,255,255,.04);--navb:rgba(255,255,255,.08);--navon:#B6F23A;--navonInk:#15112B;--cnt:rgba(255,255,255,.1);--cntInk:#F3F0FF;--btnBg:#B6F23A;--btnInk:#15112B;--btnB:#B6F23A;--focus:#B6F23A;
  --chr:10px;--chb:2px;--chc:rgba(255,255,255,.28);--chbg:transparent;--ckInk:#15112B;--ckBg:#B6F23A;--ckB:#B6F23A;--skel:rgba(255,255,255,.07);--skelHi:rgba(255,255,255,.08);--tbg:#2B2459;--tink:#F3F0FF;--tacc:#B6F23A;--tb:1px solid rgba(255,255,255,.12)}
 :root[data-theme="arcade"] .tnm .trow{border-left:3px solid var(--c)}
@@ -42,3 +42,14 @@
 :root[data-theme="arcade"] .col h2{font-family:var(--fh);letter-spacing:.12em}
 :root[data-theme="arcade"] .brand i{background:var(--acc);box-shadow:0 0 14px rgba(182,242,58,.6);border-color:var(--acc)}
 :root[data-theme="arcade"] .card .chk[aria-pressed=true]{box-shadow:0 0 12px rgba(182,242,58,.6)}
+/* QA v1.6.2: class = colored left stripe + colored label; overdue takes the card edge in red */
+:root[data-theme="arcade"] .tag{border-left:3px solid var(--c);padding:0 0 0 6px;border-radius:0}
+:root[data-theme="arcade"] .tag::before{display:none}
+:root[data-theme="arcade"] .tnm .rcls{border-left:3px solid var(--c);padding-left:6px}
+:root[data-theme="arcade"] .tnm .rcls::before{display:none}
+:root[data-theme="arcade"] .card.overdue{border-left:4px solid var(--overdue)}
+:root[data-theme="arcade"] .card.overdue::before{box-shadow:0 0 12px var(--overdue);left:-4px}
+:root[data-theme="arcade"] .tnm .trow.tlate{border-left:4px solid var(--overdue)}
+:root[data-theme="arcade"] .tnm .trow.tlate::before{box-shadow:0 0 12px var(--overdue)}
+:root[data-theme="arcade"] .done .card{border-left:4px solid color-mix(in srgb,var(--c) 40%,transparent)}
+:root[data-theme="arcade"] .done .card::before{display:none}

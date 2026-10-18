@@ -81,14 +81,14 @@
       // planner: time estimates, one-tap type (e.g. test), timed minutes, finished study/start-early chunks per night
       est: {}, ttype: {}, actual: {}, sdone: {}, timer: null, planStart: null,
       // Tonight: items pulled in early, the student's own order for today, flags they confirmed, class colors per theme
-      pulled: {}, tnOrder: null, checked: {}, colors: {},
-      prefs: { tab: 'now', view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '', theme: 'sticker', mode: '', showDone: false }
+      pulled: {}, tnOrder: null, checked: {}, colors: {}, colorAuto: {},
+      prefs: { tab: 'now', view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '', theme: 'sticker', mode: '', showDone: false, groupBy: 'date' }
     };
   }
   function normalizeState(st) {
     st = Object.assign(blank(), st || {});
     st.prefs = Object.assign(blank().prefs, st.prefs || {});
-    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'checked', 'colors'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
+    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'checked', 'colors', 'colorAuto'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
     ['cats', 'order', 'rules'].forEach(function (k) { if (!Array.isArray(st[k])) st[k] = []; });
     return st;
   }
@@ -419,13 +419,24 @@
     var th = $('#sb-theme'); if (th) th.onclick = openThemes;
     $('#sb-brand').onclick = function (e) { e.preventDefault(); setTab('now'); };
     $$('[data-tab]', app).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); setTab(b.dataset.tab); }; });
-    $('#sb-reset').onclick = function (e) {
-      e.preventDefault();
-      if (confirm('Reset the board? This clears imported tasks, progress and categories in this browser.')) {
-        try { localStorage.removeItem(K); } catch (x) { }
-        S = blank(); if (MODE === 'offline') S.seenExport = (readJson('sb-data') || {}).exportedAt;
-        save(); render();
-      }
+    $('#sb-reset').onclick = function (e) { e.preventDefault(); confirmReset(); };
+  }
+  function confirmReset() {
+    var n = Object.keys(S.ics).length + Object.keys(S.cas).length + Object.keys(S.custom).length, done = Object.keys(S.status).filter(function (k) { return S.status[k] === 'done'; }).length;
+    var d = dialog('Reset this board?', '<p>This erases everything this board saved in this browser:</p><ul class="rs-list">' +
+      '<li>' + plural(n, 'task') + ' (from Schoology, class sheets and your own)</li>' +
+      '<li>Your check-offs (' + done + ' done) and what you started</li>' +
+      '<li>Time estimates, timings and tonight\u2019s order</li>' +
+      '<li>Class names, categories and colors</li>' + (S.feedUrl ? '<li>Your saved Schoology link</li>' : '') + '</ul>' +
+      '<p class="hint">It can\u2019t be undone. Save a backup file first if you might want it back.</p>',
+      '<button class="btn" id="rs-backup">' + ICON.dl + 'Save a backup first</button><span class="r"><button class="btn" data-close>Cancel</button><button class="btn danger" id="rs-go">Erase this board</button></span>');
+    d.classList.add('reset');
+    $('#rs-backup', d).onclick = function () { downloadOffline(); };
+    $('#rs-go', d).onclick = function () {
+      d.close();
+      try { localStorage.removeItem(K); } catch (x) { }
+      S = blank(); if (MODE === 'offline') S.seenExport = (readJson('sb-data') || {}).exportedAt;
+      save(); render(); toast('Board erased.');
     };
   }
   function setTab(t) {
@@ -438,12 +449,12 @@
 
   // ---------- themes and class colors ----------
   var THEMES = [
-    ['sticker', 'Sticker Book', 'Chunky stickers, bold outlines, a DONE! stamp.', ['Sky', 'Lemon', 'Lilac', 'Lime', 'Cherry', 'Grape', 'Grass', 'Bubblegum']],
-    ['arcade', 'Arcade Night', 'Dark and glowing, with XP for every check-off.', ['Sunny', 'Violet', 'Lilac', 'Lime', 'Coral', 'Electric blue', 'Silver', 'Magenta']],
-    ['notebook', 'Highlighter Notebook', 'Graph paper and highlighter. Light or dark.', ['Sky blue', 'Yellow', 'Lavender', 'Lime', 'Coral', 'Pencil', 'Green', 'Pink']],
-    ['varsity', 'Varsity', 'Scoreboard type, team colors, a final score.', ['Royal', 'Gold', 'Maroon', 'Kelly green', 'Varsity red', 'Navy', 'Forest', 'Pink']],
-    ['riso', 'Riso Zine', 'Two-color print, stamps and halftone dots.', ['Riso blue', 'Yellow', 'Bright red', 'Green overprint', 'Blue tint', 'Purple overprint', 'Warm grey', 'Fluoro pink']],
-    ['cafe', 'Lo-fi Caf\u00e9', 'Warm and dim. Your mug fills as you go.', ['Slate blue', 'Butter', 'Lavender', 'Sage', 'Brick', 'Plum', 'Moss', 'Rose']]
+    ['sticker', 'Sticker Book', 'Chunky stickers, bold outlines, a DONE! stamp.', ['Sky', 'Lemon', 'Lilac', 'Grass', 'Cherry', 'Navy', 'Pebble', 'Plum']],
+    ['arcade', 'Arcade Night', 'Dark and glowing, with XP for every check-off.', ['Sunny', 'Violet', 'Lime', 'Coral', 'Electric blue', 'Steel', 'White', 'Green']],
+    ['notebook', 'Highlighter Notebook', 'Graph paper and highlighter. Light or dark.', ['Yellow', 'Green', 'Sky blue', 'Lavender', 'Red', 'Pencil', 'Ink blue', 'Purple']],
+    ['varsity', 'Varsity', 'Scoreboard type, team colors, a final score.', ['Royal', 'Gold', 'Maroon', 'Kelly green', 'Varsity red', 'Navy', 'Silver', 'Purple']],
+    ['riso', 'Riso Zine', 'Two-color print, stamps and halftone dots.', ['Riso blue', 'Yellow', 'Bright red', 'Green', 'Blue tint', 'Purple overprint', 'Warm grey', 'Burgundy']],
+    ['cafe', 'Lo-fi Caf\u00e9', 'Warm and dim. Your mug fills as you go.', ['Slate blue', 'Honey', 'Lavender', 'Sage', 'Brick', 'Plum', 'Latte', 'Foam']]
   ];
   function themeInfo(id) { for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === id) return THEMES[i]; return THEMES[0]; }
   function curTheme() { var t = S && S.prefs.theme; return themeInfo(t)[0]; }
@@ -485,19 +496,39 @@
       b.onclick = function () { setTheme('notebook', b.dataset.mode); $$('[data-mode]', d).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); };
     });
   }
-  // A class's color: the student's pick for this theme, or a stable default slot (never the optional pink).
-  function classIndex(name) { return !name || name === UNSORTED ? 0 : parseInt(ics.hash(name), 36) % 7 + 1; }
+  // A class's color: the student's own pick for this theme wins. Otherwise each class gets the next unused swatch
+  // of the theme's 8, in order of first appearance (earliest due date first), saved per theme so colors never
+  // shuffle. No two classes share a swatch until all 8 are used; after that the least-used swatch is reused.
+  function ensureColors(items) {
+    var t = curTheme(), auto = S.colorAuto[t] = S.colorAuto[t] || {}, picks = S.colors[t] || {};
+    var first = {};
+    (items || allItems()).concat(preItems).forEach(function (it) { var c = it.course; if (!c || c === UNSORTED) return; var d = it.d ? it.d.getTime() : 0; if (first[c] === undefined || d < first[c]) first[c] = d; });
+    S.cats.forEach(function (c) { if (c !== UNSORTED && first[c] === undefined) first[c] = Infinity; });
+    var todo = Object.keys(first).filter(function (c) { return !(picks[c] >= 1 && picks[c] <= 8) && !(auto[c] >= 1 && auto[c] <= 8); });
+    if (!todo.length) return false;
+    todo.sort(function (a, b) { return first[a] - first[b] || a.localeCompare(b); });
+    var use = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    Object.keys(first).forEach(function (c) { var n = picks[c] >= 1 && picks[c] <= 8 ? picks[c] : auto[c]; if (n >= 1 && n <= 8) use[n]++; });
+    todo.forEach(function (c) {
+      var best = 1; for (var n = 2; n <= 8; n++) if (use[n] < use[best]) best = n;
+      auto[c] = best; use[best]++;
+    });
+    return true;
+  }
   function colorOf(course) {
-    var pick = S.colors && S.colors[curTheme()] && S.colors[curTheme()][course];
-    var n = pick >= 1 && pick <= 8 ? pick : classIndex(course);
-    return { n: n, picked: !!pick };
+    if (!course || course === UNSORTED) return { n: 0, picked: false };
+    var t = curTheme(), pick = S.colors && S.colors[t] && S.colors[t][course];
+    if (pick >= 1 && pick <= 8) return { n: pick, picked: true };
+    var a = S.colorAuto && S.colorAuto[t] && S.colorAuto[t][course];
+    if (!(a >= 1 && a <= 8)) { ensureColors(); a = S.colorAuto[t] && S.colorAuto[t][course]; }
+    return { n: a >= 1 && a <= 8 ? a : 0, picked: false };
   }
   function cvars(course) { var n = colorOf(course).n; return '--c:var(--swatch-' + n + ');--ci:var(--swatch-' + n + '-ink)'; }
   function openSwatches(anchor, course) {
     var t = themeInfo(curTheme()), cur = colorOf(course).n;
     var items = [{ heading: 'Color for ' + course }];
     t[3].forEach(function (name, i) {
-      items.push({ label: name + (i === 7 ? ' (optional)' : ''), swatch: i + 1, checked: cur === i + 1, onClick: function () {
+      items.push({ label: name, swatch: i + 1, checked: cur === i + 1, onClick: function () {
         S.colors = S.colors || {}; (S.colors[curTheme()] = S.colors[curTheme()] || {})[course] = i + 1; save(); renderBoard();
         toast(course + ' is now ' + name + ' in ' + t[1] + '.');
       } });
@@ -517,8 +548,8 @@
       '<div class="search"><button class="btn icon search-btn" id="sb-search-btn" aria-label="Search" title="Search (/)">' + ICON.search + '</button>' +
       '<span class="sfield">' + ICON.search + '<input type="search" id="sb-search" placeholder="Search" aria-label="Search tasks"><kbd class="kbd-only">/</kbd></span></div>' +
       '<button class="btn" id="sb-filter" aria-haspopup="menu" aria-expanded="false" title="Filter and settings">' + ICON.filter + '<span class="lbl">Filter</span><i class="dot" aria-hidden="true"></i></button>' +
-      '</div></div>' +
-      '<div class="chips-wrap"><div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div></div>' +
+      '</div>' +
+      '<div class="chips-wrap"><div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div></div></div>' +
       '<p class="sb-note" id="sb-note" hidden></p>' +
       '<nav class="colnav" id="sb-colnav" aria-label="Jump to column"></nav>' +
       '<main class="board" id="sb-board" aria-label="Board"></main>';
@@ -539,6 +570,8 @@
     var items = [{ heading: 'Show' },
       { check: true, id: 'sb-hidepast', label: 'Hide past', kbd: 'H', checked: !!S.prefs.hidePast, onChange: function (v) { S.prefs.hidePast = v; save(); renderBoard(); } }];
     if (S.createdAt) items.push({ check: true, id: 'sb-showpre', label: 'Show items from before this board was created', checked: !!S.prefs.showPre, onChange: function (v) { S.prefs.showPre = v; save(); renderBoard(); } });
+    items.push({ sep: true }, { heading: 'Arrange' },
+      { check: true, id: 'sb-groupcls', label: 'Group by class', checked: S.prefs.groupBy === 'class', onChange: function (v) { S.prefs.groupBy = v ? 'class' : 'date'; save(); renderBoard(); } });
     items.push({ sep: true }, { heading: 'Columns' },
       { check: true, id: 'sb-proctorcol', label: '\u201cNeeds to be proctored\u201d column', checked: !!S.proctorCol, onChange: function (v) { setProctorCol(v); } });
     menu(anchor, items, { title: 'Filter & settings', label: 'Filter and settings' });
@@ -581,9 +614,27 @@
     var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return v || fallback;
   }
+  // To-do columns group by date: Overdue, Today, Tomorrow, then one header per day.
+  function dateGroups(list, now) {
+    var today = sod(now), tk = dayKey(today), tm = dayKey(addDays(today, 1)), out = [], by = {};
+    list.forEach(function (it) {
+      var k = it.d < now ? 'over' : dayKey(it.d);
+      if (!by[k]) { by[k] = { k: k === 'over' ? 'over' : k === tk ? 'today' : k === tm ? 'tomorrow' : 'day', key: k, items: [] }; out.push(by[k]); }
+      by[k].items.push(it);
+    });
+    out.sort(function (a, b) { return a.k === 'over' ? -1 : b.k === 'over' ? 1 : a.key < b.key ? -1 : 1; });
+    out.forEach(function (g) {
+      var d = g.k === 'over' ? null : parseDay(g.key);
+      g.label = g.k === 'over' ? 'Overdue' : g.k === 'today' ? '<span class="todayl">Today</span>' : g.k === 'tomorrow' ? 'Tomorrow' :
+        esc(d.toLocaleDateString('en-US', Math.abs(d - today) < 6.5 * 864e5 ? { weekday: 'long' } : { weekday: 'long', month: 'short', day: 'numeric' }));
+      if (g.k === 'tomorrow' || (g.k === 'day' && Math.abs(d - today) < 6.5 * 864e5)) g.label += ' <span class="dd">' + esc(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</span>';
+      if (g.k === 'today') g.label += ' <span class="dd">' + esc(today.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })) + '</span>';
+    });
+    return out;
+  }
   function cardHtml(it, colId) {
     var h = (it.d - new Date()) / 36e5, done = colId === 'done';
-    var cls = done ? '' : (h < 0 ? ' late overdue' : h < 36 ? ' late' : '');
+    var cls = done ? '' : (h < 0 ? ' overdue' : '');
     var url = safeUrl(it.url);
     var when = it.allDay ? 'All day' : fmtT(it.d);
     if (done) when = it.d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + when;
@@ -628,6 +679,7 @@
     $$('[data-tab]', app).forEach(function (b) { if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     $('#sb-add').classList.toggle('primary', tab === 'board');
     document.body.dataset.tab = tab;
+    if (ensureColors()) save();
     if (tab === 'now') { renderNow(); return mark(); }
     if (tab === 'cal') { renderStub('cal'); return mark(); }
     if (tab === 'ahead') { renderAhead(); return mark(); }
@@ -644,12 +696,13 @@
     $('#sb-label').textContent = r.label;
     $$('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === p.view)); });
     $('#sb-weeknav').style.display = p.view === 'week' ? '' : 'none';
-    $('#sb-week').textContent = r.nav || r.label;
+    var wn = r.nav || r.label, wi = wn.indexOf(' \u00b7 ');
+    $('#sb-week').innerHTML = wi > 0 ? '<span class="wl">' + esc(wn.slice(0, wi + 3)) + '</span>' + esc(wn.slice(wi + 3)) : esc(wn);
     $('#sb-thisweek').style.display = p.weekOffset ? '' : 'none';
     $('#sb-thisweek').textContent = weekendMode() ? 'Next week' : 'This week';
-    $('#sb-filter').classList.toggle('on', !!(p.hidePast || p.showPre));
+    $('#sb-filter').classList.toggle('on', !!(p.hidePast || p.showPre || p.groupBy === 'class'));
     renderSync();
-    $('#sb-filter').setAttribute('aria-label', 'Filter' + (p.hidePast ? ' (hiding past)' : '') + (p.showPre ? ' (showing pre-board items)' : ''));
+    $('#sb-filter').setAttribute('aria-label', 'Filter' + (p.hidePast ? ' (hiding past)' : '') + (p.showPre ? ' (showing pre-board items)' : '') + (p.groupBy === 'class' ? ' (grouped by class)' : ''));
     if (document.activeElement !== $('#sb-search')) $('#sb-search').value = p.q || '';
     var counts = {};
     viewItems.forEach(function (it) { if (it.col !== 'done') counts[it.course] = (counts[it.course] || 0) + 1; });
@@ -681,6 +734,10 @@
         } else html += '<div class="empty-col">Drag cards here</div>';
       }
       if (id === 'done') list.forEach(function (it) { html += cardHtml(it, id); });
+      else if (p.groupBy !== 'class') dateGroups(list, now).forEach(function (g) {
+        html += '<div class="day dgrp' + (g.k === 'over' ? ' over' : g.k === 'today' ? ' today' : '') + '" role="heading" aria-level="3">' + g.label + '<span class="dn" title="' + plural(g.items.length, 'card') + '">' + g.items.length + '</span></div>';
+        g.items.forEach(function (it) { html += cardHtml(it, id); });
+      });
       else cats.forEach(function (cl) {
         var g = list.filter(function (it) { return it.course === cl; });
         if (!g.length) return;
@@ -688,7 +745,7 @@
         var last = '';
         g.forEach(function (it) {
           var dk = dayKey(it.d);
-          if (dk !== last) { html += '<div class="day' + (dk === today ? ' today' : '') + '">' + (dk === today ? 'Today \u00b7 ' : '') + esc(fmtDay(it.d)) + '</div>'; last = dk; }
+          if (dk !== last) { html += '<div class="day' + (dk === today ? ' today' : '') + '">' + (dk === today ? '<span class="todayl">Today</span> ' : '') + esc(fmtDay(it.d)) + '</div>'; last = dk; }
           html += cardHtml(it, id);
         });
       });
@@ -773,6 +830,7 @@
   }
   function freshHtml() {
     var s = freshState();
+    if (s.k === 'none') return '<div class="fresh"><button type="button" class="fpill none linkb" data-addlink title="' + esc(s.tip) + '"><i class="fdot"></i><span class="ft">Link Schoology</span><span aria-hidden="true">\u2192</span></button></div>';
     var btn = s.k === 'none' ? '<button type="button" class="btn small" data-addlink>Add your link</button>' :
       s.k === 'off' ? '' : '<button type="button" class="refresh" data-refresh' + (s.k === 'sync' ? ' disabled' : '') + ' aria-label="Refresh from Schoology" title="Refresh from Schoology now">' + NICON.ref + '</button>';
     return '<div class="fresh"><span class="fpill ' + (s.k === 'ok' ? 'ok' : s.k === 'sync' ? 'fsync' : s.k === 'err' ? 'ferr' : s.k) + '" role="status" title="' + esc(s.tip) + '"><i class="fdot"></i><span class="ft">' + esc(s.t) + '</span></span>' + btn + '</div>';
@@ -946,7 +1004,7 @@
         var startVal = pad(P.start.getHours()) + ':' + pad(P.start.getMinutes()), defStart = plan.defaultStart(now);
         h += '<section class="sec tonight" aria-labelledby="tnH"><div class="sh"><h2 id="tnH">Tonight</h2><span class="cnt" title="' + plural(M.tn.length, 'thing') + ' for tonight">' + M.tn.length + '</span><span class="meta">' +
           (P.custom ? 'Your order \u00b7 <button type="button" class="lnk" data-resetorder>Back to suggested</button>' : 'By due time, then size \u00b7 <span class="dk">drag</span><span class="mb">hold</span> to reorder') + '</span></div>' +
-          '<p class="tn-when"><label>Start at <input type="time" id="tn-start" value="' + startVal + '" step="300"></label>' + (S.planStart && S.planStart.day === dayKey(now) && P.picked && P.picked > defStart ? ' <button type="button" class="lnk" id="tn-now">Start now instead</button>' : '') +
+          '<p class="tn-when"><span class="tlab" id="tn-startl">Start at</span><span class="tchip"><b>' + fmtT(P.start) + '</b>' + ICON.clock + '<input type="time" id="tn-start" value="' + startVal + '" step="300" aria-labelledby="tn-startl" title="Change the start time"></span>' + (S.planStart && S.planStart.day === dayKey(now) && P.picked && P.picked > defStart ? ' <button type="button" class="lnk" id="tn-now">Start now instead</button>' : '') +
           (P.spill.length ? '<span> \u00b7 <b>' + plural(P.spill.length, 'thing') + '</b> won\u2019t fit before ' + fmtT(P.endBy) + '</span>' : P.finish ? '<span> \u00b7 done by about <b>' + fmtT(P.finish) + '</b></span>' : '') + '</p>' +
           '<ul class="list" id="tnList">' + M.tn.map(function (t) { return rowHtml(t, M, now, { drag: true, lead: t.id === leadId }); }).join('') + '</ul>' +
           (P.spill.length ? '<div class="spill" role="note"><p><b>Won\u2019t fit before ' + fmtT(P.endBy) + ':</b> ' + plural(P.spill.length, 'thing') + ', about ' + durS(P.spill.reduce(function (a, t) { return a + t.min; }, 0)) + '. Start earlier, shorten an estimate, or ask your teacher about what won\u2019t fit.</p></div>' : '') +
@@ -989,7 +1047,10 @@
     var ro = $('[data-resetorder]', m); if (ro) ro.onclick = function () { S.tnOrder = null; save(); renderBoard(); toast('Back to the suggested order.'); };
     $$('[data-go]', m).forEach(function (b) { b.onclick = function () { setTab(b.dataset.go); }; });
     var inp = $('#tn-start', m);
-    if (inp) inp.onchange = function () { if (!inp.value) return; S.planStart = { day: dayKey(new Date()), t: inp.value }; save(); renderBoard(); };
+    if (inp) {
+      inp.onchange = function () { if (!inp.value) return; S.planStart = { day: dayKey(new Date()), t: inp.value }; save(); renderBoard(); var x = $('#tn-start'); if (x) x.focus(); };
+      inp.onclick = function () { try { if (inp.showPicker) inp.showPicker(); } catch (e) { } };
+    }
     var tn = $('#tn-now', m); if (tn) tn.onclick = function () { S.planStart = null; save(); renderBoard(); };
     $$('.grip', m).forEach(function (g) {
       g.onkeydown = function (e) {
@@ -1863,7 +1924,7 @@
     var p = prune({
       f: feed, c: S.createdAt, pc: S.proctorCol ? 1 : 0, st: remap(S.status), ov: remap(S.ov), hd: remap(S.hidden),
       cu: S.custom, ca: S.cats, or: S.order, rn: S.rename, ru: S.rules, cm: S.classMap, cas: S.cas,
-      es: remap(S.est), ty: remap(S.ttype), ac: remap(S.actual), sd: remapDay(S.sdone), pu: remap(S.pulled), ok: remap(S.checked), co: S.colors,
+      es: remap(S.est), ty: remap(S.ttype), ac: remap(S.actual), sd: remapDay(S.sdone), pu: remap(S.pulled), ok: remap(S.checked), co: S.colors, ka: S.colorAuto,
       pr: prune({ hp: S.prefs.hidePast ? 1 : 0, sp: S.prefs.showPre ? 1 : 0, th: S.prefs.theme !== 'sticker' ? S.prefs.theme : '', md: S.prefs.mode || '' })
     });
     if (S.pending) MOVE_MAPS.map(function (x) { return x[0]; }).forEach(function (k) { if (S.pending[k]) p[k] = Object.assign({}, S.pending[k], p[k] || {}); });
@@ -1934,7 +1995,7 @@
     st.custom = p.cu || {}; st.cats = p.ca || []; st.order = p.or || []; st.rename = p.rn || {}; st.rules = p.ru || [];
     st.classMap = p.cm || {}; st.cas = p.cas || {}; st.proctorCol = !!p.pc; st.createdAt = p.c || null; st.feedUrl = p.f || '';
     st.prefs = { hidePast: !!(p.pr && p.pr.hp), showPre: !!(p.pr && p.pr.sp), theme: (p.pr && p.pr.th) || 'sticker', mode: (p.pr && p.pr.md) || '' };
-    st.colors = p.co || {};
+    st.colors = p.co || {}; st.colorAuto = p.ka || {};
     return st;
   }
   function resolvePending() {
@@ -1964,6 +2025,7 @@
     } else {
       ['status', 'ov', 'hidden', 'custom', 'cas', 'rename', 'classMap', 'ics', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'checked'].forEach(function (k) { if (inc[k]) cur[k] = Object.assign({}, cur[k], inc[k]); });
       if (inc.colors) Object.keys(inc.colors).forEach(function (t) { cur.colors[t] = Object.assign({}, cur.colors[t], inc.colors[t]); });
+      if (inc.colorAuto) Object.keys(inc.colorAuto).forEach(function (t) { cur.colorAuto[t] = Object.assign({}, inc.colorAuto[t], cur.colorAuto[t]); });
       if (inc.prefs && inc.prefs.theme) { cur.prefs.theme = inc.prefs.theme; cur.prefs.mode = inc.prefs.mode || ''; }
       (inc.cats || []).forEach(function (c) { if (cur.cats.indexOf(c) < 0) cur.cats.push(c); });
       (inc.order || []).forEach(function (c) { if (cur.order.indexOf(c) < 0) cur.order.push(c); });
@@ -2447,6 +2509,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, version: '1.6.1' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, version: '1.6.2' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

@@ -3,10 +3,10 @@
    Class swatches: Slate blue #7D93B8, Butter #F0DA84, Lavender #B8B0E0, Sage #9DB48A, Brick #B5483F, Plum #B08AC0, Moss #7E9A6A, Rose #E8A0A8 (the last one is optional and never a default). */
 @font-face{font-family:Fraunces;src:url(fonts/Fraunces.woff2) format("woff2");font-weight:100 900;font-display:swap}
 @font-face{font-family:Nunito;src:url(fonts/Nunito.woff2) format("woff2");font-weight:200 1000;font-display:swap}
-:root[data-theme="cafe"],.thp[data-theme="cafe"]{color-scheme:dark;--meta-theme-color:#1E1612;--bgs:auto;--hair:#33271F;--on-late:#1E1612;--scrim:rgba(10,7,5,.55);--backdrop:rgba(10,7,5,.65);--shadow-nav:0 -8px 24px -12px rgba(0,0,0,.8);--swatch-1:#7D93B8;--swatch-1-ink:#FFFFFF;--swatch-2:#F0DA84;--swatch-2-ink:#1E1612;--swatch-3:#B8B0E0;--swatch-3-ink:#1E1612;--swatch-4:#9DB48A;--swatch-4-ink:#1E1612;--swatch-5:#B5483F;--swatch-5-ink:#FFFFFF;--swatch-6:#B08AC0;--swatch-6-ink:#1E1612;--swatch-7:#7E9A6A;--swatch-7-ink:#FFFFFF;--swatch-8:#E8A0A8;--swatch-8-ink:#1E1612;--swatch-0:#5A4A40;--swatch-0-ink:#FFFFFF;--confetti-1:#F0DA84;--confetti-2:#9DB48A;--confetti-3:#7D93B8;--confetti-4:#B8B0E0;--confetti-5:#B5483F;--confetti-stroke:#1E1612;--art-1:#F0DA84;--art-2:#B5483F;--art-ink:#2A201B;
+:root[data-theme="cafe"],.thp[data-theme="cafe"]{color-scheme:dark;--meta-theme-color:#1E1612;--bgs:auto;--hair:#33271F;--on-late:#1E1612;--scrim:rgba(10,7,5,.55);--backdrop:rgba(10,7,5,.65);--shadow-nav:0 -8px 24px -12px rgba(0,0,0,.8);--swatch-1:#6282B2;--swatch-1-ink:#1E1612;--swatch-2:#EBCF6A;--swatch-2-ink:#1E1612;--swatch-3:#C9BEF2;--swatch-3-ink:#1E1612;--swatch-4:#8FBF7A;--swatch-4-ink:#1E1612;--swatch-5:#D0625A;--swatch-5-ink:#1E1612;--swatch-6:#6E4E96;--swatch-6-ink:#FFFFFF;--swatch-7:#9A9088;--swatch-7-ink:#1E1612;--swatch-8:#F4EEE4;--swatch-8-ink:#1E1612;--swatch-0:#5A4A40;--swatch-0-ink:#FFFFFF;--confetti-1:#F0DA84;--confetti-2:#9DB48A;--confetti-3:#7D93B8;--confetti-4:#B8B0E0;--confetti-5:#B5483F;--confetti-stroke:#1E1612;--art-1:#F0DA84;--art-2:#B5483F;--art-ink:#2A201B;
  --bgc:#1E1612;--bgi:radial-gradient(700px 420px at 85% -10%,rgba(240,218,132,.13),transparent 60%),radial-gradient(600px 400px at 0 110%,rgba(125,147,184,.08),transparent 60%);--ink:#F4E9DA;--ink2:#E2D4C1;--mut:#B9A898;--card:#2A201B;--line:#3E3029;--soft:#362A23;--well:rgba(0,0,0,.18);--wellB:1px solid #33271F;--bc:#3E3029;--bw:1px;--r:13px;--rs:11px;--rb:999px;--sh:0 14px 30px -22px rgba(0,0,0,.8);--shs:none;--lift:0 0 0 1px #F0DA84,0 24px 40px -16px rgba(0,0,0,.8);--pop:0 22px 44px -16px rgba(0,0,0,.85);
  --fh:Fraunces,Georgia,serif;--fb:Nunito,system-ui,sans-serif;--fwh:600;--lsh:-.01em;--tth:none;
- --acc:#F0DA84;--accInk:#1E1612;--acc2:#F0DA84;--okc:#9DB48A;--late:#E07A6E;--lateBg:rgba(181,72,63,.14);--lateB:rgba(181,72,63,.6);--warn:#F0DA84;--warnInk:#2A1F10;--warnB:#F0DA84;--warnSoft:rgba(240,218,132,.09);--flagInk:#F0DA84;--flagBg:rgba(240,218,132,.07);--flagB:rgba(240,218,132,.55);
+ --acc:#F0DA84;--accInk:#1E1612;--acc2:#F0DA84;--okc:#9DB48A;--late:#E07A6E;--lateBg:var(--card);--lateB:rgba(181,72,63,.6);--warn:#F0DA84;--warnInk:#2A1F10;--warnB:#F0DA84;--warnSoft:rgba(240,218,132,.09);--flagInk:#F0DA84;--flagBg:rgba(240,218,132,.07);--flagB:rgba(240,218,132,.55);
  --navbg:rgba(255,255,255,.03);--navb:#33271F;--navon:#F4E9DA;--navonInk:#1E1612;--cnt:#362A23;--cntInk:#E2D4C1;--btnBg:#F0DA84;--btnInk:#1E1612;--btnB:#F0DA84;--focus:#F0DA84;
  --chr:50%;--chb:0;--chc:transparent;--chbg:transparent;--ckInk:#1E1612;--ckBg:transparent;--ckB:transparent;--skel:#2F241E;--skelHi:rgba(255,255,255,.04);--tbg:#F4E9DA;--tink:#1E1612;--tacc:#B5483F;--tb:0}
 :root[data-theme="cafe"] .tnm .verdict{font-weight:600}
@@ -29,7 +29,6 @@
 @keyframes f_steam{0%{opacity:0;transform:translateY(4px)}40%{opacity:.9}100%{opacity:0;transform:translateY(-6px)}}
 :root[data-theme="cafe"] .tnm .trow.tdone .cup{width:32px;height:32px}
 :root[data-theme="cafe"] .tnm .trow.celebrate{box-shadow:0 0 0 1px rgba(240,218,132,.5),0 0 40px -10px rgba(240,218,132,.45)}
-:root[data-theme="cafe"] .tnm .trow.tlate{border-color:rgba(181,72,63,.55)}
 :root[data-theme="cafe"] .tnm .cafe{width:170px;height:118px}
 :root[data-theme="cafe"] .tnm .cap{font:italic 500 17px/1 Fraunces;color:#F0DA84}
 :root[data-theme="cafe"] #cel{background:radial-gradient(circle at 50% 45%,rgba(240,218,132,.28),transparent 50%),rgba(20,14,11,.82);animation:f_glow var(--dur-loop) ease-out both}
@@ -48,6 +47,7 @@
 :root[data-theme="cafe"] .tag{background:color-mix(in srgb,var(--c) 22%,transparent);color:color-mix(in srgb,var(--c) 72%,#F4E9DA);border:0}
 :root[data-theme="cafe"] .col{background:rgba(0,0,0,.18);border:1px solid #33271F}
 :root[data-theme="cafe"] .col h2{font-family:var(--fh);font-weight:600;text-transform:none;letter-spacing:0;font-size:16px;color:var(--ink)}
-:root[data-theme="cafe"] .card.late{border-color:rgba(181,72,63,.55)}
 :root[data-theme="cafe"] .brand{font-family:var(--fh);font-weight:600}
 :root[data-theme="cafe"] .brand i{background:#B5483F;border:0;border-radius:6px 6px 3px 3px;box-shadow:inset 0 -9px 0 var(--acc)}
+/* QA v1.6.2: filled class tags */
+:root[data-theme="cafe"] .tag,:root[data-theme="cafe"] .tnm .rcls{background:var(--c);color:var(--ci)}

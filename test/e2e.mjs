@@ -32,7 +32,7 @@ const browser = await chromium.launch();
 const errors = [];
 function watch(page, tag) {
   page.on('pageerror', (e) => errors.push(`${tag}: ${e.message}`));
-  page.on('console', (m) => { if (m.type() === 'error' && !(tag === 'link' && /status of 422/.test(m.text())) && !(tag === 'refresh' && /status of 502/.test(m.text())) && !(tag === 'bg-refresh' && /status of 502/.test(m.text())) && !(tag === 'pwa' && /status of (400|405|504)/.test(m.text()))) errors.push(`${tag} console: ${m.text()}`); }); // deliberate probes: the 422 bad link, stubbed 502 failures, and the pwa test's relay calls (405 GET; 504 unreachable host locally, 400 rejected host on the live relay)
+  page.on('console', (m) => { if (m.type() === 'error' && !(tag === 'link' && /status of 422/.test(m.text())) && !(tag === 'refresh' && /status of 502/.test(m.text())) && !(tag === 'qa' && /status of 502/.test(m.text())) && !(tag === 'bg-refresh' && /status of 502/.test(m.text())) && !(tag === 'pwa' && /status of (400|405|504)/.test(m.text()))) errors.push(`${tag} console: ${m.text()}`); }); // deliberate probes: the 422 bad link, stubbed 502 failures, and the pwa test's relay calls (405 GET; 504 unreachable host locally, 400 rejected host on the live relay)
   page.on('dialog', (d) => d.accept());
 }
 const state = (page) => page.evaluate(() => window.SchoologyBoard.state());
@@ -53,12 +53,17 @@ async function board(page, sel = '', opts) {
 async function tab(page, t) { await page.evaluate((t) => document.querySelector(`#sb-tabs [data-tab=${t}]`).click(), t); await page.waitForTimeout(80); }
 const pill = (page) => page.locator('.fpill:visible').first().innerText();
 async function dragTo(page, card, col) {
+  // Date grouping can put the card below the fold: make the window tall enough to see the card and the column.
+  const vp = page.viewportSize(); await page.evaluate(() => scrollTo(0, 0));
+  const need = await card.evaluate((e) => Math.ceil(e.getBoundingClientRect().bottom + scrollY + 120));
+  if (vp && need > vp.height) await page.setViewportSize({ width: vp.width, height: need });
   const a = await card.boundingBox(), b = await page.locator(`.col[data-col="${col}"]`).boundingBox();
   await page.mouse.move(a.x + 30, a.y + 12);
   await page.mouse.down();
   await page.mouse.move(a.x + 60, a.y + 30, { steps: 4 });
   await page.mouse.move(b.x + b.width / 2, b.y + 80, { steps: 12 });
   await page.mouse.up();
+  if (vp && need > vp.height) await page.setViewportSize(vp);
 }
 async function noCyan(page) {
   return page.evaluate(() => {
@@ -90,7 +95,7 @@ await page.waitForTimeout(3500); // let the import toast fade for the screenshot
 const sampleCount = await page.locator('#sb-board .card').count();
 ok('sample board renders cards', sampleCount > 5, `${sampleCount} cards in view`);
 ok('four columns with the right names', (await page.locator('.col h2').allInnerTexts()).map((t) => t.split('\n')[0].trim()).join('|').toLowerCase() === 'need to be done|started|needs to be proctored|completed');
-ok('to-do grouped by class then date', await page.locator('.col[data-col="todo"] .cls').count() >= 3 && await page.locator('.col[data-col="todo"] .day').count() >= 3);
+ok('to-do grouped by date (Overdue, Today, Tomorrow, days) with the class as each card\'s tag', await page.locator('.col[data-col="todo"] .day.dgrp').count() >= 3 && await page.locator('.col[data-col="todo"] .card .tag').count() >= 3);
 await page.screenshot({ path: join(SHOTS, 'board-sample.png') });
 await page.screenshot({ path: join(SHOTS, 'board-sample-full.png'), fullPage: true });
 const cyan1 = await noCyan(page);
@@ -177,7 +182,7 @@ await page.fill('#ed-note', 'For Friday seminar');
 await page.click('#ed-save');
 const custom = cardByTitle(page, 'Animal Farm');
 ok('custom task added under custom category', await custom.isVisible() && (await custom.innerText()).includes('Reading list'));
-ok('task due within 36h gets the red edge', (await custom.getAttribute('class')).includes('late'));
+ok('a task due within 36h is not tinted or red (only overdue work is)', !/\b(late|overdue)\b/.test(await custom.getAttribute('class')));
 // edit it
 await custom.focus(); await page.keyboard.press('e'); await page.fill('#ed-title', 'Read Animal Farm ch 1-4'); await page.click('#ed-save');
 ok('custom task can be edited', await cardByTitle(page, 'Animal Farm ch 1-4').count() === 1);
@@ -967,7 +972,7 @@ await octx.close();
   await pg.locator('#sb-menu .menu-i').nth(5).click(); await pg.waitForTimeout(150);
   st = await state(pg);
   ok('class color is saved for this theme only', st.colors.notebook && Object.values(st.colors.notebook)[0] === 6 && !st.colors.sticker && /swatch-6/.test(await cardByTitle(pg, 'Two-Column').getAttribute('style')), JSON.stringify(st.colors));
-  ok('the default class colors never use the optional pink swatch', await pg.evaluate(() => [...document.querySelectorAll('.card')].every((e) => !/swatch-8/.test(e.getAttribute('style') || ''))));
+  ok('no class color is pink (the palettes have none)', await pg.evaluate(() => [...document.querySelectorAll('.card .tag')].every((e) => { const m = getComputedStyle(e).backgroundColor.match(/\d+/g).map(Number); const mx = Math.max(...m), mn = Math.min(...m), c = (mx - mn) / 255; if (mx === mn) return true; let h = mx === m[0] ? ((m[1] - m[2]) / (mx - mn)) % 6 : mx === m[1] ? (m[2] - m[0]) / (mx - mn) + 2 : (m[0] - m[1]) / (mx - mn) + 4; h = (h * 60 + 360) % 360; return !(h >= 290 && h <= 345 && c >= 0.3); })));
   // backup carries the theme, its fonts and works offline; Move carries it too
   const [bd] = await Promise.all([pg.waitForEvent('download'), more(pg, '#sb-backup')]);
   const bp = join(SHOTS, 'theme-backup.html'); await bd.saveAs(bp); const bh = readFileSync(bp, 'utf8');
@@ -1082,6 +1087,124 @@ await octx.close();
   }
 }
 
+// ---------- 18. UI Designer QA pass (v1.6.2) ----------
+{
+  const QNOW = new Date('2026-10-19T17:02:00-04:00');
+  const c = await newCtx({ now: QNOW }); const pg = await c.newPage(); watch(pg, 'qa');
+  await pg.goto(BASE + '/');
+  // 5. one "Link Schoology →" button (grey dot) instead of "Not linked" + "Add your link"
+  await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+  const lk = pg.locator('#tn-main .fresh');
+  ok('not linked: one "Link Schoology →" button with a grey dot, no separate "Add your link"', await lk.locator('button.linkb[data-addlink]').count() === 1 && /Link Schoology\s*→/.test(await lk.innerText()) && !/Not linked|Add your link/.test(await pg.locator('body').innerText()) &&
+    await lk.locator('.linkb .fdot').evaluate((e) => { const m = getComputedStyle(e).backgroundColor.match(/\d+/g).map(Number); return Math.max(...m) - Math.min(...m) < 24; }), (await lk.innerText()).replace(/\s+/g, ' '));
+  await lk.locator('.linkb').click(); await pg.waitForSelector('dialog #imp-url'); ok('"Link Schoology" opens the link step', true); await pg.keyboard.press('Escape'); await pg.waitForTimeout(150);
+  // 1. class colors: every class gets its own swatch, in order of first appearance, saved per theme, Tonight = Board
+  const classColors = () => pg.evaluate(() => { const o = {}; document.querySelectorAll('#sb-board .card, #tn-main .trow, #tn-main .cu').forEach((e) => { const t = e.querySelector('.tag, .rcls'); const n = (e.getAttribute('style') || '').match(/swatch-(\d)/); if (t && n) { const k = t.textContent.trim(); (o[k] = o[k] || new Set()).add(n[1]); } }); return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, [...v]])); });
+  let tc = await classColors();
+  await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card');
+  let bc = await classColors();
+  const allBoard = Object.entries(bc), slots = allBoard.map(([, v]) => v[0]);
+  ok('each class has its own color on the board (no two classes share a swatch)', allBoard.length >= 5 && allBoard.every(([, v]) => v.length === 1) && new Set(slots).size === slots.length, JSON.stringify(bc));
+  ok('Tonight uses the same assigned color as the board for every class', Object.entries(tc).every(([k, v]) => v.length === 1 && bc[k] && bc[k][0] === v[0]), JSON.stringify(tc));
+  let st = await state(pg);
+  const order1 = Object.entries(st.colorAuto.sticker).sort((a, b) => a[1] - b[1]).map((x) => x[0]);
+  ok('colors go out in order of first appearance (earliest due first): swatches 1, 2, 3 …', JSON.stringify(Object.values(st.colorAuto.sticker).sort()) === JSON.stringify([1, 2, 3, 4, 5].slice(0, order1.length)), JSON.stringify(st.colorAuto.sticker));
+  const rendered = await pg.evaluate(() => [...new Set([...document.querySelectorAll('#sb-board .card')].map((e) => getComputedStyle(e).getPropertyValue('--c').trim() || getComputedStyle(e.querySelector('.tag')).backgroundColor))]);
+  for (const t of ['arcade', 'notebook', 'varsity', 'riso', 'cafe']) {
+    await pg.evaluate((t) => window.SchoologyBoard.theme(t, ''), t); await pg.waitForTimeout(120);
+    const cc = await classColors(), sl = Object.values(cc).map((v) => v[0]);
+    const fills = await pg.evaluate(() => { const o = {}; document.querySelectorAll('#sb-board .card').forEach((e) => { const t = e.querySelector('.tag'); o[t.textContent.trim()] = getComputedStyle(e).getPropertyValue('--c').trim(); }); return o; });
+    ok(`${t}: every class has a different color`, new Set(sl).size === sl.length && sl.length >= 5, JSON.stringify(cc));
+  }
+  await pg.evaluate(() => window.SchoologyBoard.theme('sticker', '')); await pg.waitForTimeout(120);
+  // the student's own pick wins and stays
+  const firstCls = allBoard[0][0];
+  await pg.locator('#sb-board .card', { has: pg.locator('.tag', { hasText: firstCls }) }).first().hover();
+  await pg.locator('#sb-board .card', { has: pg.locator('.tag', { hasText: firstCls }) }).first().locator('.more').click();
+  await pg.locator('#sb-menu .menu-i', { hasText: 'color' }).click(); await pg.locator('#sb-menu .menu-i', { hasText: 'Plum' }).click(); await pg.waitForTimeout(150);
+  await pg.reload(); await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card');
+  bc = await classColors();
+  ok('a color the student picks wins, and survives a reload', bc[firstCls] && bc[firstCls][0] === '8', JSON.stringify(bc));
+  const tagCs = await pg.locator('#sb-board .card .tag').first().evaluate((e) => { const s = getComputedStyle(e); return { bg: s.backgroundColor, bw: s.borderTopWidth, bc: s.borderTopColor, sh: s.boxShadow }; });
+  ok('Sticker Book tags are filled stickers: 2px ink outline and a 2px 2px 0 shadow', tagCs.bw === '2px' && /rgb\(27, 27, 31\)/.test(tagCs.bc) && /2px 2px 0px/.test(tagCs.sh) && !/rgba\(0, 0, 0, 0\)/.test(tagCs.bg), JSON.stringify(tagCs));
+  // 3. date grouping by default; "Group by class" in the Filter menu (saved)
+  const heads = await pg.locator('.col[data-col="todo"] .day.dgrp').allInnerTexts();
+  ok('to-do columns group by date: Overdue, Today, Tomorrow, then days; class is the tag on each card', heads.length >= 3 && (heads.findIndex((h) => /^Overdue/.test(h)) <= 0) && /^Today/i.test(heads[heads[0].startsWith('Overdue') ? 1 : 0]) && heads.some((h) => /^Tomorrow/.test(h)) && heads.some((h) => /^Tomorrow/.test(h)) && await pg.locator('.col[data-col="todo"] .cls').count() === 0, heads.map((h) => h.replace(/\s+/g, ' ')).join(' | '));
+  ok('Completed stays one flat list', await pg.locator('.col[data-col="done"] .day, .col[data-col="done"] .cls').count() === 0);
+  await pg.click('#sb-filter'); await pg.locator('#sb-groupcls').click(); await pg.keyboard.press('Escape'); await pg.waitForTimeout(150);
+  ok('"Group by class" (Filter menu) groups by class', await pg.locator('.col[data-col="todo"] .cls').count() >= 3);
+  await pg.reload(); await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card');
+  ok('"Group by class" is remembered', await pg.locator('.col[data-col="todo"] .cls').count() >= 3 && (await state(pg)).prefs.groupBy === 'class');
+  await pg.click('#sb-filter'); await pg.locator('#sb-groupcls').click(); await pg.keyboard.press('Escape'); await pg.waitForTimeout(150);
+  // 4. overdue = red stripe + red due text on a normal card; today = the yellow "Today" label only; no pink
+  await pg.keyboard.press('n'); await pg.fill('#ed-title', 'Vocab Corrections'); await pg.fill('#ed-date', '2026-10-19'); await pg.fill('#ed-time', '08:00'); await pg.click('#ed-save'); await pg.waitForTimeout(200);
+  ok('an overdue card goes under "Overdue" at the top', /^Overdue/.test(await pg.locator('.col[data-col="todo"] .day.dgrp').first().innerText()) && await pg.locator('.col[data-col="todo"] .card.overdue', { hasText: 'Vocab Corrections' }).count() === 1);
+  const od = await pg.locator('.col[data-col="todo"] .card.overdue').first().evaluate((e) => { const s = getComputedStyle(e), t = getComputedStyle(e.querySelector('.tm')); return { bl: s.borderLeftWidth + ' ' + s.borderLeftColor, bg: s.backgroundColor, tm: t.color }; });
+  const normalBg = await pg.locator('.col[data-col="todo"] .card:not(.overdue)').first().evaluate((e) => getComputedStyle(e).backgroundColor);
+  ok('overdue: a 4px #E5484D stripe and red due text on a normal (untinted) card', od.bl === '4px rgb(229, 72, 77)' && od.bg === normalBg && /^rgb\((2[0-4]\d|1\d\d), (\d|[1-5]\d), (\d|[1-6]\d)\)$/.test(od.tm), JSON.stringify(od) + ' normal ' + normalBg);
+  ok('today and tomorrow are not tinted (no "late" wash)', await pg.locator('.card.late').count() === 0);
+  const tl = await pg.locator('.day.dgrp.today .todayl').evaluate((e) => getComputedStyle(e).backgroundColor);
+  ok('today is marked with the yellow "Today" label', /rgb\(255, 224, 102\)/.test(tl), tl);
+  const pinkish = await pg.evaluate(() => { const bad = []; document.querySelectorAll('#sb-main *').forEach((e) => { const m = getComputedStyle(e).backgroundColor.match(/[\d.]+/g); if (!m || (m[3] !== undefined && +m[3] < 0.05)) return; const [r, g, b] = m.map(Number); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); if (mx - mn < 8) return; let h = mx === r ? ((g - b) / (mx - mn)) % 6 : mx === g ? (b - r) / (mx - mn) + 2 : (r - g) / (mx - mn) + 4; h = (h * 60 + 360) % 360; if (r > 230 && (h >= 330 || h < 12) && mn > 200) bad.push(e.className + ' ' + m.join(',')); }); return bad.slice(0, 4); });
+  ok('no pink washes on the board', pinkish.length === 0, pinkish.join(' | '));
+  // 10. Completed: grey with the class stripe at 40%
+  const dn = await pg.locator('.col[data-col="done"] .card').first().evaluate((e) => getComputedStyle(e).borderLeftColor);
+  ok('Completed cards stay grey with the class color stripe at 40%', /\/ 0\.4\)|, 0\.4\)/.test(dn), dn);
+  // 6. the selected class chip uses the active tab's fill
+  await pg.locator('#sb-chips .chip[data-c]:not([data-c=""])').first().click(); await pg.waitForTimeout(120);
+  const chipBg = await pg.locator('#sb-chips .chip[aria-pressed="true"]').evaluate((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color]);
+  const navBg = await pg.locator('#sb-tabs [aria-current="page"]').evaluate((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color]);
+  ok('the selected class chip uses the active tab\'s fill (#1B1B1F, white text in Sticker Book)', chipBg[0] === navBg[0] && chipBg[1] === navBg[1] && chipBg[0] === 'rgb(27, 27, 31)', JSON.stringify(chipBg));
+  await pg.locator('#sb-chips .chip[data-c=""]').click();
+  // 2. a failed sync looks identical apart from the banner: same classes, colors and done states (also after a reload)
+  const snap = async () => { await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card'); const b = await pg.$$eval('#sb-board .card', (cs) => cs.map((e) => [e.querySelector('.t').textContent.trim(), e.querySelector('.tag').textContent.trim(), (e.getAttribute('style') || '').match(/swatch-\d/)[0], e.closest('.col').dataset.col]).sort());
+    await tab(pg, 'now'); await pg.waitForSelector('#tn-main .verdict'); const t = await pg.$$eval('#tn-main .trow, #tn-main .cu', (rs) => rs.map((e) => [(e.querySelector('.rt, .ct') || {}).textContent.trim(), (e.querySelector('.rcls') || { textContent: '' }).textContent.trim(), (e.getAttribute('style') || '').match(/swatch-\d/)[0], e.classList.contains('tdone')]).sort());
+    return JSON.stringify({ b, t, v: await pg.locator('#verdict').innerText() }); };
+  const good = await snap();
+  await c.route('**/api/feed', (r) => r.fulfill({ status: 502, contentType: 'application/json', body: '{"error":"x"}' }));
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(); S.feedUrl = 'https://feed.example.invalid/calendar/sample.ics'; S.lastFetch = { at: Date.now() - 40 * 60e3, ok: true }; localStorage.setItem('schoology-board:v1', JSON.stringify(S)); });
+  await pg.reload(); await pg.waitForSelector('.banner.ferr', { timeout: 8000 });
+  const failed = await snap();
+  ok('sync failure: same classes, colors, done states and verdict as the last good state (after a reload, from the saved copy)', failed === good && await pg.locator('.banner.ferr').count() === 1, failed === good ? '' : failed.slice(0, 300));
+  ok('…and the sample\'s finished item stays finished (Lab Safety Contract is in Completed, not Do first)', await pg.locator('#tn-main .dofirst', { hasText: 'Lab Safety' }).count() === 0 && (await state(pg)).status['sb-sample-001@example.invalid'] === 'done');
+  await pg.screenshot({ path: join(SHOTS, 'qa-error.png') });
+  await c.close();
+}
+// 7–9. phone: the start time chip, the board header height, the bottom tab bar
+{
+  const QNOW = new Date('2026-10-19T17:02:00-04:00');
+  const c = await newCtx({ now: QNOW, viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); const pg = await c.newPage(); watch(pg, 'qa-phone');
+  await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow'); await pg.waitForTimeout(300);
+  const chip = (await pg.locator('.tchip b').innerText()).trim();
+  ok('the start time reads like "5:05 PM" (no leading zero) on a theme chip that holds the native time picker', /^[1-9]\d?:\d\d (AM|PM)$/.test(chip) && await pg.locator('.tchip input[type="time"]#tn-start').count() === 1, chip);
+  const box = await pg.locator('.tchip').boundingBox(), ib = await pg.locator('#tn-start').boundingBox();
+  ok('tapping anywhere on the chip lands on the time input', Math.abs(box.x - ib.x) < 3 && Math.abs(box.width - ib.width) < 3 && box.height >= 32, JSON.stringify({ box, ib }));
+  // bottom bar in a real 390x844 viewport
+  await pg.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await pg.waitForTimeout(250);
+  const bar = await pg.evaluate(() => { const n = document.querySelector('#sb-botnav').getBoundingClientRect(), fin = [...document.querySelectorAll('#tn-main > *')].pop().getBoundingClientRect(), foot = document.querySelector('.foot').getBoundingClientRect(); return { pos: getComputedStyle(document.querySelector('#sb-botnav')).position, top: Math.round(n.top), bottom: Math.round(n.bottom), vh: innerHeight, last: Math.round(fin.bottom), foot: Math.round(foot.bottom), pad: getComputedStyle(document.querySelector('#app')).paddingBottom }; });
+  ok('bottom tab bar is pinned to the bottom of a real 390x844 viewport', bar.pos === 'fixed' && bar.bottom === bar.vh && bar.vh === 844, JSON.stringify(bar));
+  ok('scrolled to the end, the last line and the footer sit above the tab bar (padding = bar height + safe area)', bar.last <= bar.top && bar.foot <= bar.top, JSON.stringify(bar));
+  // a finished item so the "Hiding 1 finished item · Show" line exists
+  await pg.evaluate(() => scrollTo(0, 0)); await pg.locator('#tnList .trow .bigchk').first().click(); await pg.waitForTimeout(1500);
+  await pg.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await pg.waitForTimeout(250);
+  const hid = await pg.evaluate(() => { const h = [...document.querySelectorAll('.hid.fin')].pop(); const n = document.querySelector('#sb-botnav').getBoundingClientRect(); return h ? { b: Math.round(h.getBoundingClientRect().bottom), top: Math.round(n.top), txt: h.textContent } : null; });
+  ok('"Hiding 1 finished item · Show" is never under the tab bar', hid && hid.b <= hid.top, JSON.stringify(hid));
+  // board header: pill + progress on one row, view switch + week on one row, ~150px of chrome
+  await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card'); await pg.evaluate(() => scrollTo(0, 0)); await pg.waitForTimeout(250);
+  const hdr = await pg.evaluate(() => { const r = (s) => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; }; const top = r('#sb-top'), card = r('.col[data-col="todo"] .card'), dh = r('.col[data-col="todo"] .day'), pill = r('#sb-fresh .fpill'), prog = r('.bhead .prog'), seg = r('.seg'), wk = r('#sb-weeknav');
+    return { topbar: Math.round(top.bottom), firstCard: Math.round(card.top), chrome: Math.round(card.top - top.bottom), toFirstHeading: Math.round(dh.top - top.bottom), pillRow: Math.abs((pill.top + pill.bottom) / 2 - (prog.top + prog.bottom) / 2) < 6, segRow: Math.abs((seg.top + seg.bottom) / 2 - (wk.top + wk.bottom) / 2) < 6, overflow: document.documentElement.scrollWidth > innerWidth }; });
+  ok('phone board header: freshness/link pill and progress on one row; Due today/Week/All and ‹ week › on one row', hdr.pillRow && hdr.segRow && !hdr.overflow, JSON.stringify(hdr));
+  ok(`phone board header is compact (target ~150px; measured ${hdr.chrome}px to the first card, ${hdr.toFirstHeading}px to the first day heading; was 231px)`, hdr.chrome <= 210, JSON.stringify(hdr));
+  writeFileSync(join(SHOTS, 'qa-header.json'), JSON.stringify(hdr));
+  await pg.screenshot({ path: join(SHOTS, 'qa-board-390.png') });
+  // 10. Reset asks first, names what gets erased, offers a backup
+  await pg.evaluate(() => document.querySelector('#sb-reset').click()); await pg.waitForSelector('dialog.reset');
+  const rt = (await pg.locator('dialog.reset').innerText()).replace(/\s+/g, ' ');
+  ok('"Reset this board" asks first, lists what gets erased and offers "Save a backup first"', /check-offs/.test(rt) && /tasks/.test(rt) && /can’t be undone/.test(rt) && await pg.locator('dialog.reset #rs-backup').count() === 1, rt.slice(0, 200));
+  await pg.locator('dialog.reset [data-close]').last().click(); await pg.waitForTimeout(150);
+  ok('Cancel keeps the board', Object.keys((await state(pg)).ics).length > 5);
+  await c.close();
+}
 await browser.close();
 ok('no page errors', errors.length === 0, errors.slice(0, 5).join(' | '));
 writeFileSync(join(SHOTS, 'e2e-results.json'), JSON.stringify({ base: BASE, at: new Date().toISOString(), results, errors }, null, 2));

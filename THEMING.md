@@ -32,7 +32,11 @@ picker draw live previews of every theme inside one page. A dark variant uses `[
 - `test/theme-lint.test.mjs`: no hex, `rgb()`, `hsl()` or named color outside `public/board/theme/`; every variable
   the layout uses is defined; no hardcoded fonts, durations or shadows in `board.css` / `tonight.css`.
 - `test/colors.test.mjs`: no orange (hue 15–45°) and no cyan, teal or blue-green (160–200°) anywhere a color has real
-  chroma; pink only as the optional `--swatch-8`. Default class colors use swatches 1–7 (pink is never a default).
+  chroma, and no pink class colors. Every theme's 8 swatches must be clearly different (OKLab distance ≥ 0.11, and
+  two colorful swatches need ≥ 30° of hue apart unless their lightness differs by ≥ 0.22), each with readable text
+  (≥ 4.5:1 against its `-ink`). New classes get the next unused swatch in order of first appearance; a student's pick wins.
+- Overdue is the only red state: a 4px `--overdue` (#E5484D) left stripe plus red due text on a normal card. Today and
+  tomorrow are never tinted.
 - `test/motion.test.mjs`: UI motion ≤ 0.4 s, celebrations ≤ 1.2 s, and everything off under `prefers-reduced-motion`.
 - No hearts or sparkles in any theme's art.
 

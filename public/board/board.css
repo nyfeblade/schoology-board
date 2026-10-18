@@ -99,8 +99,8 @@ a.t:hover{text-decoration:underline;text-decoration-color:var(--text-3);text-und
 .card .m{font-size:12px;color:var(--text-2);margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
 .card .m .l{display:flex;gap:4px;align-items:center;min-width:0}
 .card .tm{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text-2);text-align:right}
-.card.late,.card.late:hover{border-left-color:var(--accent)}
-.card.late .tm{color:var(--accent)}
+.card.overdue,.card.overdue:hover{border-left:4px solid var(--overdue)}
+.card.overdue .tm{color:var(--late);font-weight:700}
 .card .more{position:absolute;top:6px;right:6px;width:24px;height:24px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--text-3);cursor:pointer;display:grid;place-items:center;padding:0;opacity:0;transition:opacity var(--dur-fast),background var(--dur-fast)}
 .card:hover .more,.card:focus-within .more,.card .more[aria-expanded=true]{opacity:1}
 .card .more:hover,.card .more[aria-expanded=true]{background:var(--border-1);color:var(--text-1)}
@@ -109,7 +109,7 @@ a.t:hover{text-decoration:underline;text-decoration-color:var(--text-3);text-und
 .done .card{opacity:.5}
 .done .card .t{text-decoration:line-through;text-decoration-color:var(--text-3)}
 .done .card:hover{opacity:.75}
-.tag{font-size:11px;line-height:18px;padding:0 8px;border-radius:var(--radius-tag);background:var(--tag-bg);color:var(--tag-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.tag{font-size:11px;line-height:18px;padding:0 8px;border-radius:var(--radius-tag);background:var(--c,var(--swatch-0));color:var(--ci,var(--swatch-0-ink));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
 .src{font-size:10px;line-height:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);border:var(--bw) solid var(--border-2);border-radius:var(--r-xs);padding:0 4px}
 .empty-col{margin-top:36px;padding:20px 8px;text-align:center;font-size:13px;color:var(--text-3);border:var(--bw) dashed var(--border-1);border-radius:var(--r-md);transition:border-color var(--dur-fast),color var(--dur-fast)}
 .col.over .empty-col{border-color:var(--accent);color:var(--text-2)}
@@ -439,3 +439,78 @@ dialog.est .est-l{margin:14px 0 8px;font-weight:600}
 }
 .tnm .cuw .cu-more{grid-column:1/-1;margin:2px 0 0}
 @media (pointer:coarse){.fresh .btn.small{min-height:36px;padding-inline:12px}}
+
+/* ---------- QA pass (v1.6.2) ---------- */
+/* overdue is the only "late" look: a red stripe and red due text on a normal card; no tint anywhere */
+.tnm .trow.tlate{background:var(--card);border-left:4px solid var(--overdue)}
+.banner.ferr{background:var(--card)}
+.tnm .spill{background:transparent}
+/* date headers on the board: Overdue, Today, Tomorrow, then days */
+.day.dgrp{display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:800;color:var(--ink2,var(--text-2))}
+.day.dgrp .dd{color:var(--mut);font-weight:600}
+.day.dgrp .dn{margin-left:auto;color:var(--mut);font-weight:600;font-variant-numeric:tabular-nums}
+.day.dgrp.over{color:var(--late)}
+.col h2+.day.dgrp{margin-top:4px}
+.todayl{display:inline-block;background:var(--warn);color:var(--warnInk);border-radius:6px;padding:0 7px;line-height:18px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+/* Completed: the grey look, with the class stripe at 40% */
+.done .card{opacity:1;background:var(--soft);box-shadow:none;border-left:4px solid color-mix(in srgb,var(--c) 40%,transparent)}
+.done .card .t{color:var(--mut)}
+.done .card .m{filter:grayscale(1);opacity:.65}
+.done .card:hover{opacity:1}
+/* the selected class chip uses the active tab's fill */
+.chip[aria-pressed=true],.chip[aria-pressed=true]:hover{background:var(--navon);border-color:var(--navon);color:var(--navonInk)}
+.chip[aria-pressed=true] b{color:inherit;opacity:.8}
+.chip[aria-pressed=true] .cdot{outline:1.5px solid var(--navonInk)}
+/* "Link Schoology →": one button until linked, then the freshness pill */
+.fpill.linkb{cursor:pointer;font:inherit;font-weight:800;color:var(--ink);background:var(--card);border:var(--bw) solid var(--bc);gap:8px}
+.fpill.linkb:hover{border-color:var(--ink)}
+.fpill.linkb .fdot{background:var(--mut)}
+@media (pointer:coarse){.fpill.linkb{min-height:36px}}
+/* Tonight's start time: a theme chip that opens the native time picker */
+.tnm .tn-when .tlab{color:var(--mut)}
+.tchip{position:relative;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--chr);border:var(--chb) solid var(--chc);background:var(--chbg);color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums;cursor:pointer}
+.tchip b{color:var(--ink)}
+.tchip svg{width:14px;height:14px;color:var(--mut)}
+.tnm .tn-when .tchip input{position:absolute;inset:calc(var(--chb,0px) * -1);width:calc(100% + 2 * var(--chb,0px));height:calc(100% + 2 * var(--chb,0px));opacity:0;cursor:pointer;padding:0;margin:0;border:0}
+.tchip:focus-within{box-shadow:var(--ring)}
+.tchip input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
+@media (pointer:coarse){.tchip{height:36px}}
+.rs-list{margin:8px 0 12px;padding-left:20px;line-height:1.6}
+dialog.reset .dlg-f .btn.danger{background:var(--late);border-color:var(--late);color:var(--on-late)}
+.weeknav .wl{color:var(--mut);font-weight:600}
+.sb-tools>.chips-wrap{flex:1 0 100%;padding:0}
+@media (max-width:900px){
+ #app{padding-bottom:calc(var(--botnav-h) + env(safe-area-inset-bottom) + 12px)}
+ .botnav{box-sizing:border-box;height:calc(var(--botnav-h) + env(safe-area-inset-bottom));align-items:flex-start}
+ main.tnm{padding-bottom:16px}
+ .board{padding-bottom:16px}
+ /* board header on a phone: pill + progress, then view + week, then search/filter + class chips, then the column tabs */
+ .bhead{padding:4px 16px 0;flex-wrap:nowrap;align-items:center;min-height:36px}
+ .bhead .hl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+ .bhead .hr{flex:1;min-width:0;flex-wrap:nowrap;justify-content:space-between;gap:10px}
+ #sb-fresh{min-width:0;flex:0 1 auto;display:flex}
+ #sb-fresh .fresh{min-width:0}
+ #sb-fresh .fpill{min-width:0;height:32px}
+ #sb-fresh .ft{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .bhead .prog{gap:6px;font-size:12px;white-space:nowrap}
+ .bhead .progbar{width:40px}
+ .sb-tools{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"seg nav" "tools chips";gap:6px 8px;padding:6px 16px 0}
+ .sb-tools.searching{grid-template-areas:"seg nav" "tools tools" "chips chips"}
+ .seg{grid-area:seg;grid-column:auto;display:inline-flex;height:32px}
+ .seg button{padding:0 10px}
+ .weeknav{grid-area:nav;justify-self:end;min-width:0;flex-wrap:nowrap;justify-content:flex-end}
+ .weeknav .btn.icon{width:30px;height:32px}
+ .weeknav b{min-width:0;flex:none;white-space:nowrap}
+ .weeknav .wl{display:none}
+ .tr{grid-area:tools;grid-column:auto;gap:6px}
+ .tr .btn.icon,#sb-filter{width:32px;height:32px;min-height:32px}
+ .sb-tools>.chips-wrap{grid-area:chips;min-width:0;padding:0;margin-right:-16px}
+ .sb-tools>.chips-wrap .chips{padding:0 32px 0 0}
+ .sb-tools>.chips-wrap .chip{height:32px}
+ .colnav{margin-top:6px}
+ .colnav button{height:36px}
+ .col h2{display:none}
+ .board{padding-top:6px}
+ .col{padding:4px 12px 8px}
+ .col .day:first-child{margin-top:0}
+}
