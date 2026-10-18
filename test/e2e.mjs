@@ -920,6 +920,13 @@ await octx.close();
   await pg.screenshot({ path: join(SHOTS, 'state-flagged.png') });
   await fb.locator('[data-ok]').click(); await pg.waitForTimeout(150);
   ok('"It\'s right" clears the flag and remembers it', await pg.locator('#tn-main .flagbox').count() === 0 && Object.keys((await state(pg)).checked).length === 1);
+  // the class sheet and the calendar disagree on a date: the calendar date is used, and the row says so
+  await pg.evaluate(() => { const S = window.SchoologyBoard.state(); const id = Object.keys(S.ics).find((k) => /Problem Set 4\.2/.test(S.ics[k].title)); const d = new Date(S.ics[id].due);
+    S.cas['cas-ps42'] = { id: 'cas-ps42', title: 'Problem Set 4.2', course: 'Geometry', due: new Date(d.getTime() + 864e5 * 1).toISOString(), classDate: null, note: '', kind: 'hw', source: 'cas' }; window.SchoologyBoard.render(); });
+  await pg.waitForTimeout(150);
+  const dbox = (await pg.locator('#tnList .trow', { hasText: 'Problem Set 4.2' }).locator('.flagbox').innerText().catch(() => '')).replace(/\s+/g, ' ');
+  ok('"Double-check this" on a date: class sheet vs. Schoology calendar, which one is used, and one card (no duplicate)', /class sheet says Tue, Oct 20, but the Schoology calendar says Mon, Oct 19/.test(dbox) && await pg.locator('#tn-main .trow', { hasText: 'Problem Set 4.2' }).count() === 1 && await pg.locator('#tnList .trow', { hasText: 'Problem Set 4.2' }).locator('.due .q').count() === 1, dbox.slice(0, 200));
+  await pg.locator('#tnList .trow', { hasText: 'Problem Set 4.2' }).locator('[data-ok]').click(); await pg.waitForTimeout(150);
   // all done: the finish moment (≤1.2 s), then "You're free tonight" with a peek at what's next
   let guard = 0, celMs = -1;
   while (await pg.locator('#tn-main .trow:not(.tdone) .bigchk').count() && guard++ < 8) {

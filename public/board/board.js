@@ -2447,6 +2447,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, version: '1.6.1' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, version: '1.6.1' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
