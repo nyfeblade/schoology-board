@@ -680,12 +680,12 @@
   // Row 1's second line: ‹ week › · freshness (or the Link Schoology link until a feed is saved).
   function phoneFresh() {
     var s = freshState();
-    if (s.k === 'none') return '<button type="button" class="mh-link" data-addlink title="' + esc(s.tip) + '">Link Schoology<span aria-hidden="true"> \u2192</span></button>';
+    if (s.k === 'none') return '<button type="button" class="mh-link" data-addlink title="' + esc(s.tip) + '">Link Schoology<span class="la" aria-hidden="true"> \u2192</span></button>';
     if (s.k === 'off') return '<span class="mh-fr">' + esc(s.t) + '</span>';
     if (s.k === 'sync') return '<span class="mh-fr fsync" role="status">Syncing\u2026</span>';
     var f = S.lastFetch || {}, t = s.k === 'err' ? 'Sync failed' : 'Synced ' + ago(f.at);
     var lab = s.k === 'err' ? 'The last refresh failed. ' + (f.at ? 'Last synced ' + ago(f.at) + '. ' : '') + 'Tap to try again' : s.k === 'stale' ? t + ', might be out of date. Tap to refresh' : t + '. Tap to refresh';
-    return '<button type="button" class="mh-fr ' + (s.k === 'err' ? 'ferr' : s.k) + '" data-refresh title="' + esc(s.tip) + '" aria-label="' + esc(lab) + '">' + (s.k === 'ok' ? '' : '<i class="fdot" aria-hidden="true"></i>') + esc(t) + '</button>';
+    return '<button type="button" class="mh-fr ' + (s.k === 'err' ? 'ferr' : s.k) + '" data-refresh title="' + esc(s.tip) + '" aria-label="' + esc(lab) + '">' + '<span class="mh-frt">' + (s.k === 'ok' ? '' : '<i class="fdot" aria-hidden="true"></i>') + esc(t) + '</span></button>';
   }
   function phoneSub() {
     var el = $('#sb-msub'); if (!el) return;

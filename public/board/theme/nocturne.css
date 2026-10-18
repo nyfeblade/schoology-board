@@ -306,4 +306,4 @@
 :root[data-theme="nocturne"] .tnm .tchip{border-color:rgba(255,255,255,.14)}
 :root[data-theme="nocturne"] .thp-pv{color:var(--moon)}
 /* phone board header (600px and narrower): stale / failed freshness use the same glowing dot as the pill */
-@media (max-width:600px){:root[data-theme="nocturne"] .mh-fr.stale{margin:0 -5px;background:none;color:var(--ink)}:root[data-theme="nocturne"] .mh-fr.stale .fdot{background:var(--gold);box-shadow:0 0 8px rgba(233,210,122,.7)}:root[data-theme="nocturne"] .mh-fr.ferr{color:var(--ink)}:root[data-theme="nocturne"] .mh-fr.ferr .fdot{background:var(--late);box-shadow:0 0 8px rgba(242,102,106,.7)}}
+@media (max-width:600px){:root[data-theme="nocturne"] .mh-fr.stale .mh-frt{padding:0;background:none;color:var(--ink)}:root[data-theme="nocturne"] .mh-fr.stale .fdot{display:inline-block;background:var(--gold);box-shadow:0 0 8px rgba(233,210,122,.7)}:root[data-theme="nocturne"] .mh-fr.ferr{color:var(--ink)}:root[data-theme="nocturne"] .mh-fr.ferr .fdot{background:var(--late);box-shadow:0 0 8px rgba(242,102,106,.7)}}

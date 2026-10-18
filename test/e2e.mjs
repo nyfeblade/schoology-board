@@ -1512,7 +1512,7 @@ await octx.close();
       await pg.keyboard.press('Escape');
       // freshness on the line under the title: linked, stale, failed
       const fr = async (k) => { await pg.evaluate((k) => { const S = window.SchoologyBoard.state(); S.feedUrl = 'https://feed.example.invalid/x.ics'; S.lastFetch = k === 'stale' ? { at: Date.now() - 7 * 3600e3, ok: true } : k === 'err' ? { at: Date.now() - 2 * 3600e3, ok: false } : { at: Date.now() - 4 * 60e3, ok: true }; window.SchoologyBoard.render(); }, k); await pg.waitForTimeout(150);
-        return pg.evaluate(() => { const b = document.querySelector('#sb-msub .mh-fr'), cs = getComputedStyle(b), v = (n) => { const i = document.createElement('i'); i.style.color = 'var(' + n + ')'; document.body.appendChild(i); const c = getComputedStyle(i).color; i.remove(); return c; };
+        return pg.evaluate(() => { const b = document.querySelector('#sb-msub .mh-fr'), cs = getComputedStyle(b.querySelector('.mh-frt') || b), v = (n) => { const i = document.createElement('i'); i.style.color = 'var(' + n + ')'; document.body.appendChild(i); const c = getComputedStyle(i).color; i.remove(); return c; };
           return { text: b.textContent, cls: b.className, tag: b.tagName, refresh: b.hasAttribute('data-refresh'), color: cs.color, bg: cs.backgroundColor, warn: v('--warn'), warnInk: v('--warnInk'), late: v('--late'), mut: v('--mut'), banner: (document.querySelector('#sb-banner .banner') || {}).className || '' }; }); };
       await pg.route('**/api/feed', (r) => r.fulfill({ status: 504, body: '' }));
       const ok1 = await fr('ok');
@@ -1549,6 +1549,15 @@ await octx.close();
         return { tabs: Math.round(q('#sb-colnav').bottom), head: Math.round(q('.col[data-col="todo"] .day').top), card: Math.round(q('.col[data-col="todo"] .card').top), clip: [...sub.children].some((e) => e.getBoundingClientRect().right > ic.left || (e.tagName === 'SPAN' && e.scrollWidth > e.clientWidth + 1)) || document.querySelector('.mh-t').getBoundingClientRect().right > ic.left, ov: document.documentElement.scrollWidth > innerWidth }; });
       rows.push(`${W}x${H} ${t}${m ? '-' + m : ''}: tabs ${r.tabs}, heading ${r.head}, card ${r.card}`);
       ok(`${t}${m ? ' ' + m : ''} at ${W}px: header ends by 142px, first day heading by 150px, first card by 180px; row 1 not clipped; no sideways scroll`, r.tabs <= 142 && r.head <= 150 && r.card <= 180 && !r.clip && !r.ov, JSON.stringify(r));
+      // the longest line: next week (Oct 26–Nov 1) with each freshness state; nothing truncated, nothing under the icons
+      const long = [];
+      for (const k of ['none', 'ok', 'stale', 'err']) {
+        long.push(await pg.evaluate((k) => { const S = window.SchoologyBoard.state(); S.prefs.weekOffset = 1; S.feedUrl = k === 'none' ? '' : 'https://feed.example.invalid/x.ics'; S.lastFetch = k === 'none' ? null : k === 'stale' ? { at: Date.now() - 23 * 3600e3, ok: true } : k === 'err' ? { at: Date.now() - 2 * 3600e3, ok: false } : { at: Date.now() - 50 * 60e3, ok: true }; window.SchoologyBoard.render();
+          const ic = document.querySelector('.mh-ic').getBoundingClientRect().left, kids = [...document.querySelector('#sb-msub').children];
+          return { k, txt: document.querySelector('#sb-msub').textContent, under: kids.some((e) => e.getBoundingClientRect().right > ic), cut: [...document.querySelectorAll('#sb-msub .mh-frt, #sb-msub .mh-link')].some((e) => e.scrollWidth > e.clientWidth + 1) }; }, k));
+      }
+      await pg.evaluate(() => { const S = window.SchoologyBoard.state(); S.prefs.weekOffset = 0; S.feedUrl = ''; S.lastFetch = null; window.SchoologyBoard.render(); });
+      ok(`${t}${m ? ' ' + m : ''} at ${W}px: "‹ Oct 26–Nov 1 › · Link Schoology → / Synced 50m ago / Synced 23h ago / Sync failed" all fit without cutting off`, long.every((x) => !x.under && !x.cut) && /Oct 26–Nov 1/.test(long[0].txt), JSON.stringify(long.filter((x) => x.under || x.cut)));
     }
     await c.close();
   }
