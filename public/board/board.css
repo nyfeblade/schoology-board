@@ -526,3 +526,8 @@ dialog.reset .dlg-f .btn.danger{background:var(--late);border-color:var(--late);
  .col .day:first-child{margin-top:0}
 }
 .thp-pv{display:inline-block;margin-left:6px;padding:1px 6px;border:1px solid var(--border-1);border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);vertical-align:2px}
+/* Tonight header on a phone: the freshness pill on the left, progress on the right (never run together) */
+@media (max-width:900px){
+ :root .tnm .thero .hr{column-gap:16px;align-self:stretch}
+ :root:not([data-theme="nocturne"]) .tnm .thero .hr>.tprog{margin-left:auto}
+}

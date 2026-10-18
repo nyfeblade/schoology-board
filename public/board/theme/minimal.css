@@ -157,7 +157,7 @@
 :root[data-theme="minimal"] .botnav a{font-weight:500;font-size:11px}
 :root[data-theme="minimal"] .botnav a svg{width:20px;height:20px;stroke-width:1.6}
 :root[data-theme="minimal"] .botnav a[aria-current=page] svg{stroke-width:2}
-:root[data-theme="minimal"] .botnav a .soon{font-size:9px}
+:root[data-theme="minimal"] .botnav a .soon{font-size:9px;top:1px;padding:0 4px;line-height:14px;border:1px solid var(--line);border-radius:4px;background:var(--bgc)}
 :root[data-theme="minimal"] .tnm .verdict{font-size:24px;line-height:30px}
 :root[data-theme="minimal"] .tnm .thero{padding:16px 0 8px;gap:8px}
 :root[data-theme="minimal"] .tnm .trow{padding:12px 0}
