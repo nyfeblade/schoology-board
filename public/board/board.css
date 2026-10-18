@@ -604,3 +604,13 @@ dialog.reset .dlg-f .btn.danger{background:var(--late);border-color:var(--late);
  body[data-tab=board] #app{padding-bottom:calc(var(--botnav-h) + env(safe-area-inset-bottom) + 88px)}
  body[data-tab=board] #sb-toast{bottom:calc(var(--botnav-h) + env(safe-area-inset-bottom) + 88px)}
 }
+/* phone header freshness in themes whose stale/error pill is a dot rather than a fill (same look as their pill) */
+@media (max-width:600px){
+ :root[data-theme="minimal"] .mh-fr.stale,:root[data-theme="nocturne"] .mh-fr.stale{margin:0 -5px;background:none;color:var(--ink)}
+ :root[data-theme="minimal"] .mh-fr.stale .fdot{background:var(--yel)}
+ :root[data-theme="nocturne"] .mh-fr.stale .fdot{background:var(--gold);box-shadow:0 0 6px var(--gold)}
+ :root[data-theme="minimal"] .mh-fr.ferr{color:var(--ink)}
+ :root[data-theme="nocturne"] .mh-fr.ferr{color:var(--ink)}
+ :root[data-theme="nocturne"] .mh-fr.ferr .fdot{background:var(--late);box-shadow:0 0 6px var(--late)}
+ :root[data-theme="minimal"][data-mode="dark"] .fab{background:var(--btnBg);color:var(--btnInk);border-color:var(--btnB)}
+}
