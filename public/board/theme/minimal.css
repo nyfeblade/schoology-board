@@ -217,3 +217,5 @@
 :root[data-theme="minimal"] .tnm .trow.tlate{border-left:0}
 :root[data-theme="minimal"] .tnm .trow.tlate .due{color:var(--late)}
 :root[data-theme="minimal"] .tnm .trow.tdone{background:none}
+/* phone board header (600px and narrower): stale / failed freshness use the same dot as the pill; the dark round button uses the light fill */
+@media (max-width:600px){:root[data-theme="minimal"] .mh-fr.stale{margin:0 -5px;background:none;color:var(--ink)}:root[data-theme="minimal"] .mh-fr.stale .fdot{background:var(--yel)}:root[data-theme="minimal"] .mh-fr.ferr{color:var(--ink)}:root[data-theme="minimal"][data-mode="dark"] .fab{background:var(--btnBg);color:var(--btnInk);border-color:var(--btnB)}}
