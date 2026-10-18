@@ -1,6 +1,6 @@
-// Time-to-content for the Now screen on a throttled phone: CPU 4x slower + DevTools "Fast 3G"
+// Time-to-content for the Tonight screen on a throttled phone: CPU 4x slower + DevTools "Fast 3G"
 // (562.5 ms RTT, 1.44 Mb/s down, 675 kb/s up). Warm cache = second and later visits (service worker +
-// saved board in localStorage). Content = the moment the Now hero is drawn ('sb-content' mark).
+// saved board in localStorage). Content = the moment Tonight's verdict is drawn ('sb-content' mark).
 //   BASE_URL=https://schoology-board.vercel.app node scripts/perf-now.mjs
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
@@ -34,7 +34,7 @@ await p.evaluate(() => navigator.serviceWorker && navigator.serviceWorker.ready)
 await throttle(true);
 const warm = [];
 for (let i = 0; i < RUNS; i++) {
-  await p.reload({ waitUntil: 'load' }); await p.waitForSelector('.now-hero');
+  await p.reload({ waitUntil: 'load' }); await p.waitForSelector('#tn-main .thero');
   warm.push(await measure());
 }
 const sw = await p.evaluate(() => !!(navigator.serviceWorker && navigator.serviceWorker.controller));

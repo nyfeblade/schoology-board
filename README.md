@@ -1,6 +1,6 @@
 # Schoology Board
 
-**Know what to do tonight without opening Schoology.** Paste your Schoology calendar link and Schoology Board opens on **Now**: the one thing to do right now, tonight's plan hour by hour, and what's coming up. Behind it are the **Board** (every assignment by status) and **Week ahead**. It works offline, installs like an app, and nothing is stored on a server.
+**Know what to do tonight without opening Schoology.** Paste your Schoology calendar link and Schoology Board opens on **Tonight**: how many things are due and how long they'll take, what to do first, and the order to do it in. Behind it are the **Board** (every assignment by status), **Calendar** (coming soon) and the **Sunday plan**. Six looks to pick from, it works offline, installs like an app, and nothing is stored on a server.
 
 **Live: https://schoology-board.vercel.app** · [See a sample plan](https://schoology-board.vercel.app) (no sign-in, made-up data)
 
@@ -8,17 +8,19 @@
 
 ## What it does
 
-- **Now (the home screen).** On top: the one thing to do right now, with its due time, its Schoology link, **Start timer** and **Mark done**. Below it, **Tonight's plan**: time blocks from the start time you pick (it defaults to now, rounded up to 5 minutes, or 4:00 PM), ordered by due date and then biggest first, with a 10-minute break after about 50 minutes of work and a "done by" time. If tonight won't fit before 11 PM, it says so and lists what spills over. Then **After that**: the next few days, quizzes and tests, and anything to start early.
-- **Time estimates.** Every task starts with a typical time for its kind (reading 30 min, homework 45, writing 60, lab 60; quizzes and tests get 60–90 min of study). Tap the estimate to change it, or tell the board what kind of work it is. Plans show *est.* (typical), *learned* (your average) or *yours* (you set it).
+- **Tonight (the home screen).** A one-line verdict ("3 things tonight, about 2h 15m"), then **Do first** (overdue work, pinned, with when it was due), then **Tonight**: your list in order (by due time, then biggest first) with planned times from the start time you pick, a 10-minute break after about 50 minutes, and when you'll be done. If it won't all fit before 11 PM, it says how many things won't fit instead of promising a time. Drag to reorder (hold on a phone, or use the arrow keys on the grip); **Back to suggested** undoes it. Check something off and it folds away with **Undo**. **Coming up** shows the next days with **Pull into tonight**. Nothing is hidden silently: finished items ("Hiding 2 finished · Show"), work more than two days late, and later days of Coming up are counted, with a link to the board.
+- **Always honest about freshness.** A pill on every screen says "Synced with Schoology 3m ago". After 6 hours it turns yellow; if a refresh fails, a banner offers **Retry** and **Open Schoology** and keeps your list ("Your check-offs still save on this device"). Anything that looks off gets **Double-check this** with the reason, where it came from and an **It's right** button.
+- **Time estimates.** Every task starts with a typical time for its kind (reading 30 min, homework 45, writing 60, lab 60; quizzes and tests get 60–90 min of study). Tap a time chip to pick 15 min to 2 h, or **More options…** to set any time or the kind of work. Dashed chips are guesses; solid ones are your average or your own number.
 - **Timer.** Start and stop a timer on any task; the minutes come off tonight's plan. After you time two or more of the same kind of work in a class, the board uses your own average for that class.
 - **Quizzes and tests.** Anything called a quiz or test (or marked as one) gets study sessions on the nights before it: 2 for a quiz, 3 for a test, 4 for a midterm or final.
-- **Start early.** Work of 2 hours or more that's due in 3 to 5 days gets a **Start early** flag, and a 45-minute first chunk goes into tonight's plan.
-- **Week ahead.** Quizzes and tests coming up, the busiest day by estimated time, and what to start early. **Save as image** makes a picture of it right in your browser.
+- **Start early.** Work of 2 hours or more that's due in 3 to 5 days gets a **Start early** flag, and a 45-minute first chunk goes into tonight's list.
+- **Sunday plan.** The week ahead: quizzes and tests coming up, the busiest day by estimated time, and what to start early. **Save as image** makes a picture of it right in your browser.
 - **The Board.** **Need to be done → Started → Completed** (plus an optional **Needs to be proctored** column), grouped by class and day. Drag cards (long-press on a phone), double-click to mark done, or use each card's **⋯** menu. Views: **Due today**, **Week** (from Friday 6 PM it opens on next week) and **All**.
 - **Always up to date.** With a saved link the board updates when you open it, every 15 minutes while it's open, and when you come back to it after a few minutes. If Schoology doesn't answer, it keeps your saved board and quietly tries again later.
 - **Install it.** On a Chromebook or Android phone use **Install app** in Chrome; on an iPhone use **Share → Add to Home Screen**. After the first visit it opens without internet.
+- **Six themes.** Sticker Book (the default), Arcade Night, Highlighter Notebook (light or dark), Varsity, Riso Zine and Lo-fi Café, each with its own fonts, cards and finish moment. Pick one with the palette button (in **⋯** on a phone). Class colors come from each theme's 8 swatches and are saved per theme. Your theme is saved on this device and travels with backups and **Move to phone**.
 - **Classes, even though Schoology doesn't send them.** After an import, **Name your classes** lists each group of assignments that start the same way ("ALG2 · 12 items") so you can name it once. Your Course Assignment Sheets (CAS) and your own edits always win.
-- **Course Assignment Sheets.** Drop Course Assignment Sheet (CAS) PDFs. They're read in your browser and become dated tasks, including readings, which show up in tonight's plan with a reading estimate. Anything already on your Schoology calendar is skipped.
+- **Course Assignment Sheets.** Drop Course Assignment Sheet (CAS) PDFs. They're read in your browser and become dated tasks, including readings, which show up in Tonight with a reading estimate. Anything already on your Schoology calendar is skipped.
 - **A clean start.** Work that was due before the day you made the board counts as already handled. A quiet note says how many are hidden, with **Show**.
 - **Your own tasks and categories.** Add, rename, reorder or delete them; they survive every update.
 - **Save a backup file** (in **⋯**). One `.html` file with your board, plan, estimates and theme inside. It works without internet. It never contains your calendar link.
@@ -83,7 +85,7 @@ How we checked: Schoology's REST API docs (events vs. assignment due events, tit
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # unit tests: calendar parsing, CAS, the planner, theme lint, a 517-item synthetic school year
+npm test             # unit tests: calendar parsing, CAS, the planner, time zones/DST, theme + color + motion rules, a 517-item synthetic school year
 npm run build && npm start
 BASE_URL=http://localhost:3000 npm run test:e2e   # headless Chromium end-to-end (frozen clock)
 BASE_URL=http://localhost:3000 node scripts/perf-now.mjs      # time-to-content on a throttled phone
@@ -94,8 +96,8 @@ Deploy to Vercel as a standard Next.js project; no environment variables are nee
 
 ### How it's built
 
-- `public/board/theme/default.css`: every color, font, radius, shadow, texture and motion value as CSS variables. `board.css` only references them. See [THEMING.md](THEMING.md) for adding a theme.
-- `public/board/board.js`, `board.css`: the whole board UI, framework-free. The website (`public/index.html`) and the backup file run **the same files**. The backup inlines them along with pdf.js.
+- `public/board/theme/*.css`: the six themes as CSS variables (with their fonts in `theme/fonts/`, SIL OFL); `default.css` maps them onto the layout's variables. `board.css` and `tonight.css` only reference variables. See [THEMING.md](THEMING.md).
+- `public/board/board.js`, `board.css`, `tonight.css`: the whole UI, framework-free. The website (`public/index.html`) and the backup file run **the same files**. The backup inlines them along with pdf.js.
 - `public/board/plan.js`: the planner (estimates, learning, tonight's time blocks, study nights, start-early, week ahead). Pure functions, unit-tested with frozen clocks.
 - `scripts/build-pwa.mjs`: writes the app manifest and service worker at build time (colors from the theme).
 - `public/board/ics.js`: the iCal parser (no dependencies; runs in the browser and Node).

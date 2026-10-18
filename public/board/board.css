@@ -438,3 +438,4 @@ dialog.est .est-l{margin:14px 0 8px;font-weight:600}
  #sb-add .lbl{display:inline}
 }
 .tnm .cuw .cu-more{grid-column:1/-1;margin:2px 0 0}
+@media (pointer:coarse){.fresh .btn.small{min-height:36px;padding-inline:12px}}

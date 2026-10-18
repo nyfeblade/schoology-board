@@ -101,3 +101,11 @@ test('no hearts or sparkles in icons, emoji or copy', () => {
   for (const f of [...ours, ...theirs].filter((f) => !/\.py$/.test(f))) readFileSync(f, 'utf8').split('\n').forEach((l, i) => { if (RX.test(l)) bad.push(`${f}:${i + 1} ${l.trim().slice(0, 80)}`); });
   assert.deepEqual(bad, []);
 });
+
+test('no hearts or sparkles anywhere in the UI or themes', async () => {
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const dir = new URL('../public/board/', import.meta.url);
+  const files = ['board.js', 'board.css', 'tonight.css', 'plan.js'].map((f) => new URL(f, dir)).concat(readdirSync(new URL('theme/', dir)).filter((f) => f.endsWith('.css')).map((f) => new URL('theme/' + f, dir)), [new URL('../public/index.html', import.meta.url)]);
+  const bad = /[\u2661\u2665\u2764\u2763\u{1F493}-\u{1F49F}\u{1F9E1}\u{1F90D}\u{1F90E}\u2728\u2726\u2727\u{1F31F}\u{1F4AB}]|\bheart\b|\bsparkle/iu;
+  for (const f of files) { const t = readFileSync(f, 'utf8'); const m = t.match(bad); assert.equal(m, null, `${f.pathname.split('/').pop()}: ${m && m[0]}`); }
+});

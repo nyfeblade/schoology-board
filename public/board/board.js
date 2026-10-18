@@ -823,7 +823,7 @@
   }
   function dueLine(t, now) {
     var it = t.item;
-    if (t.overdue) { var dd = Math.round((sod(now) - sod(it.d)) / 864e5); return 'Was due ' + it.d.toLocaleDateString('en-US', { weekday: 'short' }) + (it.allDay ? '' : ' ' + fmtT(it.d)) + ', ' + (dd <= 0 ? 'earlier today' : dd === 1 ? 'yesterday' : dd + ' days ago'); }
+    if (t.overdue) { var dd = Math.round((sod(now) - sod(it.d)) / 864e5), tm = it.allDay ? '' : ' ' + fmtT(it.d); return dd <= 0 ? 'Was due today' + tm : dd === 1 ? 'Was due yesterday' + tm : 'Was due ' + it.d.toLocaleDateString('en-US', { weekday: 'short' }) + tm + ', ' + dd + ' days ago'; }
     if (t.kind === 'study') return plan.LABEL[t.est.type] + ' ' + dueWords(it, now);
     var w = 'Due ' + dueWords(it, now);
     if (it.note && /before class/i.test(it.note)) w += ', before class';
@@ -2447,6 +2447,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, version: '1.6.0' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, version: '1.6.1' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

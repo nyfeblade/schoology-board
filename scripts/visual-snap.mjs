@@ -17,7 +17,7 @@ const shot = (p, name) => p.screenshot({ path: join(OUT, name + '.png') });
 // desktop
 let c = await ctxFor(); let p = await c.newPage();
 await p.goto(BASE + '/'); await p.waitForSelector('#imp-url'); await settle(p, 500); await shot(p, 'first-run');
-await p.click('#imp-sample'); await p.waitForSelector('.now-hero'); await p.click('#sb-tabs [data-tab=board]'); await p.waitForSelector('#sb-board .card'); await settle(p); await shot(p, 'desktop-board');
+await p.click('#imp-sample'); await p.waitForSelector('#tn-main .trow'); await p.evaluate(() => document.querySelector('#sb-tabs [data-tab=board]').click()); await p.waitForSelector('#sb-board .card'); await settle(p); await shot(p, 'desktop-board');
 await p.click('#sb-filter'); await settle(p, 300); await shot(p, 'desktop-filter-menu'); await p.keyboard.press('Escape');
 await p.click('#sb-more'); await settle(p, 300); await shot(p, 'desktop-more-menu'); await p.keyboard.press('Escape');
 await p.locator('.card').first().focus(); await p.keyboard.press('e'); await settle(p, 300); await shot(p, 'desktop-editor'); await p.keyboard.press('Escape');
@@ -35,7 +35,7 @@ await p.waitForSelector('dialog.naming'); await settle(p, 600); await shot(p, 'd
 // phone
 c = await ctxFor({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); p = await c.newPage();
 await p.goto(BASE + '/'); await p.waitForSelector('#imp-url'); await settle(p, 500); await shot(p, 'phone-first-run');
-await p.click('#imp-sample'); await p.waitForSelector('.now-hero'); await p.click('#sb-tabs [data-tab=board]'); await p.waitForSelector('#sb-board .card'); await settle(p); await shot(p, 'phone-board');
+await p.click('#imp-sample'); await p.waitForSelector('#tn-main .trow'); await p.evaluate(() => document.querySelector('#sb-tabs [data-tab=board]').click()); await p.waitForSelector('#sb-board .card'); await settle(p); await shot(p, 'phone-board');
 await p.locator('#sb-more').tap(); await p.waitForSelector('.menu.sheet'); await settle(p, 400); await shot(p, 'phone-sheet');
 await c.close();
 // backup opened from disk
