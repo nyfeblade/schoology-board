@@ -46,13 +46,14 @@
 
 ## Get your Schoology calendar link
 
-These steps come from PowerSchool's Schoology help article ["Link Schoology Calendar to a Different Calendar"](https://customercentral.powerschool.com/s/article/q-a-link-schoology-calendar-to-different-calendar-274611?language=en_US) and the [student calendar-sharing guide](https://uc.powerschool-docs.com/en/schoology/latest/personal-account-students-share-your-calendar):
+Verified on a real student account:
 
-1. In Schoology, open the account menu in the upper-right corner and choose **Settings** (older layouts call it **Account Settings**).
-2. In the **Share Your Schoology Calendar** area, click **Enable**.
-3. Copy the URL in the **Use this iCal link** pane and paste it into Schoology Board. A `webcal://` link works too.
+1. In Schoology, open **Calendar**.
+2. At the bottom of the month grid, click **Export**.
+3. Choose **Share Calendar**.
+4. Copy the **iCal link** and paste it into Schoology Board. A `webcal://` link works too.
 
-Notes from the same docs: the setting only works if your personal calendar has at least one entry. Some schools turn it off. Treat the link like a password: anyone who has it can read your calendar.
+Some schools turn calendar sharing off; if you don't see **Export** or **Share Calendar**, that's probably why. Treat the link like a password: anyone who has it can read your calendar.
 
 **No link?** Drop an `.ics` file instead. Any calendar app that subscribed to your Schoology calendar can usually export one.
 

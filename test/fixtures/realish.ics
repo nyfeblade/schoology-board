@@ -1,0 +1,213 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Schoology iCal API//EN
+CALSCALE:GREGORIAN
+X-WR-CALNAME:Schoology
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261020T035900Z
+DTEND;VALUE=DATE-TIME:20261020T045900Z
+UID:calendar-event-101@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000101
+SUMMARY:Humanities Primary HW Upload Day 01
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000101
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261021T035900Z
+DTEND;VALUE=DATE-TIME:20261021T045900Z
+UID:calendar-event-102@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000102
+SUMMARY:Humanities Primary HW Upload Day 02
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000102
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261022T035900Z
+DTEND;VALUE=DATE-TIME:20261022T045900Z
+UID:calendar-event-103@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000103
+SUMMARY:Humanities Primary HW Upload Day 03
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000103
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261023T035900Z
+DTEND;VALUE=DATE-TIME:20261023T045900Z
+UID:calendar-event-104@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000104
+SUMMARY:Humanities III Primary Project 01
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000104
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261030T035900Z
+DTEND;VALUE=DATE-TIME:20261030T045900Z
+UID:calendar-event-105@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000105
+SUMMARY:Humanities III Primary Project 02
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000105
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261020T170000Z
+DTEND;VALUE=DATE-TIME:20261020T180000Z
+UID:calendar-event-106@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000106
+SUMMARY:Discovery Bio - Module 01 Quiz
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000106
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261027T170000Z
+DTEND;VALUE=DATE-TIME:20261027T180000Z
+UID:calendar-event-107@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000107
+SUMMARY:Discovery Bio - Module 02 Quiz
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000107
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261021T170000Z
+DTEND;VALUE=DATE-TIME:20261021T180000Z
+UID:calendar-event-108@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000108
+SUMMARY:Biology: Exploration of a Made-up Cell
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000108
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261022T035500Z
+DTEND;VALUE=DATE-TIME:20261022T045500Z
+UID:calendar-event-109@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000109
+SUMMARY:French 1 Activities (2nd ed.) Exercise 01-01
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000109
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261023T035500Z
+DTEND;VALUE=DATE-TIME:20261023T045500Z
+UID:calendar-event-110@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000110
+SUMMARY:French 1 Activities (2nd ed.) Exercise 01-02
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000110
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261024T035500Z
+DTEND;VALUE=DATE-TIME:20261024T045500Z
+UID:calendar-event-111@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000111
+SUMMARY:French I Quiz 1
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000111
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261020T160000Z
+DTEND;VALUE=DATE-TIME:20261020T170000Z
+UID:calendar-event-112@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000112
+SUMMARY:GEOM1 - Quiz 01
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000112
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261021T160000Z
+DTEND;VALUE=DATE-TIME:20261021T170000Z
+UID:calendar-event-113@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000113
+SUMMARY:GEOM1 Homework 1
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000113
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261022T160000Z
+DTEND;VALUE=DATE-TIME:20261022T170000Z
+UID:calendar-event-114@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000114
+SUMMARY:Composition Assignment (Drafting): Made-up Essay, DRAFT
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000114
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261029T160000Z
+DTEND;VALUE=DATE-TIME:20261029T170000Z
+UID:calendar-event-115@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000115
+SUMMARY:Composition Assignment (Drafting): Made-up Essay, FINAL
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000115
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261020T200000Z
+DTEND;VALUE=DATE-TIME:20261020T210000Z
+UID:calendar-event-116@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000116
+SUMMARY:Unit 1 Reading Check
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000116
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261021T200000Z
+DTEND;VALUE=DATE-TIME:20261021T210000Z
+UID:calendar-event-117@example.invalid
+URL;VALUE=URI:http://example.schoology.com/assignment/90000117
+SUMMARY:Proctor Note for Unit Two Quiz
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/assignment/90000117
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261022T200000Z
+DTEND;VALUE=DATE-TIME:20261022T210000Z
+UID:calendar-event-118@example.invalid
+URL;VALUE=URI:http://example.schoology.com/course/7000/materials/discussion/view/90000118
+SUMMARY:Peer Review Discussion Board
+DESCRIPTION:Made-up assignment for tests. - Link: http://example.schoology.com/course/7000/materials/discussion/view/90000118
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE:20261019
+DTEND;VALUE=DATE:20261024
+UID:calendar-event-900@example.invalid
+URL;VALUE=URI:http://example.schoology.com/event/80000900/profile
+SUMMARY:Spirit Week (Full-Time Students Only)
+DESCRIPTION:Made-up school event.\n\nClick Meeting Link here: http://example.schoology.com/x - Link: http://example.schoology.com/event/80000900/profile
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE:20261026
+DTEND;VALUE=DATE:20261027
+UID:calendar-event-901@example.invalid
+URL;VALUE=URI:http://example.schoology.com/event/80000901/profile
+SUMMARY:Picture Day (Full-Time Students Only)
+DESCRIPTION:Made-up school event. - Link: http://example.schoology.com/event/80000901/profile
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261021T113000Z
+DTEND;VALUE=DATE-TIME:20261021T190000Z
+UID:calendar-event-902@example.invalid
+URL;VALUE=URI:http://example.schoology.com/event/80000902/profile
+SUMMARY:Open House (8:00 - 2:30 pm ET)
+DESCRIPTION:Made-up school event. - Link: http://example.schoology.com/event/80000902/profile
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261028T113000Z
+DTEND;VALUE=DATE-TIME:20261028T190000Z
+UID:calendar-event-903@example.invalid
+URL;VALUE=URI:http://example.schoology.com/event/80000903/profile
+SUMMARY:Testing Day (8:00 - 2:30 pm ET)
+DESCRIPTION:Made-up school event. - Link: http://example.schoology.com/event/80000903/profile
+END:VEVENT
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20261017T213124Z
+DTSTART;VALUE=DATE-TIME:20261019T040000Z
+DTEND;VALUE=DATE-TIME:20261024T035900Z
+UID:calendar-event-904@example.invalid
+URL;VALUE=URI:http://example.schoology.com/event/80000904/profile
+SUMMARY:Fall Break Week (first week only)
+DESCRIPTION:Made-up multi-day timed event. - Link: http://example.schoology.com/event/80000904/profile
+END:VEVENT
+END:VCALENDAR

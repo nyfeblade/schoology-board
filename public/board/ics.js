@@ -147,7 +147,10 @@
   }
 
   function kindFromUrl(url) {
-    var m = String(url || '').match(/\/(assignment|assessment|common_assessment|discussion|event|page|external_tool|course)\/(\d+)/i);
+    url = String(url || '');
+    // Course materials links look like /course/123/materials/discussion/view/456: the item type wins over "course".
+    var m = url.match(/\/(discussion|assignment|assessment|common_assessment|page|external_tool)\/(?:view\/)?(\d+)/i) ||
+      url.match(/\/(event|course)\/(\d+)/i);
     if (!m) return { kind: 'event', id: null };
     var k = m[1].toLowerCase();
     if (k === 'common_assessment') k = 'assessment';
@@ -191,6 +194,7 @@
       var d = splitDescription(P.DESCRIPTION ? P.DESCRIPTION.value : '');
       var url = (P.URL && P.URL.value.trim()) || d.link || null;
       if (url && !/^https?:\/\//i.test(url)) url = null;
+      if (url) url = url.replace(/^http:\/\/([a-z0-9.-]*\.)?schoology\.com\//i, function (m0) { return 'https' + m0.slice(4); }); // Schoology feeds say http://; the site is https-only
       var cats = P.CATEGORIES ? unescapeText(P.CATEGORIES.value.replace(/\\,/g, '\u0000'))
         .split(',').map(function (x) { return x.replace(/\u0000/g, ',').trim(); }).filter(Boolean) : [];
       if (!uid) uid = 'gen-' + hash(title + '|' + when.due + '|' + (url || ''));
@@ -351,6 +355,22 @@
       var c = clusters[p.key] = clusters[p.key] || { n: 0, names: {} };
       c.n++; c.names[p.raw] = (c.names[p.raw] || 0) + 1;
     });
+    // A prefix that is a narrower or wider spelling of a bigger group joins it:
+    // "Humanities III Primary" -> "Humanities Primary", "Biology: ..." -> "Discovery Bio". (Conflicting
+    // numbers never merge: "Spanish 1" stays apart from "Spanish 2".) The naming step can split them again.
+    var ckeys = Object.keys(clusters), alias = {};
+    ckeys.forEach(function (k) { clusters[k].tok = courseTokens(k); });
+    ckeys.slice().sort(function (a, b) { return clusters[a].n - clusters[b].n || a.localeCompare(b); }).forEach(function (k) {
+      var best = null, bn = 0, tie = false;
+      ckeys.forEach(function (o) {
+        if (o === k || alias[o] || clusters[o].n < clusters[k].n || (clusters[o].n === clusters[k].n && o > k)) return;
+        if (!sameCourse(clusters[k].tok, clusters[o].tok)) return;
+        if (clusters[o].n > bn) { best = o; bn = clusters[o].n; tie = false; } else if (clusters[o].n === bn) tie = true;
+      });
+      if (best && !tie) alias[k] = best;
+    });
+    function root(k) { var seen = 0; while (alias[k] && seen++ < 10) k = alias[k]; return k; }
+    ckeys.forEach(function (k) { var r = root(k); if (r !== k) clusters[r].n += clusters[k].n; });
     function matchKnown(tok) {
       var best = null, bs = 0, tie = false;
       kTok.forEach(function (kt, i) { var sc = sameCourse(tok, kt); if (sc > bs) { bs = sc; best = known[i]; tie = false; } else if (sc && sc === bs && known[i] !== best) tie = true; });
@@ -363,8 +383,9 @@
       keywords(title).forEach(function (w) { if (kw[w]) { var cs = Object.keys(kw[w]); if (cs.length === 1) votes[cs[0]] = (votes[cs[0]] || 0) + 1; } });
       var vk = Object.keys(votes).sort(function (a, b) { return votes[b] - votes[a]; });
       if (vk.length && (vk.length === 1 || votes[vk[0]] > votes[vk[1]])) return { course: vk[0], why: 'words' };
-      if (p && clusters[p.key] && clusters[p.key].n >= 2 && isWork({ title: title, kind: kind })) {
-        var names = clusters[p.key].names, name = Object.keys(names).sort(function (a, b) { return names[b] - names[a] || a.localeCompare(b); })[0];
+      var ck = p && clusters[p.key] ? root(p.key) : null;
+      if (ck && clusters[ck].n >= 2 && isWork({ title: title, kind: kind })) {
+        var names = clusters[ck].names, name = Object.keys(names).sort(function (a, b) { return names[b] - names[a] || a.localeCompare(b); })[0];
         return { course: name, why: 'cluster' };
       }
       return null;

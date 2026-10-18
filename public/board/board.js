@@ -902,10 +902,10 @@
       '<div class="err" id="imp-err" role="alert"></div>' +
       (MODE === 'offline' ? '<p class="hint">Needs internet: the link is fetched through ' + esc(CFG.home || 'the website') + '. Offline, drop an .ics file instead.</p>' : '') +
       '<details class="how"' + (first ? ' open' : '') + '><summary>Where do I find this link?</summary><ol class="how-steps">' +
-      '<li>In Schoology, open the account menu (top right) and choose <b>Settings</b>.</li>' +
-      '<li>Under <b>Share Your Schoology Calendar</b>, click <b>Enable</b>.</li>' +
-      '<li>Copy the URL under <b>Use this iCal link</b> and paste it above.</li></ol>' +
-      '<p class="small dim">From PowerSchool\'s Schoology help. Your calendar needs at least one entry, and some schools hide this setting. Treat the link like a password.</p></details></form>' +
+      '<li>In Schoology, open <b>Calendar</b>.</li>' +
+      '<li>At the bottom of the month grid, click <b>Export</b>, then <b>Share Calendar</b>.</li>' +
+      '<li>Copy the <b>iCal link</b> and paste it above.</li></ol>' +
+      '<p class="small dim">Some schools turn calendar sharing off. Treat the link like a password.</p></details></form>' +
       '<div class="or">or</div>' +
       '<label class="drop" id="imp-drop" tabindex="0"><input type="file" id="imp-file" class="sr" tabindex="-1" multiple accept=".ics,.ical,.ifb,.pdf,text/calendar,application/pdf">' +
       '<span class="drop-ic">' + BIG_UPLOAD + '</span><span class="drop-t">Drop a Schoology .ics or Course Assignment Sheet PDFs</span>' +
@@ -1559,6 +1559,6 @@
     setInterval(function () { if (!drag && !document.querySelector('dialog[open]') && $('#sb-board') && !(document.activeElement && document.activeElement.classList.contains('card'))) renderBoard(); }, 60000);
     window.addEventListener('storage', function (e) { if (e.key === K) { S = load(); delete S._migrated; delete S._needsProctorCheck; render(); } });
   }
-  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, version: '1.3.0' };
+  window.SchoologyBoard = { state: function () { return S; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, version: '1.3.1' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
