@@ -1,6 +1,6 @@
 # Schoology Board
 
-**Know what to do tonight without opening Schoology.** Paste your Schoology calendar link and Schoology Board opens on **Tonight**: how many things are due and how long they'll take, what to do first, and the order to do it in. Behind it are the **Board** (every assignment by status), **Calendar** (coming soon) and the **Sunday plan**. Six looks to pick from, it works offline, installs like an app, and nothing is stored on a server.
+**Know what to do tonight without opening Schoology.** Paste your Schoology calendar link and Schoology Board opens on **Tonight**: how many things are due and how long they'll take, what to do first, and the order to do it in. Behind it are the **Board** (every assignment by status), **Calendar** (coming soon) and the **Sunday plan**. Seven looks to pick from, it works offline, installs like an app, and nothing is stored on a server.
 
 **Live: https://schoology-board.vercel.app** · [See a sample plan](https://schoology-board.vercel.app) (no sign-in, made-up data)
 
@@ -14,7 +14,7 @@
 - **Timer.** Start and stop a timer on any task; the minutes come off tonight's plan. After you time two or more of the same kind of work in a class, the board uses your own average for that class.
 - **Quizzes and tests.** Anything called a quiz or test (or marked as one) gets study sessions on the nights before it: 2 for a quiz, 3 for a test, 4 for a midterm or final.
 - **Start early.** Work of 2 hours or more that's due in 3 to 5 days gets a **Start early** flag, and a 45-minute first chunk goes into tonight's list.
-- **Sunday plan.** The week ahead: quizzes and tests coming up, the busiest day by estimated time, and what to start early. **Save as image** makes a picture of it right in your browser.
+- **Sunday plan.** The coming Monday to Sunday (this week until Friday 6 PM, then next week): minutes of work due each day with the busiest day marked, quizzes and tests with their study nights, and big assignments to start early (2 hours or more, due in 3 to 5 days) with their first 45-minute chunk on tonight's list. **Share image** (or **Save image** where sharing isn't available) draws a picture of the plan in your current theme, right in your browser. The picture never includes your calendar link. No notifications.
 - **The Board.** **Need to be done → Started → Completed** (plus an optional **Needs to be proctored** column), grouped by date (**Overdue**, **Today**, **Tomorrow**, then each day) with each card's class as a colored tag; **Filter → Group by class** switches to class groups (remembered). Drag cards (long-press on a phone), double-click to mark done, or use each card's **⋯** menu. Views: **Due today**, **Week** (from Friday 6 PM it opens on next week) and **All**.
 - **Always up to date.** With a saved link the board updates when you open it, every 15 minutes while it's open, and when you come back to it after a few minutes. If Schoology doesn't answer, it keeps your saved board and quietly tries again later.
 - **Install it.** On a Chromebook or Android phone use **Install app** in Chrome; on an iPhone use **Share → Add to Home Screen**. After the first visit it opens without internet.

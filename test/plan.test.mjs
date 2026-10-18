@@ -211,3 +211,27 @@ test('custom order: overdue stays first, the student order applies to the rest, 
   const firstWork = p.blocks.filter((x) => x.kind !== 'break');
   assert.equal(firstWork[1].task.id, d.id);
 });
+
+test('a first chunk pinned from the Sunday plan joins that night only, and stops once done', () => {
+  const big = item('Science Fair Project', '2026-10-27T23:59'); // 9 days out: not start-early yet
+  const cx = ctx({ est: { [big.id]: 180 } });
+  assert.equal(P.tonightTasks([big], cx, SUN).tasks.length, 0);
+  cx.earlyPin = { [big.id]: '2026-10-18' };
+  const t = P.tonightTasks([big], cx, SUN).tasks;
+  assert.equal(t.length, 1); assert.equal(t[0].kind, 'early'); assert.equal(t[0].min, 45);
+  assert.equal(P.tonightTasks([big], cx, at('2026-10-19T17:00')).tasks.length, 0, 'a pin is for one night');
+  cx.sdone = { [big.id + '@2026-10-18']: 1 };
+  assert.equal(P.tonightTasks([big], cx, SUN).tasks.length, 0, 'done for tonight');
+});
+
+test('Sunday plan accounting: every assignment in the week is counted once, tests apart', () => {
+  const ws = at('2026-10-19T00:00');
+  const items = [item('Problem Set 1', '2026-10-19T23:59'), item('Read Ch 5', '2026-10-21T23:59'), item('Unit Test', '2026-10-22T08:00'),
+    item('Essay', '2026-10-21T23:59'), item('Next week PS', '2026-10-26T23:59'), item('Done one', '2026-10-20T23:59', { col: 'done' })];
+  const w = P.weekAhead(items, ctx(), ws, SUN);
+  assert.equal(w.n, 3); assert.equal(w.tests.length, 1);
+  assert.equal(w.total, w.days.reduce((a, d) => a + d.min, 0));
+  assert.equal(w.days.reduce((a, d) => a + d.items.length, 0), w.n);
+  assert.equal(w.heaviest.day.getDate(), 21); assert.equal(w.heaviest.min, 90);
+  assert.deepEqual(w.tests[0].nights.map((x) => x.day.getDate()), [19, 20, 21]);
+});

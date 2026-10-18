@@ -740,9 +740,9 @@ await octx.close();
   await bo.close();
   // Sunday plan + share card
   ok('the nav reads Tonight · Board · Calendar (Soon) · Sunday plan', (await np.locator('#sb-tabs').innerText()).replace(/\s+/g, ' ').trim().toLowerCase() === 'tonight board calendar soon sunday plan', await np.locator('#sb-tabs').innerText());
-  await tab(np, 'ahead'); await np.waitForSelector('.wk');
+  await tab(np, 'ahead'); await np.waitForSelector('.wkm');
   const wk = (await np.locator('#sb-main main').innerText()).replace(/\s+/g, ' ');
-  ok('Sunday plan: quizzes and tests, the busiest day and what to start early', /Quizzes and tests/.test(wk) && /busiest day/.test(wk) && /Science Fair Project/.test(wk) && await np.locator('.wk-bars li').count() === 7 && await np.locator('.wk-bars li.heavy').count() === 1, wk.slice(0, 200));
+  ok('Sunday plan: quizzes and tests, the busiest day and what to start early', /Quizzes and tests/.test(wk) && /busiest day/.test(wk) && /Science Fair Project/.test(wk) && await np.locator('.wkb li').count() === 7 && await np.locator('.wkb li.heavy').count() === 1, wk.slice(0, 200));
   ok('Sunday plan has the freshness pill too', await np.locator('#sb-main main .fpill').isVisible());
   await np.screenshot({ path: join(SHOTS, 'week-ahead.png'), fullPage: true });
   const [img] = await Promise.all([np.waitForEvent('download'), np.click('#wk-img')]);
@@ -1267,6 +1267,104 @@ await octx.close();
   const dot = await pg.evaluate(() => { const d = document.querySelector('#tn-main .fpill.stale .fdot'); return d ? getComputedStyle(d).backgroundColor : null; });
   ok('Minimal stale: yellow #E5B800 dot', dot === 'rgb(229, 184, 0)', dot);
   await c.close();
+}
+// ---------- 20. Sunday plan: week switch, labelled numbers, busiest day, start early, share card, themes, phone, offline ----------
+{
+  const SNOW = new Date('2026-10-18T15:00:00-04:00');
+  const open = async (pg) => { await tab(pg, 'ahead'); await pg.waitForSelector('.wkm'); await pg.waitForTimeout(120); };
+  const big = (pg) => pg.evaluate(() => { const S = window.SchoologyBoard.state(); const id = Object.keys(S.ics).find((k) => /Osmosis/.test(S.ics[k].title)); S.est[id] = 150; localStorage.setItem('schoology-board:v1', JSON.stringify(S)); window.SchoologyBoard.render(); return id; });
+  const wk = (pg) => pg.evaluate(() => { const W = window.SchoologyBoard.week(); return { n: W.n, tests: W.tests.length, total: W.total, mins: W.days.map((d) => d.min), counts: W.days.map((d) => d.items.length), heavy: W.heaviest ? W.days.indexOf(W.heaviest) : -1, early: W.early.map((e) => e.item.id) }; });
+  // the week switches at Friday 6 PM
+  {
+    const c = await newCtx({ now: new Date('2026-10-23T17:59:00-04:00') }); const pg = await c.newPage(); watch(pg, 'sunday-switch');
+    await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tn-main'); await open(pg);
+    const a = (await pg.locator('.wkm .greet').innerText()) + ' | ' + await pg.locator('.wkm .verdict').innerText();
+    await c.clock.setFixedTime(new Date('2026-10-23T18:00:00-04:00')); await pg.reload(); await pg.waitForSelector('#tn-main'); await open(pg);
+    const b = (await pg.locator('.wkm .greet').innerText()) + ' | ' + await pg.locator('.wkm .verdict').innerText();
+    ok('Sunday plan: Friday 5:59 PM shows this week, 6:00 PM shows next week', /this week \| Oct 19.25/i.test(a) && /next week \| Oct 26.Nov 1/i.test(b), a + ' → ' + b);
+    await c.close();
+  }
+  const c = await newCtx({ now: SNOW }); const pg = await c.newPage(); watch(pg, 'sunday');
+  await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow'); const bigId = await big(pg); await open(pg);
+  const w = await wk(pg);
+  const dom = await pg.evaluate(() => ({ li: [...document.querySelectorAll('.wkb li')].map((l) => l.getAttribute('aria-label')), heavyIdx: [...document.querySelectorAll('.wkb li')].findIndex((l) => l.classList.contains('heavy')),
+    nudge: document.querySelector('.wkm .nudge').textContent, metas: [...document.querySelectorAll('.wkm .sec .meta')].map((m) => m.textContent), cnt: [...document.querySelectorAll('.wkm .sec .cnt')].map((m) => +m.textContent),
+    tests: document.querySelectorAll('.wk-tests .cu').length, early: document.querySelectorAll('.wk-early .cu').length, primary: document.querySelectorAll('.wkm .btn.primary').length }));
+  ok('Sunday plan: 7 day bars, each labelled with minutes and how many are due (or "Nothing due")', dom.li.length === 7 && dom.li.every((l) => /^\w+day: (Nothing due|(\d+ h ?)?(\d+ min)? · \d+ due)/.test(l)), dom.li[0]);
+  ok('Sunday plan: every section says what its number means', dom.metas.join('|') === 'Estimated minutes|With study nights|2 h+, due in 3–5 days' && dom.cnt[0] === dom.tests && dom.cnt[1] === dom.early, dom.metas.join('|'));
+  ok('Sunday plan: the summary matches the plan (assignments, quizzes/tests, busiest day)', new RegExp('^' + w.n + ' assignments? due').test(dom.nudge) && new RegExp(w.tests + ' (quiz|quizzes)').test(dom.nudge) && /busiest day: \w+day \(/.test(dom.nudge), dom.nudge);
+  const mx = Math.max(...w.mins); const exp = w.mins.findIndex((m, i) => m === mx && m > 0);
+  ok('Sunday plan: the busiest day is the day with the most estimated minutes, marked once', w.heavy === exp && dom.heavyIdx === exp && await pg.locator('.wkb .wkb-tag').count() === 1, JSON.stringify(w.mins));
+  ok('Sunday plan accounting: total = sum of the days; day counts = assignments due; quizzes and tests listed apart', w.total === w.mins.reduce((a, b) => a + b, 0) && w.counts.reduce((a, b) => a + b, 0) === w.n && dom.tests === w.tests);
+  ok('Sunday plan: one primary action (See tonight\'s list)', dom.primary === 1 && /See tonight/.test(await pg.locator('.wkm .btn.primary').innerText()));
+  // start early: a 2.5 h lab due Thursday is already on tonight's list as a 45-min first chunk
+  ok('Start early: the 2 h 30 min lab is listed with its 45-min first chunk', w.early.length === 1 && w.early[0] === bigId && /First chunk: 45 min tonight/.test(await pg.locator('.wk-early .cu').innerText()));
+  ok('Start early: it is already on tonight\'s list, with a way to see it there', /On tonight’s list/.test(await pg.locator('.wk-early .wkl-a').innerText()) && await pg.locator('.wk-early [data-see]').count() === 1);
+  await pg.click('.wk-early [data-see]'); await pg.waitForSelector('#tnList .trow');
+  ok('"See tonight" opens Tonight on that chunk', await pg.locator(`#tnList .trow[data-id="${bigId}"]`).count() === 1 && await pg.locator('#sb-tabs [data-tab=now][aria-current=page]').count() === 1);
+  await pg.locator(`#tnList .trow[data-id="${bigId}"] .bigchk`).click(); await pg.waitForTimeout(1600); await open(pg);
+  ok('after checking the chunk off, the Sunday plan says "First chunk done tonight"', /First chunk done tonight/.test(await pg.locator('.wk-early .wkl-a').innerText()));
+  // the Add button (when an item is not on tonight yet) pins one chunk and offers Undo
+  const other = await pg.evaluate(() => { const S = window.SchoologyBoard.state(); const id = 'sun-big'; S.custom[id] = { id, title: 'History project', course: 'History', due: Date.now() + 4 * 864e5, allDay: false, source: 'custom' }; S.est[id] = 240; localStorage.setItem('schoology-board:v1', JSON.stringify(S)); return id; });
+  await pg.reload(); await pg.waitForSelector('#tn-main');
+  await open(pg);
+  const hasAdd = await pg.locator(`.wk-early [data-early="${other}"]`).count();
+  ok('Start early lists a 4 h project too (on tonight\'s list automatically, so no Add needed)', hasAdd === 0 && await pg.locator(`.wk-early [data-see="${other}"]`).count() === 1);
+  // share card: desktop Chromium cannot share files → "Save image" downloads a themed PNG
+  ok('no file sharing here → the button reads "Save image"', /Save image/.test(await pg.locator('#wk-img').innerText()));
+  const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('#wk-img')]);
+  const cp = join(SHOTS, 'sunday-card.png'); await dl.saveAs(cp); const png = PNG.sync.read(readFileSync(cp));
+  const cols = new Set(); for (let i = 0; i < png.data.length; i += 4 * 997) cols.add(png.data.slice(i, i + 3).join());
+  ok('Save image: sunday-plan-2026-10-19.png, 1080×1350, drawn (not blank)', dl.suggestedFilename() === 'sunday-plan-2026-10-19.png' && png.width === 1080 && png.height === 1350 && cols.size > 8, dl.suggestedFilename() + ' ' + cols.size);
+  // themes: all variants render, no cyan/teal/orange, no overflow, the card still draws
+  const bad = [];
+  for (const t of ['sticker', 'arcade', 'notebook', 'notebook-dark', 'varsity', 'riso', 'cafe', 'minimal', 'minimal-dark']) {
+    await pg.evaluate((t) => window.SchoologyBoard.theme(t.replace('-dark', ''), /-dark/.test(t) ? 'dark' : ''), t); await open(pg); await pg.waitForTimeout(250);
+    const cy = await noCyan(pg); const ov = await pg.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+    const blob = await pg.evaluate(() => new Promise((r) => { const b = document.querySelector('#wk-img'); const orig = URL.createObjectURL; URL.createObjectURL = (x) => { r(x.size); URL.createObjectURL = orig; return orig(x); }; b.click(); }));
+    if (cy.length || ov || !(blob > 20000)) bad.push(`${t}: cyan ${cy.length} overflow ${ov} card ${blob}`);
+  }
+  ok('Sunday plan in all 9 theme variants: no cyan/teal/orange, no sideways scroll, share card draws', bad.length === 0, bad.join('; '));
+  await pg.evaluate(() => window.SchoologyBoard.theme('sticker', ''));
+  // motion: UI transitions ≤ 0.4 s
+  const mot = await pg.evaluate(() => { let m = 0; document.querySelectorAll('.wkm, .wkm *').forEach((e) => { const cs = getComputedStyle(e); (cs.transitionDuration + ',' + cs.animationDuration).split(',').forEach((v) => { m = Math.max(m, parseFloat(v) * (/ms/.test(v) ? 0.001 : 1) || 0); }); }); return m; });
+  ok('Sunday plan motion: nothing longer than 0.4 s', mot <= 0.4, mot + 's');
+  // empty week: says so and offers a next step
+  await c.clock.setFixedTime(new Date('2027-01-10T15:00:00-05:00')); await pg.reload(); await pg.waitForSelector('#tn-main'); await open(pg);
+  ok('an empty week says so and offers "Open the board" (no dead end)', /Nothing is due next week yet/.test(await pg.locator('.wkm .nudge').innerText()) && await pg.locator('#wk-board').count() === 1 && await pg.locator('.wk-tests .then').count() === 1);
+  await c.close();
+  // Web Share API: phones that can share files get "Share image" and a PNG file
+  {
+    const c2 = await newCtx({ now: SNOW, viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await c2.addInitScript(() => { navigator.canShare = (d) => !!(d && d.files); navigator.share = (d) => { window.__shared = d.files.map((f) => f.name + '|' + f.type + '|' + f.size); return Promise.resolve(); }; });
+    const p2 = await c2.newPage(); watch(p2, 'sunday-share');
+    await p2.goto(BASE + '/'); await p2.click('#imp-sample'); await p2.waitForSelector('#tnList .trow'); await big(p2); await open(p2);
+    await p2.click('#wk-img'); await p2.waitForFunction(() => window.__shared, null, { timeout: 5000 });
+    const sh = await p2.evaluate(() => window.__shared);
+    ok('Share image (phone, Web Share API): one PNG file handed to the share sheet', /Share image/.test(await p2.locator('#wk-img').innerText()) && sh.length === 1 && /^sunday-plan-2026-10-19\.png\|image\/png\|\d{5,}$/.test(sh[0]), sh.join());
+    for (const W of [390, 360]) {
+      await p2.setViewportSize({ width: W, height: 800 }); await p2.waitForTimeout(150);
+      const lay = await p2.evaluate(() => ({ ov: document.documentElement.scrollWidth > innerWidth, small: [...document.querySelectorAll('.wkm button')].filter((b) => b.offsetParent && b.getBoundingClientRect().height < 32).length, clip: [...document.querySelectorAll('.wkb-n')].filter((e) => e.scrollWidth > e.clientWidth + 1).length }));
+      ok(`Sunday plan at ${W}px: no sideways scroll, buttons ≥ 32 px tall, day labels not clipped`, !lay.ov && !lay.small && !lay.clip, JSON.stringify(lay));
+    }
+    await c2.close();
+  }
+  // reduced motion: no transitions or animations at all
+  {
+    const c3 = await newCtx({ now: SNOW, reducedMotion: 'reduce' }); const p3 = await c3.newPage(); watch(p3, 'sunday-rm');
+    await p3.goto(BASE + '/'); await p3.click('#imp-sample'); await p3.waitForSelector('#tnList .trow'); await open(p3);
+    const m = await p3.evaluate(() => { let m = 0; document.querySelectorAll('.wkm, .wkm *').forEach((e) => { const cs = getComputedStyle(e); (cs.transitionDuration + ',' + cs.animationDuration).split(',').forEach((v) => { m = Math.max(m, parseFloat(v) * (/ms/.test(v) ? 0.001 : 1) || 0); }); }); return m; });
+    ok('Sunday plan with reduced motion: no motion', m <= 0.01, m + 's');
+    // offline backup: same plan, image still saves, nothing fetched
+    const [bd] = await Promise.all([p3.waitForEvent('download'), more(p3, '#sb-backup')]); const bp = join(SHOTS, 'sunday-backup.html'); await bd.saveAs(bp);
+    const want = await wk(p3); await c3.close();
+    const c4 = await newCtx({ now: new Date(SNOW.getTime() + 10 * 60e3) }); const p4 = await c4.newPage(); watch(p4, 'sunday-backup'); let net = 0;
+    await p4.route('**/*', (r) => (/^(file|blob|data):/.test(r.request().url()) ? r.continue() : (net++, r.abort())));
+    await p4.goto(pathToFileURL(bp).href); await p4.waitForSelector('#tn-main'); await open(p4);
+    const [d4] = await Promise.all([p4.waitForEvent('download'), p4.click('#wk-img')]);
+    ok('offline backup: the Sunday plan is the same and Save image works with no network', JSON.stringify(await wk(p4)) === JSON.stringify(want) && /\.png$/.test(d4.suggestedFilename()) && net === 0, 'requests ' + net);
+    await c4.close();
+  }
 }
 await browser.close();
 ok('no page errors', errors.length === 0, errors.slice(0, 5).join(' | '));

@@ -2,6 +2,7 @@
    Pure functions (no DOM), plain browser script + CommonJS module, no dependencies.
    Items come in already normalized by board.js: { id, title, course, d: Date, kind, source, col, pre, allDay }.
    ctx = { est: {id: min}, ttype: {id: type}, actual: {id: min}, sdone: {"id@YYYY-MM-DD": 1}, timer: {id, at} | null,
+           earlyPin: {id: "YYYY-MM-DD"} (a first chunk the student added to that night from the Sunday plan),
            isWork: fn(item) -> bool } */
 (function (root) {
   'use strict';
@@ -136,7 +137,7 @@
         tasks.push({ id: it.id, item: it, kind: 'work', min: remaining(it, e, ctx, now), est: e, due: it.d, pulled: true });
       } else if (it.d >= spillAfter && it.d < wEnd) {
         tasks.push({ id: it.id, item: it, kind: 'work', min: remaining(it, e, ctx, now), est: e, due: it.d, overdue: it.d < now });
-      } else if (isStartEarly(it, e, today) && !(ctx.sdone && ctx.sdone[it.id + '@' + tk])) {
+      } else if ((isStartEarly(it, e, today) || (ctx.earlyPin && ctx.earlyPin[it.id] === tk)) && !(ctx.sdone && ctx.sdone[it.id + '@' + tk])) {
         tasks.push({ id: it.id, item: it, kind: 'early', min: Math.min(EARLY_CHUNK, remaining(it, e, ctx, now)), est: e, due: it.d });
       }
     });
@@ -210,29 +211,35 @@
     return out;
   }
 
-  // Week ahead: Mon-Sun totals, tests, the heaviest day and what to start early.
+  // Week ahead (the Sunday plan): for the Mon-Sun week starting at weekStart -
+  //  days:     estimated minutes of work due each day (quizzes and tests are not in the bars; they have study nights),
+  //  tests:    quizzes and tests due that week, each with the study nights still ahead (same rule as Tonight),
+  //  heaviest: the day from today on with the most minutes due (earliest wins a tie), or null,
+  //  early:    what to start early, by Tonight's rule (2 h or more, not a test, due in 3 to 5 days), with the
+  //            first chunk Tonight plans (45 min, or what is left if less).
+  // Invariant: n + tests.length = every plannable item due that week; total = the sum of the days.
   function weekAhead(items, ctx, weekStart, now) {
-    var learned = learnedTable(items, ctx), days = [], tests = [], early = [], today = sod(now);
+    var learned = learnedTable(items, ctx), days = [], tests = [], early = [], today = sod(now), n = 0;
     for (var i = 0; i < 7; i++) days.push({ day: addDays(weekStart, i), min: 0, items: [] });
     var end = addDays(weekStart, 7);
     items.forEach(function (it) {
-      if (!plannable(it, ctx) || it.d < weekStart || it.d >= end) return;
-      var e = estimate(it, ctx, learned), di = daysBetween(weekStart, it.d);
+      if (!plannable(it, ctx)) return;
+      var e = estimate(it, ctx, learned);
+      if (!isTestType(e.type) && isStartEarly(it, e, today)) early.push({ item: it, est: e, startBy: today, chunk: Math.min(EARLY_CHUNK, remaining(it, e, ctx, now)) });
+      if (it.d < weekStart || it.d >= end) return;
       if (isTestType(e.type)) {
         var nights = studyNights(it, e, today);
-        tests.push({ item: it, est: e, studyFrom: nights.length ? nights[0].day : null, sessions: nights.length });
+        tests.push({ item: it, est: e, nights: nights, studyFrom: nights.length ? nights[0].day : null, sessions: nights.length });
         return;
       }
-      days[di].min += e.min; days[di].items.push({ item: it, est: e });
-      if (e.min >= EARLY_MIN) {
-        var startBy = addDays(sod(it.d), -5); if (startBy < today) startBy = today;
-        early.push({ item: it, est: e, startBy: startBy });
-      }
+      var di = daysBetween(weekStart, it.d);
+      days[di].min += e.min; days[di].items.push({ item: it, est: e }); n++;
     });
-    var heaviest = days.reduce(function (m, d) { return d.min > (m ? m.min : 0) ? d : m; }, null);
-    tests.sort(function (a, b) { return a.item.d - b.item.d; });
-    early.sort(function (a, b) { return a.item.d - b.item.d; });
-    return { days: days, tests: tests, early: early, heaviest: heaviest, total: days.reduce(function (a, d) { return a + d.min; }, 0) };
+    var heaviest = null;
+    days.forEach(function (d) { if (d.day >= today && d.min > 0 && (!heaviest || d.min > heaviest.min)) heaviest = d; });
+    var byDue = function (a, b) { return a.item.d - b.item.d || String(a.item.title).localeCompare(String(b.item.title)); };
+    tests.sort(byDue); early.sort(byDue);
+    return { days: days, tests: tests, early: early, heaviest: heaviest, n: n, total: days.reduce(function (a, d) { return a + d.min; }, 0) };
   }
 
   function fmtMin(m) {

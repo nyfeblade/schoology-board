@@ -81,14 +81,14 @@
       // planner: time estimates, one-tap type (e.g. test), timed minutes, finished study/start-early chunks per night
       est: {}, ttype: {}, actual: {}, sdone: {}, timer: null, planStart: null,
       // Tonight: items pulled in early, the student's own order for today, flags they confirmed, class colors per theme
-      pulled: {}, tnOrder: null, checked: {}, colors: {}, colorAuto: {},
+      pulled: {}, earlyPin: {}, tnOrder: null, checked: {}, colors: {}, colorAuto: {},
       prefs: { tab: 'now', view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '', theme: 'sticker', mode: '', showDone: false, groupBy: 'date' }
     };
   }
   function normalizeState(st) {
     st = Object.assign(blank(), st || {});
     st.prefs = Object.assign(blank().prefs, st.prefs || {});
-    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'checked', 'colors', 'colorAuto'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
+    ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'earlyPin', 'checked', 'colors', 'colorAuto'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
     ['cats', 'order', 'rules'].forEach(function (k) { if (!Array.isArray(st[k])) st[k] = []; });
     return st;
   }
@@ -787,7 +787,7 @@
   // ---------- planner context ----------
   function pctx() {
     var today = dayKey(new Date());
-    return { est: S.est, ttype: S.ttype, actual: S.actual, sdone: S.sdone, timer: S.timer, pulled: S.pulled,
+    return { est: S.est, ttype: S.ttype, actual: S.actual, sdone: S.sdone, timer: S.timer, pulled: S.pulled, earlyPin: S.earlyPin,
       order: S.tnOrder && S.tnOrder.day === today ? S.tnOrder.ids : null, isWork: function (it) { return ics.isWork(it); } };
   }
   var SRC_LABEL = { est: 'our guess', learned: 'your average', set: 'yours' };
@@ -1311,95 +1311,147 @@
     var rs = $('#est-reset', d); if (rs) rs.onclick = function () { delete S.est[id]; delete S.ttype[id]; save(); d.close(); renderBoard(); toast('Using the typical time again'); };
   }
 
-  // ---------- Week ahead (made for Sunday) ----------
+  // ---------- Sunday plan: the coming Mon-Sun (before Friday 6 PM: this week; from then on: next week) ----------
   var lastWeek = null;
+  function wday(d, long) { return d.toLocaleDateString('en-US', { weekday: long ? 'long' : 'short' }); }
+  function nightsWords(t, now) {
+    if (!t.nights.length) return sod(t.item.d) <= sod(now) ? 'It\u2019s today' : 'No study nights left';
+    var names = t.nights.map(function (n) { return dayKey(n.day) === dayKey(now) ? 'tonight' : wday(n.day); });
+    return 'Study ' + names.join(', ') + ' \u00b7 ' + plan.fmtMin(t.nights[0].min) + (t.nights.length > 1 ? ' each' : '');
+  }
+  function earlyState(e, now, tasks) {
+    var key = e.item.id + '@' + dayKey(now);
+    if (S.sdone[key]) return 'done';
+    // On tonight's list in any form: its first chunk, or the whole thing when it falls inside tonight's window (e.g. due Monday, seen on Friday).
+    return tasks.some(function (t) { return t.id === e.item.id; }) ? 'in' : 'add';
+  }
   function renderAhead() {
-    var now = new Date(), items = allItems(), ws = ics.defaultWeekStart(now), we = addDays(ws, 6);
-    var W = plan.weekAhead(items, pctx(), ws, now);
+    var now = new Date(), items = allItems(), cx = pctx(), ws = ics.defaultWeekStart(now), we = addDays(ws, 6);
+    var W = plan.weekAhead(items, cx, ws, now), tasks = plan.tonightTasks(items, cx, now).tasks;
     var range = fmtShort(ws) + '\u2013' + (we.getMonth() === ws.getMonth() ? we.getDate() : fmtShort(we));
-    var rel = Math.round((ws - monday(now)) / (7 * 864e5));
+    var rel = Math.round((ws - monday(now)) / (7 * 864e5)), which = rel === 1 ? 'next' : 'this';
     lastWeek = { W: W, range: range, rel: rel };
     var max = Math.max.apply(null, W.days.map(function (d) { return d.min; }).concat([1]));
-    var nItems = W.days.reduce(function (a, d) { return a + d.items.length; }, 0);
-    var head = nItems || W.tests.length ?
-      '<p class="wk-sum">' + (nItems ? '<b>' + nItems + ' assignment' + (nItems === 1 ? '' : 's') + '</b> due, about <b>' + plan.fmtMin(W.total) + '</b> of work' : 'No assignments due') +
-      (W.tests.length ? ' \u00b7 <b>' + W.tests.length + ' ' + (W.tests.length === 1 ? 'quiz or test' : 'quizzes and tests') + '</b>' : '') +
-      (W.heaviest && W.heaviest.min ? ' \u00b7 busiest day: <b>' + esc(W.heaviest.day.toLocaleDateString('en-US', { weekday: 'long' })) + '</b>' : '') + '</p>' :
-      '<p class="wk-sum">Nothing is due ' + (rel === 1 ? 'next' : 'this') + ' week yet.</p>';
-    var bars = '<ol class="wk-bars" aria-label="Estimated work due each day">' + W.days.map(function (d) {
-      var heavy = W.heaviest && W.heaviest.min && d === W.heaviest, past = d.day < sod(now);
-      return '<li class="' + (heavy ? 'heavy' : '') + (past ? ' past' : '') + '"><span class="wk-d">' + esc(d.day.toLocaleDateString('en-US', { weekday: 'short' })) + '</span>' +
-        '<span class="wk-bar"><i style="width:' + Math.round(100 * d.min / max) + '%"></i></span>' +
-        '<span class="wk-n">' + (d.items.length ? esc(plan.fmtMin(d.min)) + ' \u00b7 ' + d.items.length + ' due' : 'Nothing due') + '</span></li>';
-    }).join('') + '</ol>';
-    var tests = '<section class="wk-sec"><h2>Quizzes and tests</h2>' + (W.tests.length ? '<ul class="wk-list">' + W.tests.map(function (t) {
-      return '<li><span class="flag test">' + esc(plan.LABEL[t.est.type]) + '</span><span class="wk-t">' + esc(t.item.title) + '<span class="dim"> \u00b7 ' + esc(t.item.course) + ' \u00b7 ' + esc(dueWords(t.item, now)) + '</span></span>' +
-        '<span class="wk-n">' + (t.sessions ? t.sessions + ' study session' + (t.sessions === 1 ? '' : 's') + ' from ' + esc(t.studyFrom.toLocaleDateString('en-US', { weekday: 'short' })) : 'No study nights left') + '</span></li>';
-    }).join('') + '</ul>' : '<p class="empty-line">No quizzes or tests on your board this week. If one is missing, open its card and set its kind to Quiz or Test.</p>') + '</section>';
-    var early = '<section class="wk-sec"><h2>Start early</h2>' + (W.early.length ? '<ul class="wk-list">' + W.early.map(function (e) {
-      return '<li><span class="flag early">Start early</span><span class="wk-t">' + esc(e.item.title) + '<span class="dim"> \u00b7 ' + esc(e.item.course) + ' \u00b7 due ' + esc(dueWords(e.item, now)) + '</span></span>' +
-        '<span class="wk-n">about ' + esc(plan.fmtMin(e.est.min)) + ' \u00b7 start by ' + esc(sod(e.startBy) <= sod(now) ? 'today' : e.startBy.toLocaleDateString('en-US', { weekday: 'long' })) + '</span></li>';
-    }).join('') + '</ul>' : '<p class="empty-line">Nothing big (2 hours or more) is due this week.</p>') + '</section>';
+    var parts = [];
+    parts.push(W.n ? '<b>' + plural(W.n, 'assignment') + '</b> due, about <b>' + esc(plan.fmtMin(W.total)) + '</b> of work' : 'No assignments due');
+    if (W.tests.length) parts.push('<b>' + W.tests.length + '</b> ' + (W.tests.length === 1 ? 'quiz or test' : 'quizzes and tests'));
+    if (W.heaviest) parts.push('busiest day: <b>' + esc(wday(W.heaviest.day, true)) + '</b> (' + esc(plan.fmtMin(W.heaviest.min)) + ' due)');
+    var empty = !W.n && !W.tests.length;
+    var nudge = empty ? 'Nothing is due ' + which + ' week yet. New assignments show up here when Schoology posts them.' : parts.join(' \u00b7 ') + '.';
+    var canShare = shareFilesOk();
+    var bars = '<section class="sec wk-days"><div class="sh"><h2>Work due each day</h2><span class="meta">Estimated minutes</span></div>' +
+      '<ol class="wkb" aria-label="Estimated minutes of work due each day">' + W.days.map(function (d) {
+        var heavy = W.heaviest && d === W.heaviest, past = d.day < sod(now);
+        var lab = d.items.length ? plan.fmtMin(d.min) + ' \u00b7 ' + d.items.length + ' due' : 'Nothing due';
+        return '<li class="' + (heavy ? 'heavy' : '') + (past ? ' past' : '') + '" aria-label="' + esc(wday(d.day, true) + ': ' + lab + (heavy ? ', busiest day' : '') + (past ? ', already past' : '')) + '">' +
+          '<span class="wkb-d" aria-hidden="true"><b>' + esc(wday(d.day)) + '</b> ' + d.day.getDate() + '</span>' +
+          '<span class="wkb-bar" aria-hidden="true"><i style="width:' + (d.min ? Math.max(4, Math.round(100 * d.min / max)) : 0) + '%"></i></span>' +
+          '<span class="wkb-n" aria-hidden="true">' + esc(lab) + (heavy ? ' <span class="wkb-tag">Busiest</span>' : '') + '</span></li>';
+      }).join('') + '</ol></section>';
+    var tests = '<section class="sec wk-tests"><div class="sh"><h2>Quizzes and tests</h2><span class="cnt">' + W.tests.length + '</span><span class="meta">With study nights</span></div>' +
+      (W.tests.length ? '<ul class="wkl">' + W.tests.map(function (t) {
+        return '<li class="cu" style="' + cvars(t.item.course) + '"><span class="cdot" aria-hidden="true"></span><div class="cb"><span class="ct">' + esc(t.item.title) + '</span>' +
+          '<span class="cm">' + esc(plan.LABEL[t.est.type]) + ' \u00b7 ' + esc(dueWords(t.item, now)) + ' \u00b7 ' + esc(t.item.course) + '</span>' +
+          '<span class="cm wkl-s">' + esc(nightsWords(t, now)) + '</span></div></li>';
+      }).join('') + '</ul>' : '<p class="then">No quizzes or tests on your board ' + which + ' week. If one is missing, open its card on the board and set its kind to Quiz or Test.</p>') + '</section>';
+    var early = '<section class="sec wk-early"><div class="sh"><h2>Start early</h2><span class="cnt">' + W.early.length + '</span><span class="meta">2 h+, due in 3\u20135 days</span></div>' +
+      (W.early.length ? '<ul class="wkl">' + W.early.map(function (e) {
+        var st = earlyState(e, now, tasks);
+        var act = st === 'done' ? '<span class="wkl-ok">' + ICON.check + 'First chunk done tonight</span>' :
+          st === 'in' ? '<span class="wkl-ok">' + ICON.check + 'On tonight\u2019s list</span><button type="button" class="btn ghost wk-see" data-see="' + esc(e.item.id) + '">See tonight</button>' :
+          '<button type="button" class="btn wk-add" data-early="' + esc(e.item.id) + '">Add first chunk to tonight</button>';
+        return '<li class="cu" style="' + cvars(e.item.course) + '"><span class="cdot" aria-hidden="true"></span><div class="cb"><span class="ct">' + esc(e.item.title) + '</span>' +
+          '<span class="cm">About ' + esc(plan.fmtMin(e.est.min)) + ' \u00b7 ' + esc(dueWords(e.item, now)) + ' \u00b7 ' + esc(e.item.course) + '</span>' +
+          '<span class="cm wkl-s">First chunk: ' + esc(plan.fmtMin(e.chunk)) + ' tonight</span></div><div class="wkl-a">' + act + '</div></li>';
+      }).join('') + '</ul>' : '<p class="then">Nothing big (2 hours or more) is due in 3 to 5 days. Set a longer estimate on a card if something will take a while.</p>') + '</section>';
     document.body.dataset.view = 'ahead';
-    $('#sb-main').innerHTML = '<main class="tnm wkm"><section class="thero"><div class="hl"><p class="greet">Sunday plan</p><h1 class="verdict">' + (rel === 1 ? 'Next week' : 'This week') + ' \u00b7 ' + esc(range) + '</h1>' + head + '</div><div class="hr">' + freshHtml() + '</div></section>' + bannerHtml() +
-      '<div class="wk"><div class="wk-acts"><button class="btn primary" id="wk-tonight">' + NICON.moon + 'See tonight\u2019s list</button><button class="btn" id="wk-img">' + ICON.dl + 'Save as image</button></div>' +
-      bars + '<div class="wk-cols">' + tests + early + '</div></div></main>';
+    $('#sb-main').innerHTML = '<main class="tnm wkm"><section class="thero"><div class="hl"><p class="greet">Sunday plan \u00b7 ' + (rel === 1 ? 'next week' : 'this week') + '</p><h1 class="verdict">' + esc(range) + '</h1><p class="nudge">' + nudge + '</p></div><div class="hr">' + freshHtml() + '</div></section>' + bannerHtml() +
+      '<div class="wk-acts"><button class="btn primary" id="wk-tonight">' + NICON.moon + 'See tonight\u2019s list</button>' +
+      '<button class="btn" id="wk-img" title="' + (canShare ? 'Share a picture of this plan' : 'Save a picture of this plan') + '">' + ICON.dl + (canShare ? 'Share image' : 'Save image') + '</button>' +
+      (empty ? '<button class="btn ghost" id="wk-board">Open the board</button>' : '') + '</div>' +
+      bars + '<div class="wk-cols">' + tests + early + '</div></main>';
     bindFresh($('#sb-main'));
     document.title = 'Sunday plan \u00b7 Schoology Board';
     $('#wk-tonight').onclick = function () { setTab('now'); };
     $('#wk-img').onclick = shareWeek;
+    if ($('#wk-board')) $('#wk-board').onclick = function () { setTab('board'); };
+    $$('#sb-main [data-early]').forEach(function (b) {
+      b.onclick = function () {
+        var id = b.dataset.early, it = itemById(id); S.earlyPin[id] = dayKey(new Date()); save(); renderAhead();
+        toast('Added to tonight: first chunk of ' + (it ? it.title : 'this assignment'), 'Undo', function () { delete S.earlyPin[id]; save(); renderAhead(); }, 6000);
+        var nb = $('#sb-main [data-see="' + cssEsc(id) + '"]'); if (nb) nb.focus();
+      };
+    });
+    $$('#sb-main [data-see]').forEach(function (b) { b.onclick = function () { setTab('now'); var r = $('.trow[data-id="' + cssEsc(b.dataset.see) + '"]'); if (r) { r.scrollIntoView({ block: 'center' }); r.classList.add('arrive'); } }; });
   }
-  // A shareable picture of the week, drawn here with <canvas>. Nothing leaves the device unless you share it.
+  function shareFilesOk() {
+    try { return !!(window.File && navigator.canShare && navigator.canShare({ files: [new File([''], 'plan.png', { type: 'image/png' })] })); } catch (e) { return false; }
+  }
+  // A shareable picture of the plan, drawn here with <canvas> in the current theme. It holds only what the
+  // screen shows (dates, titles, classes, minutes), never the calendar link. Nothing leaves the device unless you share it.
   function weekCanvas() {
-    var L = lastWeek, W = L.W, c = document.createElement('canvas'), w = 1080, h = 1350, x = c.getContext('2d');
+    var L = lastWeek, W = L.W, c = document.createElement('canvas'), w = 1080, h = 1350, x = c.getContext('2d'), now = new Date();
     c.width = w; c.height = h;
-    var V = function (n, f) { return themeVar(n, f); }, font = V('--font-body', 'sans-serif'), disp = V('--font-display', font);
-    x.fillStyle = V('--bg', 'black'); x.fillRect(0, 0, w, h);
-    x.fillStyle = V('--surface-1', 'black'); x.fillRect(48, 48, w - 96, h - 96);
-    x.strokeStyle = V('--border-2', 'gray'); x.lineWidth = 2; x.strokeRect(48, 48, w - 96, h - 96);
-    var ink = V('--text-1', 'white'), dim = V('--text-2', 'gray'), acc = V('--accent', 'red');
-    function text(s, X, Y, size, color, weight, f) { x.fillStyle = color; x.font = (weight || 400) + ' ' + size + 'px ' + (f || font); x.fillText(s, X, Y); }
-    function fit(s, max, size, weight) { x.font = (weight || 400) + ' ' + size + 'px ' + font; if (x.measureText(s).width <= max) return s; while (s.length > 1 && x.measureText(s + '\u2026').width > max) s = s.slice(0, -1); return s + '\u2026'; }
-    text((L.rel === 1 ? 'Next week' : 'This week') + ' \u00b7 ' + L.range, 96, 150, 56, ink, 700, disp);
-    var sub = (W.total ? plan.fmtMin(W.total) + ' of work' : 'No assignments due') + (W.tests.length ? ' \u00b7 ' + W.tests.length + (W.tests.length === 1 ? ' quiz or test' : ' quizzes and tests') : '');
-    text(sub, 96, 210, 32, dim, 400);
-    var max = Math.max.apply(null, W.days.map(function (d) { return d.min; }).concat([1])), y = 290;
+    var V = function (n, f) { return themeVar(n, f) || f; }, font = V('--font-body', 'sans-serif'), disp = V('--font-display', font), mono = /^ui-monospace/.test(V('--font-mono', '')) ? font : V('--font-mono', font);
+    var ink = V('--text-1', 'black'), dim = V('--text-2', 'gray'), mut = V('--text-3', 'gray'), card = V('--surface-1', 'white'), line = V('--border-1', 'silver');
+    x.fillStyle = V('--bg', 'white'); x.fillRect(0, 0, w, h);
+    var r = parseFloat(V('--radius-col', '16')) || 16;
+    function rr(X, Y, W2, H2, R) { x.beginPath(); x.moveTo(X + R, Y); x.arcTo(X + W2, Y, X + W2, Y + H2, R); x.arcTo(X + W2, Y + H2, X, Y + H2, R); x.arcTo(X, Y + H2, X, Y, R); x.arcTo(X, Y, X + W2, Y, R); x.closePath(); }
+    rr(48, 48, w - 96, h - 96, Math.min(r * 2, 36)); x.fillStyle = card; x.fill(); x.strokeStyle = V('--border-2', line); x.lineWidth = 3; x.stroke();
+    function text(s, X, Y, size, color, weight, f, align) { x.fillStyle = color; x.font = (weight || 400) + ' ' + size + 'px ' + (f || font); x.textAlign = align || 'left'; x.fillText(s, X, Y); x.textAlign = 'left'; }
+    function fit(s, max, size, weight, f) { x.font = (weight || 400) + ' ' + size + 'px ' + (f || font); if (x.measureText(s).width <= max) return s; while (s.length > 1 && x.measureText(s + '\u2026').width > max) s = s.slice(0, -1); return s + '\u2026'; }
+    text('SUNDAY PLAN \u00b7 ' + (L.rel === 1 ? 'NEXT WEEK' : 'THIS WEEK'), 104, 136, 26, mut, 600);
+    text(L.range, 104, 210, 72, ink, 700, disp);
+    var sub = (W.n ? plural(W.n, 'assignment') + ' \u00b7 about ' + plan.fmtMin(W.total) : 'No assignments due') + (W.tests.length ? ' \u00b7 ' + W.tests.length + (W.tests.length === 1 ? ' quiz or test' : ' quizzes and tests') : '');
+    text(fit(sub, 870, 32), 104, 262, 32, dim, 400);
+    text('Work due each day', 104, 336, 28, ink, 700, disp);
+    var max = Math.max.apply(null, W.days.map(function (d) { return d.min; }).concat([1])), y = 362;
     W.days.forEach(function (d) {
-      var heavy = W.heaviest && W.heaviest.min && d === W.heaviest;
-      text(d.day.toLocaleDateString('en-US', { weekday: 'short' }), 96, y + 30, 30, heavy ? ink : dim, heavy ? 700 : 400);
-      x.fillStyle = V('--surface-3', 'gray'); x.fillRect(210, y + 6, 560, 32);
-      x.fillStyle = heavy ? acc : V('--border-3', 'gray'); x.fillRect(210, y + 6, Math.max(d.min ? 8 : 0, Math.round(560 * d.min / max)), 32);
-      text(d.min ? plan.fmtMin(d.min) : '\u2013', 796, y + 32, 28, heavy ? ink : dim, heavy ? 700 : 400);
-      y += 62;
+      var heavy = W.heaviest && d === W.heaviest;
+      text(wday(d.day), 104, y + 33, 28, heavy ? ink : dim, heavy ? 700 : 400);
+      rr(200, y + 10, 460, 30, 15); x.fillStyle = V('--bar-track', line); x.fill();
+      if (d.min) { rr(200, y + 10, Math.max(30, Math.round(460 * d.min / max)), 30, 15); x.fillStyle = heavy ? V('--bar-heavy', ink) : V('--bar-fill', dim); x.fill(); }
+      text(d.min ? plan.fmtMin(d.min) + (heavy ? ' \u00b7 busiest' : '') : 'Nothing due', 684, y + 34, 26, heavy ? ink : dim, heavy ? 700 : 400, mono);
+      y += 54;
     });
-    y += 40;
-    text('Quizzes and tests', 96, y, 34, ink, 700, disp); y += 52;
-    (W.tests.length ? W.tests.slice(0, 4) : [null]).forEach(function (t) {
-      text(t ? fit(t.item.d.toLocaleDateString('en-US', { weekday: 'short' }) + '  ' + t.item.title, 860, 30) : 'None this week', 96, y, 30, t ? ink : dim); y += 46;
-    });
-    y += 30;
-    text('Start early', 96, y, 34, ink, 700, disp); y += 52;
-    (W.early.length ? W.early.slice(0, 3) : [null]).forEach(function (e) {
-      text(e ? fit(e.item.title + ' \u00b7 ' + plan.fmtMin(e.est.min), 860, 30) : 'Nothing big this week', 96, y, 30, e ? ink : dim); y += 46;
-    });
-    text('Made with Schoology Board', 96, h - 96, 26, dim, 400);
+    y += 46;
+    function list(title, rows, emptyS) {
+      text(title, 104, y, 28, ink, 700, disp); y += 46;
+      (rows.length ? rows : [null]).forEach(function (row) {
+        if (!row) { text(emptyS, 104, y, 26, mut); y += 44; return; }
+        x.fillStyle = row.c; x.beginPath(); x.arc(114, y - 9, 8, 0, Math.PI * 2); x.fill();
+        text(fit(row.t, 820, 28, 600), 136, y, 28, ink, 600); text(fit(row.m, 820, 23), 136, y + 32, 23, dim); y += 80;
+      });
+    }
+    var sw = function (course) { return V('--swatch-' + colorOf(course).n, ink); };
+    list('Quizzes and tests', W.tests.slice(0, 3).map(function (t) { return { c: sw(t.item.course), t: t.item.title, m: plan.LABEL[t.est.type] + ' \u00b7 ' + wday(t.item.d) + ' \u00b7 ' + nightsWords(t, now) }; }), 'None ' + (L.rel === 1 ? 'next' : 'this') + ' week');
+    y += 14;
+    list('Start early', W.early.slice(0, 2).map(function (e) { return { c: sw(e.item.course), t: e.item.title, m: 'About ' + plan.fmtMin(e.est.min) + ' \u00b7 due ' + wday(e.item.d) + ' \u00b7 first ' + plan.fmtMin(e.chunk) + ' tonight' }; }), 'Nothing big coming up');
+    text('Made with Schoology Board', 104, h - 92, 24, mut, 400);
     return c;
   }
   function shareWeek() {
     if (!lastWeek) return;
-    var c = weekCanvas(), name = 'week-ahead-' + dayKey(addDays(ics.defaultWeekStart(new Date()), 0)) + '.png';
-    c.toBlob(function (blob) {
-      if (!blob) { toastErr('Could not make the image in this browser.'); return; }
-      var file = window.File ? new File([blob], name, { type: 'image/png' }) : null;
-      if (file && navigator.canShare && navigator.canShare({ files: [file] }) && sheetMode()) {
-        navigator.share({ files: [file], title: 'My week' }).catch(function () { });
-        return;
-      }
-      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
-      document.body.appendChild(a); a.click();
-      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-      toast('Image saved to your downloads.');
-    }, 'image/png');
+    var name = 'sunday-plan-' + dayKey(ics.defaultWeekStart(new Date())) + '.png';
+    var fonts = [themeVar('--font-body', ''), themeVar('--font-display', ''), themeVar('--font-mono', '')].filter(Boolean);
+    var ready = document.fonts && document.fonts.load ? Promise.all(fonts.map(function (f) { return document.fonts.load('600 28px ' + f).catch(function () { }); })) : Promise.resolve();
+    ready.then(function () {
+      weekCanvas().toBlob(function (blob) {
+        if (!blob) { toastErr('Could not make the image in this browser.'); return; }
+        var file = window.File ? new File([blob], name, { type: 'image/png' }) : null;
+        if (file && shareFilesOk()) {
+          navigator.share({ files: [file], title: 'My week' }).catch(function (e) { if (e && e.name !== 'AbortError') saveBlob(blob, name); });
+          return;
+        }
+        saveBlob(blob, name);
+      }, 'image/png');
+    });
+  }
+  function saveBlob(blob, name) {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    toast('Image saved to your downloads.');
   }
 
   function itemById(id) {
@@ -1896,7 +1948,7 @@
   // ---------- move to phone: the board travels in the link's #fragment, which browsers never send to a server ----------
   var MOVE_KEY = '#move=', QR_MAX = 1200;
   // Payload key -> state map. Keys may be hashed calendar ids ('~...'; sdone keys end in '@YYYY-MM-DD').
-  var MOVE_MAPS = [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden'], ['es', 'est'], ['ty', 'ttype'], ['ac', 'actual'], ['sd', 'sdone'], ['pu', 'pulled'], ['ok', 'checked']];
+  var MOVE_MAPS = [['st', 'status'], ['ov', 'ov'], ['hd', 'hidden'], ['es', 'est'], ['ty', 'ttype'], ['ac', 'actual'], ['sd', 'sdone'], ['pu', 'pulled'], ['ep', 'earlyPin'], ['ok', 'checked']];
   function b64u(bytes) {
     var bin = '';
     for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
@@ -1991,7 +2043,7 @@
   }
   // Turn a move payload into board state. Hashed calendar UIDs wait in S.pending until the feed arrives.
   function stateFromMove(p) {
-    var st = { status: {}, ov: {}, hidden: {}, est: {}, ttype: {}, actual: {}, sdone: {}, pulled: {}, checked: {}, pending: null, ics: {} };
+    var st = { status: {}, ov: {}, hidden: {}, est: {}, ttype: {}, actual: {}, sdone: {}, pulled: {}, earlyPin: {}, checked: {}, pending: null, ics: {} };
     MOVE_MAPS.forEach(function (pair) {
       var m = p[pair[0]] || {};
       Object.keys(m).forEach(function (k) {
@@ -2031,7 +2083,7 @@
       S = normalizeState(base);
       if (!S.feedUrl && MODE === 'web') S.feedUrl = keepFeed; // a backup never carries the link; keep this device's
     } else {
-      ['status', 'ov', 'hidden', 'custom', 'cas', 'rename', 'classMap', 'ics', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'checked'].forEach(function (k) { if (inc[k]) cur[k] = Object.assign({}, cur[k], inc[k]); });
+      ['status', 'ov', 'hidden', 'custom', 'cas', 'rename', 'classMap', 'ics', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'earlyPin', 'checked'].forEach(function (k) { if (inc[k]) cur[k] = Object.assign({}, cur[k], inc[k]); });
       if (inc.colors) Object.keys(inc.colors).forEach(function (t) { cur.colors[t] = Object.assign({}, cur.colors[t], inc.colors[t]); });
       if (inc.colorAuto) Object.keys(inc.colorAuto).forEach(function (t) { cur.colorAuto[t] = Object.assign({}, inc.colorAuto[t], cur.colorAuto[t]); });
       if (inc.prefs && inc.prefs.theme) { cur.prefs.theme = inc.prefs.theme; cur.prefs.mode = inc.prefs.mode || ''; }
@@ -2517,6 +2569,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, version: '1.7.0' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, week: function () { var now = new Date(); return plan.weekAhead(allItems(), pctx(), ics.defaultWeekStart(now), now); }, version: '1.8.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
