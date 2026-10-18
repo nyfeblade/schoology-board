@@ -531,3 +531,76 @@ dialog.reset .dlg-f .btn.danger{background:var(--late);border-color:var(--late);
  :root .tnm .thero .hr{column-gap:16px;align-self:stretch}
  :root:not([data-theme="nocturne"]) .tnm .thero .hr>.tprog{margin-left:auto}
 }
+/* ---------- phone board header (600px and narrower) ----------
+   Row 1: logo + "Board", "‹ Oct 19–25 › · Synced 4m ago" under it, search / filter / ⋯ on the right.
+   Row 2: the view chip ("Week ▾") and the class chips in one scrolling row. Row 3: the column tabs (sticky).
+   Add task is a round button above the tab bar. A compact title bar fades in once row 1 scrolls away. */
+.mh,.mbar,.fab,.vchip{display:none}
+@media (max-width:600px){
+ body[data-tab=board] .topbar,body[data-tab=board] .bhead{display:none}
+ .mh{display:block;padding:8px 16px 0}
+ .mh1{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;height:44px}
+ .mh-id{display:grid;grid-template-columns:24px minmax(0,auto);column-gap:10px;align-items:center;min-width:0}
+ .mh-logo{display:block;grid-row:1}
+ .mh-tt{display:contents}
+ .mh-t{grid-row:1;grid-column:2}
+ .mh-sub{grid-row:2;grid-column:1/-1}
+ span.mh-fr{display:block;overflow:hidden;text-overflow:ellipsis;margin:0;padding:0}
+ .mh-t{margin:0;font:700 20px/22px var(--fh);letter-spacing:var(--lsh);text-transform:var(--tth);color:var(--ink)}
+ .mh-sub{display:flex;align-items:center;gap:4px;height:18px;margin-top:1px;font-size:12px;line-height:16px;color:var(--mut);white-space:nowrap;min-width:0}
+ .mh-ar{position:relative;flex:none;width:16px;height:16px;padding:0;border:0;border-radius:4px;background:none;color:var(--ink2);font:inherit;font-size:16px;line-height:14px;cursor:pointer;display:inline-grid;place-items:center}
+ .mh-ar::before{content:"";position:absolute;inset:-6px}
+ .mh-ar svg{width:14px;height:14px;stroke-width:2.4}
+ .mh-wk{color:var(--ink2);font-weight:600;font-variant-numeric:tabular-nums}
+ .mh-sep{margin:0 2px}
+ .mh-fr{position:relative;display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 5px;margin:0 -5px;border:0;border-radius:4px;background:none;color:var(--mut);font:inherit;cursor:pointer;min-width:0;overflow:visible}
+ button.mh-fr::before{content:"";position:absolute;inset:-6px 0}
+ .mh-fr .fdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+ .mh-fr.stale{margin:0;background:var(--warn);color:var(--warnInk);font-weight:700}
+ .mh-fr.ferr{color:var(--late);font-weight:700}
+ .mh-link{position:relative;padding:0;border:0;background:none;font:inherit;font-weight:700;color:var(--ink);text-decoration:underline;text-decoration-color:var(--acc);text-decoration-thickness:2px;text-underline-offset:3px;cursor:pointer}
+ .mh-link::before{content:"";position:absolute;inset:-7px -4px}
+ .mh-ar:focus-visible,.mh-fr:focus-visible,.mh-link:focus-visible{outline:0;box-shadow:var(--ring)}
+ .mh-ic{display:flex;gap:4px;flex:none;margin-right:-6px}
+ .mib{position:relative;width:36px;height:36px;display:inline-grid;place-items:center;padding:0;border:0;border-radius:var(--rs);background:none;color:var(--ink);cursor:pointer}
+ .mib svg{width:20px;height:20px}
+ .mib:focus-visible{outline:0;box-shadow:var(--ring)}
+ .mib .dot{display:none;position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--ink)}
+ .mib.on .dot{display:block}
+ .mh1.searching>.mh-id,.mh1.searching>.mh-ic{visibility:hidden}
+ .mh-s{position:absolute;left:0;right:0;top:4px;height:36px;z-index:2;display:flex;align-items:center;gap:8px;padding:0 0 0 12px;background:var(--card);border:var(--bw) solid var(--border-2);border-radius:var(--radius-input)}
+ .mh-s[hidden]{display:none}
+ .mh-s>svg{width:18px;height:18px;color:var(--mut);flex:none}
+ .mh-s input{flex:1;min-width:0;height:100%;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:16px;outline:0}
+ .mh-s input::-webkit-search-cancel-button{display:none}
+ :root .mh-s input:focus,:root .mh-s input:focus-visible{outline:0;box-shadow:none;border:0}
+ .mh-s:focus-within{box-shadow:var(--ring)}
+ .mh-s .mib{width:34px;height:34px}
+ /* row 2 */
+ .sb-tools{display:block;padding:8px 0 0}
+ .sb-tools .tl,.sb-tools .tr,.sb-tools .seg,.sb-tools .weeknav{display:none!important}
+ .sb-tools>.chips-wrap{display:flex;gap:8px;margin:0;padding:0 40px 0 16px;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(to right,currentColor calc(100% - 24px),transparent);mask-image:linear-gradient(to right,currentColor calc(100% - 24px),transparent)}
+ .sb-tools>.chips-wrap::-webkit-scrollbar{display:none}
+ .sb-tools>.chips-wrap .chips{flex:none;flex-wrap:nowrap;overflow:visible;padding:0;-webkit-mask-image:none;mask-image:none}
+ :root .sb-tools>.chips-wrap .chip{height:32px;flex:none}
+ :root .sb-tools>.chips-wrap>.vchip.chip,:root .sb-tools>.chips-wrap>.vchip.chip:hover{display:inline-flex;gap:4px;background:var(--ink);border-color:var(--ink);color:var(--bgc);font-weight:700;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+ /* the column starts right under the tabs: its date heading is the first thing below them */
+ body[data-tab=board] .board{padding-top:4px}
+ body[data-tab=board] .col{padding-top:0}
+ :root body[data-tab=board] .col h2+.day.dgrp{margin-top:0}
+ .vchip .vc{font-size:10px;opacity:.85}
+ /* row 3: column tabs stick to the top (under the compact bar once it shows) */
+ .colnav{top:var(--mstick,0px);margin-top:8px;border-bottom:1px solid var(--border-1)}
+ .colnav button{height:40px}
+ body[data-tab=board].mcompact{--mstick:44px}
+ body[data-tab=board] .mbar{display:flex;position:fixed;top:0;left:0;right:0;z-index:26;height:44px;box-sizing:border-box;align-items:center;justify-content:space-between;gap:8px;padding:0 10px 0 16px;background:var(--colnav-bg);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--dur-fast) ease-out,visibility var(--dur-fast) step-end}
+ body[data-tab=board].mcompact .mbar{opacity:1;visibility:visible;pointer-events:auto;transition:opacity var(--dur-fast) ease-out,visibility var(--dur-fast) step-start}
+ .mbar-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 16px/1.2 var(--fh);letter-spacing:var(--lsh);text-transform:var(--tth);color:var(--ink)}
+ /* Add task: a round button above the tab bar; the board gets room so it never covers the last card */
+ body[data-tab=board] .fab{display:grid;place-items:center;position:fixed;right:16px;bottom:calc(var(--botnav-h) + env(safe-area-inset-bottom) + 16px);z-index:40;width:56px;height:56px;padding:0;border-radius:var(--rb);background:var(--acc);color:var(--accInk);border:var(--bw) solid var(--bc);box-shadow:var(--sh);cursor:pointer}
+ .fab svg{width:26px;height:26px;stroke-width:2.4}
+ .fab:focus-visible{outline:0;box-shadow:var(--ring)}
+ body[data-tab=board] .board{padding-bottom:16px}
+ body[data-tab=board] #app{padding-bottom:calc(var(--botnav-h) + env(safe-area-inset-bottom) + 88px)}
+ body[data-tab=board] #sb-toast{bottom:calc(var(--botnav-h) + env(safe-area-inset-bottom) + 88px)}
+}

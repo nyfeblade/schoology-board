@@ -51,7 +51,7 @@
   --accent-soft:var(--soft); --accent-softer:var(--warnSoft);
   --note-color:var(--mut);
   --btn-bg:var(--card); --btn-active-bg:var(--soft); --seg-active-bg:var(--navon); --seg-active-ink:var(--navonInk);
-  --header-bg:transparent; --colnav-bg:var(--card);
+  --header-bg:transparent; --colnav-bg:var(--card); --mstick:0px; /* phone board: the column tabs stick this far from the top (44px under the compact title bar) */
   --col-bg:transparent; --col-border:var(--hair); --col-border-style:dashed; --col-over-bg:var(--warnSoft);
   --card-bg:var(--card); --card-hover-bg:var(--card); --card-border:var(--bc); --card-edge:var(--bc);
   --card-late-bg:var(--lateBg); --card-done-bg:var(--soft);

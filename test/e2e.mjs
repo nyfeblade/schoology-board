@@ -37,7 +37,7 @@ function watch(page, tag) {
 }
 const state = (page) => page.evaluate(() => window.SchoologyBoard.state());
 // The ⋯ menu closes if an async import finishes and re-renders right as it opens; open it again in that case.
-const more = async (page, id) => { for (let k = 0; ; k++) { await page.click('#sb-more'); try { await page.click(id, { timeout: k < 2 ? 2500 : 30000 }); return; } catch (e) { if (k >= 2) throw e; await page.keyboard.press('Escape'); await page.waitForTimeout(300); } } };
+const more = async (page, id) => { for (let k = 0; ; k++) { await page.locator('#sb-more, #sb-mmore').locator('visible=true').first().click(); try { await page.click(id, { timeout: k < 2 ? 2500 : 30000 }); return; } catch (e) { if (k >= 2) throw e; await page.keyboard.press('Escape'); await page.waitForTimeout(300); } } };
 const newCtx = async (opts = {}) => { const c = await browser.newContext({ timezoneId: 'America/New_York', acceptDownloads: true, viewport: { width: 1440, height: 900 }, ...opts }); await c.clock.setFixedTime(opts.now || NOW); return c; };
 const cardByTitle = (page, t) => page.locator('.card', { hasText: t }).first();
 // The "Name your classes" step opens after a user import; skip it when a test isn't about it.
@@ -127,7 +127,7 @@ await mpage.screenshot({ path: join(SHOTS, 'mobile-board.png') });
   await mpage.locator('#sb-colnav button[data-col="done"]').tap(); await mpage.waitForTimeout(700);
   ok('mobile: tapping a column name jumps there and underlines it', await mpage.locator('#sb-colnav button[data-col="done"]').getAttribute('aria-current') === 'true');
   await mpage.locator('#sb-colnav button[data-col="todo"]').tap(); await mpage.waitForTimeout(700);
-  await mpage.locator('#sb-more').tap(); await mpage.waitForSelector('.menu.sheet');
+  await mpage.locator('#sb-mmore').tap(); await mpage.waitForSelector('.menu.sheet');
   const sheetText = await mpage.locator('.menu.sheet').innerText();
   ok('mobile: ⋯ opens a bottom sheet with Import tasks, Edit categories and Save a backup file', /Import tasks/.test(sheetText) && /Edit categories/.test(sheetText) && /Save a backup file/.test(sheetText) && !/Download for offline/.test(sheetText) && !/Keyboard/.test(sheetText));
   await mpage.locator('.scrim').tap({ position: { x: 20, y: 20 } }); await mpage.waitForTimeout(200);
@@ -500,7 +500,7 @@ await octx.close();
   await pctx.route('**/api/feed', (r) => r.fulfill({ status: 200, contentType: 'text/calendar', body: B }));
   await pctx.addInitScript((st) => { if (!localStorage.getItem('schoology-board:v1')) localStorage.setItem('schoology-board:v1', st); }, JSON.stringify({ ...rs, lastFetch: { at: wed.getTime() + 60e3, ok: true } }));
   const pp = await pctx.newPage(); watch(pp, 'phone');
-  await pp.goto(BASE + '/'); await board(pp, ' .card'); await pp.waitForSelector('.bhead .fpill.ok'); await pp.waitForTimeout(400);
+  await pp.goto(BASE + '/'); await board(pp, ' .card'); await pp.waitForSelector('.mh-fr.ok'); await pp.waitForTimeout(400);
   ok('phone: note and status fit without horizontal overflow', await pp.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await pp.screenshot({ path: join(SHOTS, 'phone-board.png') });
   await pctx.close();
@@ -787,7 +787,7 @@ await octx.close();
     await pg.goto(BASE + '/'); await pg.waitForSelector('#imp-url'); await grab(pg, 'first run');
     await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow'); await grab(pg, 'Tonight');
     await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card'); await grab(pg, 'Board');
-    await pg.click('#sb-more'); await grab(pg, 'More menu'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
+    await pg.locator('#sb-more, #sb-mmore').locator('visible=true').first().click(); await grab(pg, 'More menu'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
     await tab(pg, 'ahead'); await grab(pg, 'Sunday plan');
     await tab(pg, 'cal'); await grab(pg, 'Calendar (soon)');
     await more(pg, '#sb-import'); await pg.waitForSelector('dialog #imp-url'); await grab(pg, 'Import dialog'); await pg.keyboard.press('Escape');
@@ -1189,12 +1189,11 @@ await octx.close();
   await pg.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await pg.waitForTimeout(250);
   const hid = await pg.evaluate(() => { const h = [...document.querySelectorAll('.hid.fin')].pop(); const n = document.querySelector('#sb-botnav').getBoundingClientRect(); return h ? { b: Math.round(h.getBoundingClientRect().bottom), top: Math.round(n.top), txt: h.textContent } : null; });
   ok('"Hiding 1 finished item · Show" is never under the tab bar', hid && hid.b <= hid.top, JSON.stringify(hid));
-  // board header: pill + progress on one row, view switch + week on one row, ~150px of chrome
+  // board header on a phone (v1.10): row 1 title + week + freshness + 3 icons, row 2 chips, row 3 tabs; about 140px of chrome
   await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card'); await pg.evaluate(() => scrollTo(0, 0)); await pg.waitForTimeout(250);
-  const hdr = await pg.evaluate(() => { const r = (s) => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; }; const top = r('#sb-top'), card = r('.col[data-col="todo"] .card'), dh = r('.col[data-col="todo"] .day'), pill = r('#sb-fresh .fpill'), prog = r('.bhead .prog'), seg = r('.seg'), wk = r('#sb-weeknav');
-    return { topbar: Math.round(top.bottom), firstCard: Math.round(card.top), chrome: Math.round(card.top - top.bottom), toFirstHeading: Math.round(dh.top - top.bottom), pillRow: Math.abs((pill.top + pill.bottom) / 2 - (prog.top + prog.bottom) / 2) < 6, segRow: Math.abs((seg.top + seg.bottom) / 2 - (wk.top + wk.bottom) / 2) < 6, overflow: document.documentElement.scrollWidth > innerWidth }; });
-  ok('phone board header: freshness/link pill and progress on one row; Due today/Week/All and ‹ week › on one row', hdr.pillRow && hdr.segRow && !hdr.overflow, JSON.stringify(hdr));
-  ok(`phone board header is compact (target ~150px; measured ${hdr.chrome}px to the first card, ${hdr.toFirstHeading}px to the first day heading; was 231px)`, hdr.chrome <= 210, JSON.stringify(hdr));
+  const hdr = await pg.evaluate(() => { const r = (s) => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; }; const card = r('.col[data-col="todo"] .card'), dh = r('.col[data-col="todo"] .day'), tabs = r('#sb-colnav');
+    return { tabsBottom: Math.round(tabs.bottom), firstHeading: Math.round(dh.top), firstCard: Math.round(card.top), topbar: !!document.querySelector('#sb-top').offsetParent, overflow: document.documentElement.scrollWidth > innerWidth }; });
+  ok(`phone board header is compact: tabs end at ${hdr.tabsBottom}px, first day heading at ${hdr.firstHeading}px, first card at ${hdr.firstCard}px (designer target ~148; was 257px to the first card)`, hdr.tabsBottom <= 142 && hdr.firstHeading <= 150 && hdr.firstCard <= 180 && !hdr.topbar && !hdr.overflow, JSON.stringify(hdr));
   writeFileSync(join(SHOTS, 'qa-header.json'), JSON.stringify(hdr));
   await pg.screenshot({ path: join(SHOTS, 'qa-board-390.png') });
   // 10. Reset asks first, names what gets erased, offers a backup
@@ -1438,6 +1437,122 @@ await octx.close();
   const rm = await pg.evaluate(() => { let n = 0; document.querySelectorAll('*').forEach((e) => { const cs = getComputedStyle(e); if (cs.animationName !== 'none' && parseFloat(cs.animationDuration) > 0.01) n++; }); return { n, verdict: document.querySelector('#verdict').textContent, full: !!document.querySelector('.nsk .cst.full') }; });
   ok('Nocturne with reduced motion: the finished constellation shows without animation', rm.n === 0 && rm.full && /sky’s clear/.test(rm.verdict), JSON.stringify(rm));
   await c.close();
+}
+// ---------- 22. Phone board header (600px and narrower) ----------
+{
+  const MNOW = new Date('2026-10-19T17:02:00-04:00');
+  for (const [W, H] of [[390, 844], [360, 780]]) {
+    const c = await newCtx({ now: MNOW, viewport: { width: W, height: H }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); const pg = await c.newPage(); watch(pg, 'mhead-' + W);
+    await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+    await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card'); await pg.waitForTimeout(250);
+    const g = await pg.evaluate(() => { const r = (s) => { const e = document.querySelector(s); return e && e.offsetParent !== null ? e.getBoundingClientRect() : null; };
+      const h1 = r('#sb-mh1'), chips = r('#sb-chipsw'), tabs = r('#sb-colnav'), icons = [...document.querySelectorAll('.mh-ic .mib')].map((b) => [Math.round(b.getBoundingClientRect().width), Math.round(b.getBoundingClientRect().height), b.getAttribute('aria-label')]);
+      const arrows = [...document.querySelectorAll('.mh-ar')].map((b) => { const cs = getComputedStyle(b, '::before'); return Math.round(b.getBoundingClientRect().width - 2 * parseFloat(cs.left)); });
+      return { h1: [Math.round(h1.top), Math.round(h1.height)], chips: [Math.round(chips.top), Math.round(document.querySelector('#sb-chips .chip').getBoundingClientRect().height)], tabs: [Math.round(tabs.top), Math.round(document.querySelector('#sb-colnav button').getBoundingClientRect().height)],
+        icons, arrows, title: document.querySelector('.mh-t').textContent, sub: document.querySelector('#sb-msub').textContent, topbar: !!r('#sb-top'), seg: !!r('.seg'), prog: !!r('#sb-prog'), add: !!r('#sb-add'), bhead: !!r('.bhead'),
+        first: document.querySelector('#sb-chipsw').firstElementChild.id, vchip: document.querySelector('#sb-vchip').textContent, overflow: document.documentElement.scrollWidth > innerWidth }; });
+    ok(`phone ${W}px: row 1 is 44px with 8px above (logo, "Board", "‹ Oct 19–25 › · Link Schoology →"); chips 32px 8px below; tabs 40px 8px below`, g.h1[0] === 8 && g.h1[1] === 44 && g.chips[0] === 60 && g.chips[1] === 32 && g.tabs[0] === 100 && g.tabs[1] === 40 && g.title === 'Board' && /Oct 19–25.*·.*Link Schoology →/.test(g.sub), JSON.stringify(g));
+    ok(`phone ${W}px: search, filter and ⋯ are 36px icon buttons with labels; the week arrows are 28px tap targets`, g.icons.length === 3 && g.icons.every((x) => x[0] === 36 && x[1] === 36 && x[2]) && g.icons.map((x) => x[2]).join('|') === 'Search|Filter|More actions' && g.arrows.length === 2 && g.arrows.every((a) => a === 28), JSON.stringify([g.icons, g.arrows]));
+    ok(`phone ${W}px: no top bar, Add task button, progress bar or Due today/Week/All bar on the board; "Week ▾" is the first chip; nothing scrolls sideways`, !g.topbar && !g.add && !g.prog && !g.seg && !g.bhead && g.first === 'sb-vchip' && g.vchip === 'Week▾' && !g.overflow, JSON.stringify(g));
+    const vc = await pg.evaluate(() => { const v = getComputedStyle(document.querySelector('#sb-vchip')), i = document.createElement('i'); i.style.color = 'var(--ink)'; document.body.appendChild(i); const ink = getComputedStyle(i).color; i.remove(); return { bg: v.backgroundColor, ink }; });
+    ok(`phone ${W}px: the view chip is ink-filled`, vc.bg === vc.ink, JSON.stringify(vc));
+    const fade = await pg.evaluate(() => getComputedStyle(document.querySelector('#sb-chipsw')).webkitMaskImage || getComputedStyle(document.querySelector('#sb-chipsw')).maskImage);
+    ok(`phone ${W}px: the chip row fades out over its last 24px`, /calc\(100% - 24px\)/.test(fade), fade);
+    if (W === 390) {
+      // view menu
+      await pg.locator('#sb-vchip').tap(); await pg.waitForSelector('.menu.sheet');
+      const vm = await pg.locator('.menu.sheet .menu-i').allInnerTexts();
+      ok('view chip opens a menu with Due today / Week / All (Week checked)', vm.map((x) => x.trim()).join('|') === 'Due today|Week|All' && await pg.locator('#sb-v-week[aria-checked="true"]').count() === 1, vm.join('|'));
+      await pg.locator('#sb-v-all').tap(); await pg.waitForTimeout(200);
+      ok('choosing All switches the board and the chip reads "All ▾"; the line under the title says "All dates"', (await state(pg)).prefs.view === 'all' && (await pg.locator('#sb-vchip').innerText()).startsWith('All') && /All dates/.test(await pg.locator('#sb-msub').innerText()) && await pg.locator('.mh-ar').count() === 0);
+      await pg.locator('#sb-vchip').tap(); await pg.locator('#sb-v-today').tap(); await pg.waitForTimeout(200);
+      ok('Due today from the menu', (await state(pg)).prefs.view === 'today' && /Due today/.test(await pg.locator('#sb-msub').innerText()));
+      await pg.locator('#sb-vchip').tap(); await pg.locator('#sb-v-week').tap(); await pg.waitForTimeout(200);
+      await pg.locator('#sb-mnext').tap(); await pg.waitForTimeout(150);
+      ok('› moves to next week (Oct 26–Nov 1) and the view menu offers "Back to this week"', /Oct 26/.test(await pg.locator('#sb-msub').innerText()) && (await pg.locator('#sb-vchip').tap(), await pg.locator('#sb-v-now').isVisible()));
+      await pg.locator('#sb-v-now').tap(); await pg.waitForTimeout(150);
+      ok('back on this week', /Oct 19–25/.test(await pg.locator('#sb-msub').innerText()) && (await state(pg)).prefs.weekOffset === 0);
+      // filter sheet holds Group by class
+      await pg.locator('#sb-mfilter').tap(); await pg.waitForSelector('.menu.sheet');
+      ok('Filter opens a sheet with Hide past and Group by class', await pg.locator('.menu.sheet #sb-hidepast').count() === 1 && await pg.locator('.menu.sheet #sb-groupcls').count() === 1);
+      await pg.locator('.menu.sheet label:has(#sb-groupcls)').tap(); await pg.waitForTimeout(150);
+      ok('grouping by class from the sheet works and lights the filter dot', (await state(pg)).prefs.groupBy === 'class' && await pg.locator('#sb-mfilter.on').count() === 1 && /filters are on/.test(await pg.locator('#sb-mfilter').getAttribute('aria-label')));
+      await pg.locator('.menu.sheet label:has(#sb-groupcls)').tap(); await pg.keyboard.press('Escape'); await pg.waitForTimeout(150);
+      // search expand / close
+      const n0 = await pg.locator('#sb-board .card').count();
+      await pg.locator('#sb-msearch-btn').tap(); await pg.waitForTimeout(100);
+      const sb = await pg.evaluate(() => { const s = document.querySelector('#sb-ms').getBoundingClientRect(), r = document.querySelector('#sb-mh1').getBoundingClientRect(); return { open: !document.querySelector('#sb-ms').hidden, full: Math.round(s.width) === Math.round(r.width), focus: document.activeElement.id, exp: document.querySelector('#sb-msearch-btn').getAttribute('aria-expanded'), title: getComputedStyle(document.querySelector('.mh-id')).visibility }; });
+      ok('search expands over row 1, full width, focused', sb.open && sb.full && sb.focus === 'sb-msearch' && sb.exp === 'true' && sb.title === 'hidden', JSON.stringify(sb));
+      await pg.keyboard.type('osmosis'); await pg.waitForTimeout(200);
+      const n1 = await pg.locator('#sb-board .card').count();
+      await pg.screenshot({ path: join(SHOTS, 'mhead-search.png') });
+      await pg.keyboard.press('Escape'); await pg.waitForTimeout(150);
+      ok('typing filters the cards; Esc closes search, clears it and puts focus back on the search button', n1 >= 1 && n1 < n0 && await pg.locator('#sb-ms').isHidden() && (await state(pg)).prefs.q === '' && await pg.locator('#sb-board .card').count() === n0 && await pg.evaluate(() => document.activeElement.id) === 'sb-msearch-btn', `${n0} → ${n1}`);
+      await pg.locator('#sb-msearch-btn').tap(); await pg.keyboard.type('zzz'); await pg.locator('#sb-msx').tap(); await pg.waitForTimeout(150);
+      ok('× closes and clears search too', await pg.locator('#sb-ms').isHidden() && (await state(pg)).prefs.q === '');
+      // FAB
+      const fab = await pg.evaluate(() => { const f = document.querySelector('#sb-fab'), r = f.getBoundingClientRect(), n = document.querySelector('#sb-botnav').getBoundingClientRect(), cs = getComputedStyle(f), i = document.createElement('i'); i.style.color = 'var(--acc)'; document.body.appendChild(i); const acc = getComputedStyle(i).color; i.remove();
+        return { w: Math.round(r.width), h: Math.round(r.height), right: Math.round(innerWidth - r.right), gap: Math.round(n.top - r.bottom), label: f.getAttribute('aria-label'), bg: cs.backgroundColor, acc, pos: cs.position }; });
+      ok('Add task is a 56px round button bottom-right, 16px above the tab bar, accent-filled, labelled "Add task"', fab.w === 56 && fab.h === 56 && fab.right === 16 && fab.gap === 16 && fab.label === 'Add task' && fab.bg === fab.acc && fab.pos === 'fixed', JSON.stringify(fab));
+      await pg.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await pg.waitForTimeout(250);
+      const cover = await pg.evaluate(() => { const f = document.querySelector('#sb-fab').getBoundingClientRect(); const col = document.querySelector('.col[data-col="todo"]'), cards = col.querySelectorAll('.card'), last = cards[cards.length - 1].getBoundingClientRect(), foot = document.querySelector('.foot').getBoundingClientRect(); return { lastBottom: Math.round(last.bottom), footBottom: Math.round(foot.bottom), fabTop: Math.round(f.top) }; });
+      ok('scrolled to the end, the round button covers neither the last card nor the footer', cover.lastBottom <= cover.fabTop && cover.footBottom <= cover.fabTop, JSON.stringify(cover));
+      await pg.evaluate(() => scrollTo(0, 0)); await pg.waitForTimeout(150);
+      await pg.locator('#sb-fab').tap(); await pg.waitForSelector('dialog #ed-save');
+      ok('the round button opens Add task', /Add task/.test(await pg.locator('dialog #ed-save').innerText())); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
+      // sticky tabs + compact bar
+      const pre = await pg.evaluate(() => ({ on: document.body.classList.contains('mcompact'), op: getComputedStyle(document.querySelector('#sb-mbar')).opacity }));
+      await pg.evaluate(() => scrollTo(0, 400)); await pg.waitForTimeout(400);
+      const sc = await pg.evaluate(() => { const t = document.querySelector('#sb-colnav'), cs = getComputedStyle(t), bar = document.querySelector('#sb-mbar'), bs = getComputedStyle(bar); return { tabsTop: Math.round(t.getBoundingClientRect().top), pos: cs.position, border: cs.borderBottomWidth, barOp: bs.opacity, barH: Math.round(bar.getBoundingClientRect().height), barTop: Math.round(bar.getBoundingClientRect().top), text: document.querySelector('#sb-mbar-t').textContent, dur: bs.transitionDuration, search: !!bar.querySelector('#sb-mbar-s'), hidden: bar.getAttribute('aria-hidden') }; });
+      ok('before scrolling the compact bar is hidden', !pre.on && pre.op === '0', JSON.stringify(pre));
+      ok('scrolled: rows 1–2 are gone, the 44px "Board · Oct 19–25" bar (with search) fades in within 0.2s and the column tabs stick right under it with a 1px border', sc.barOp === '1' && sc.barH === 44 && sc.barTop === 0 && sc.text === 'Board · Oct 19–25' && sc.search && sc.hidden === 'false' && sc.pos === 'sticky' && sc.tabsTop === 44 && sc.border === '1px' && parseFloat(sc.dur) <= 0.2, JSON.stringify(sc));
+      await pg.screenshot({ path: join(SHOTS, 'mhead-scrolled.png') });
+      await pg.locator('#sb-mbar-s').tap(); await pg.waitForTimeout(250);
+      ok('the compact bar\'s search scrolls back up and opens search', await pg.evaluate(() => scrollY) === 0 && await pg.locator('#sb-ms').isVisible() && await pg.evaluate(() => document.activeElement.id) === 'sb-msearch');
+      await pg.keyboard.press('Escape');
+      // freshness on the line under the title: linked, stale, failed
+      const fr = async (k) => { await pg.evaluate((k) => { const S = window.SchoologyBoard.state(); S.feedUrl = 'https://feed.example.invalid/x.ics'; S.lastFetch = k === 'stale' ? { at: Date.now() - 7 * 3600e3, ok: true } : k === 'err' ? { at: Date.now() - 2 * 3600e3, ok: false } : { at: Date.now() - 4 * 60e3, ok: true }; window.SchoologyBoard.render(); }, k); await pg.waitForTimeout(150);
+        return pg.evaluate(() => { const b = document.querySelector('#sb-msub .mh-fr'), cs = getComputedStyle(b), v = (n) => { const i = document.createElement('i'); i.style.color = 'var(' + n + ')'; document.body.appendChild(i); const c = getComputedStyle(i).color; i.remove(); return c; };
+          return { text: b.textContent, cls: b.className, tag: b.tagName, refresh: b.hasAttribute('data-refresh'), color: cs.color, bg: cs.backgroundColor, warn: v('--warn'), warnInk: v('--warnInk'), late: v('--late'), mut: v('--mut'), banner: (document.querySelector('#sb-banner .banner') || {}).className || '' }; }); };
+      await pg.route('**/api/feed', (r) => r.fulfill({ status: 504, body: '' }));
+      const ok1 = await fr('ok');
+      ok('linked: "Synced 4m ago" in muted text; tapping it refreshes', ok1.text === 'Synced 4m ago' && ok1.tag === 'BUTTON' && ok1.refresh && ok1.color === ok1.mut && !ok1.banner, JSON.stringify(ok1));
+      const st = await fr('stale');
+      ok('stale (>6h): the Synced text turns the theme\'s stale yellow AND the stale banner still shows', st.text === 'Synced 7h ago' && /stale/.test(st.cls) && st.bg === st.warn && st.color === st.warnInk && /banner stale/.test(st.banner), JSON.stringify(st));
+      const er = await fr('err');
+      ok('failed refresh: "Sync failed" in the error style AND the error banner still shows', er.text === 'Sync failed' && /ferr/.test(er.cls) && er.color === er.late && /banner ferr/.test(er.banner), JSON.stringify(er));
+      await pg.screenshot({ path: join(SHOTS, 'mhead-error.png'), clip: { x: 0, y: 0, width: 390, height: 300 } });
+      await pg.unroute('**/api/feed');
+      await pg.evaluate(() => { const S = window.SchoologyBoard.state(); S.feedUrl = ''; S.lastFetch = null; window.SchoologyBoard.render(); });
+      // reduced motion: no fade
+      await pg.emulateMedia({ reducedMotion: 'reduce' }); await pg.waitForTimeout(100);
+      ok('reduced motion: the compact bar appears without a fade', parseFloat(await pg.evaluate(() => getComputedStyle(document.querySelector('#sb-mbar')).transitionDuration)) === 0);
+      await pg.emulateMedia({ reducedMotion: 'no-preference' });
+      // other tabs keep the regular header; wider than 600px keeps the tablet layout
+      await tab(pg, 'now'); await pg.waitForTimeout(150);
+      ok('Tonight keeps its top bar (logo, Add task, ⋯) and shows no round button', await pg.locator('#sb-top').isVisible() && await pg.locator('#sb-add').isVisible() && await pg.locator('#sb-fab').count() === 0);
+      await tab(pg, 'board'); await pg.setViewportSize({ width: 700, height: 900 }); await pg.waitForTimeout(200);
+      ok('at 700px the board keeps the regular header (no compact rows, no round button)', await pg.locator('#sb-mh1').isHidden() && await pg.locator('#sb-fab').isHidden() && await pg.locator('.seg').isVisible() && await pg.locator('#sb-add').isVisible());
+    }
+    await c.close();
+  }
+  // every theme at 390x844 and 360x780: header geometry and no clipping
+  const THM = [['sticker', ''], ['arcade', ''], ['notebook', ''], ['notebook', 'dark'], ['varsity', ''], ['riso', ''], ['cafe', ''], ['minimal', ''], ['minimal', 'dark'], ['nocturne', '']];
+  const rows = [];
+  for (const [W, H] of [[390, 844], [360, 780]]) {
+    const c = await newCtx({ now: MNOW, viewport: { width: W, height: H }, deviceScaleFactor: 1, isMobile: true, hasTouch: true }); const pg = await c.newPage(); watch(pg, 'mhead-themes');
+    await pg.goto(BASE + '/?preview=nocturne'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+    await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card');
+    for (const [t, m] of THM) {
+      await pg.evaluate(([t, m]) => window.SchoologyBoard.theme(t, m), [t, m]); await pg.evaluate(() => scrollTo(0, 0)); await pg.waitForTimeout(150);
+      const r = await pg.evaluate(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); const sub = document.querySelector('#sb-msub'), id = document.querySelector('.mh-id').getBoundingClientRect(), ic = document.querySelector('.mh-ic').getBoundingClientRect();
+        return { tabs: Math.round(q('#sb-colnav').bottom), head: Math.round(q('.col[data-col="todo"] .day').top), card: Math.round(q('.col[data-col="todo"] .card').top), clip: [...sub.children].some((e) => e.getBoundingClientRect().right > ic.left || (e.tagName === 'SPAN' && e.scrollWidth > e.clientWidth + 1)) || document.querySelector('.mh-t').getBoundingClientRect().right > ic.left, ov: document.documentElement.scrollWidth > innerWidth }; });
+      rows.push(`${W}x${H} ${t}${m ? '-' + m : ''}: tabs ${r.tabs}, heading ${r.head}, card ${r.card}`);
+      ok(`${t}${m ? ' ' + m : ''} at ${W}px: header ends by 142px, first day heading by 150px, first card by 180px; row 1 not clipped; no sideways scroll`, r.tabs <= 142 && r.head <= 150 && r.card <= 180 && !r.clip && !r.ov, JSON.stringify(r));
+    }
+    await c.close();
+  }
+  writeFileSync(join(SHOTS, 'mhead-geometry.txt'), rows.join('\n'));
 }
 await browser.close();
 ok('no page errors', errors.length === 0, errors.slice(0, 5).join(' | '));

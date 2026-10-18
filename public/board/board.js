@@ -597,6 +597,15 @@
   // The Board tab: view switch, search, class chips and the columns.
   function mountBoard() {
     $('#sb-main').innerHTML =
+      // Phones (600px and narrower): a compact header. Row 1 = title, week, freshness and three icon buttons;
+      // row 2 = the view chip and class chips; row 3 = the column tabs. Add task is the round button.
+      '<div class="mh" id="sb-mh"><div class="mh1" id="sb-mh1"><div class="mh-id"><span class="brand mh-logo" aria-hidden="true"><i></i></span><div class="mh-tt"><h1 class="mh-t">Board</h1><div class="mh-sub" id="sb-msub"></div></div></div>' +
+      '<div class="mh-ic"><button type="button" class="mib" id="sb-msearch-btn" aria-label="Search" aria-expanded="false" aria-controls="sb-ms">' + ICON.search + '</button>' +
+      '<button type="button" class="mib" id="sb-mfilter" aria-label="Filter" aria-haspopup="menu" aria-expanded="false">' + ICON.filter + '<i class="dot" aria-hidden="true"></i></button>' +
+      '<button type="button" class="mib" id="sb-mmore" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">' + NICON.dots + '</button></div>' +
+      '<div class="mh-s" id="sb-ms" role="search" hidden>' + ICON.search + '<input type="search" id="sb-msearch" placeholder="Search tasks" aria-label="Search tasks" enterkeyhint="search"><button type="button" class="mib" id="sb-msx" aria-label="Close search">' + ICON.x + '</button></div></div></div>' +
+      '<div class="mbar" id="sb-mbar" aria-hidden="true"><span class="mbar-t" id="sb-mbar-t">Board</span><button type="button" class="mib" id="sb-mbar-s" tabindex="-1" aria-label="Search">' + ICON.search + '</button></div>' +
+      '<button type="button" class="fab" id="sb-fab" aria-label="Add task" title="Add task">' + ICON.plus + '</button>' +
       '<div class="bhead"><div class="hl"><h1 class="bh-t">Board <span id="sb-label"></span></h1></div><div class="hr"><span id="sb-fresh">' + freshHtml() + '</span>' +
       '<div class="prog"><span class="hsky" id="sb-hsky"></span><span class="prog-t" id="sb-prog"></span><span class="progbar" aria-hidden="true"><i id="sb-bar"></i></span></div></div></div><div id="sb-banner">' + bannerHtml() + '</div>' +
       '<div class="sb-tools" id="sb-tools"><div class="tl">' +
@@ -607,7 +616,7 @@
       '<span class="sfield">' + ICON.search + '<input type="search" id="sb-search" placeholder="Search" aria-label="Search tasks"><kbd class="kbd-only">/</kbd></span></div>' +
       '<button class="btn" id="sb-filter" aria-haspopup="menu" aria-expanded="false" title="Filter and settings">' + ICON.filter + '<span class="lbl">Filter</span><i class="dot" aria-hidden="true"></i></button>' +
       '</div>' +
-      '<div class="chips-wrap"><div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div></div></div>' +
+      '<div class="chips-wrap" id="sb-chipsw"><button type="button" class="chip vchip" id="sb-vchip" aria-haspopup="menu" aria-expanded="false"></button><div class="chips" id="sb-chips" role="group" aria-label="Filter by class"></div></div></div>' +
       '<p class="sb-note" id="sb-note" hidden></p>' +
       '<nav class="colnav" id="sb-colnav" aria-label="Jump to column"></nav>' +
       '<main class="board" id="sb-board" aria-label="Board"></main>';
@@ -623,6 +632,76 @@
     if (S.prefs.q) tools.classList.add('searching');
     var board = $('#sb-board'), raf = 0;
     board.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; syncColnav(); }); }, { passive: true });
+    mountPhoneHead();
+  }
+  // ---------- phone board header ----------
+  function phoneHead() { var h = $('#sb-mh1'); return !!(h && h.offsetParent); }
+  function mountPhoneHead() {
+    var ms = $('#sb-ms'), mi = $('#sb-msearch'), mb = $('#sb-msearch-btn');
+    $('#sb-fab').onclick = function () { openEditor(null); };
+    $('#sb-mmore').onclick = function () { moreMenu(this); };
+    $('#sb-mfilter').onclick = function () { filterMenu(this); };
+    $('#sb-vchip').onclick = function () { viewMenu(this); };
+    mb.onclick = function () { openPhoneSearch(); };
+    $('#sb-msx').onclick = function () { closePhoneSearch(true); };
+    mi.oninput = function () { S.prefs.q = this.value; renderBoard(); };
+    mi.onkeydown = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closePhoneSearch(true); } };
+    $('#sb-mbar-s').onclick = function () { window.scrollTo(0, 0); openPhoneSearch(); };
+    if (S.prefs.q) { ms.hidden = false; $('#sb-mh1').classList.add('searching'); mb.setAttribute('aria-expanded', 'true'); }
+    document.body.classList.remove('mcompact');
+    // The compact title bar fades in once row 1 has scrolled out of view.
+    if (window.IntersectionObserver) {
+      var io = new IntersectionObserver(function (es) {
+        var e = es[es.length - 1];
+        if (!e.target.isConnected) { io.disconnect(); document.body.classList.remove('mcompact'); return; }
+        var on = !e.isIntersecting && e.boundingClientRect.bottom <= 0;
+        document.body.classList.toggle('mcompact', on);
+        var bar = $('#sb-mbar'); if (bar) { bar.setAttribute('aria-hidden', String(!on)); $('#sb-mbar-s').tabIndex = on ? 0 : -1; }
+      });
+      io.observe($('#sb-mh1'));
+    }
+  }
+  function openPhoneSearch() {
+    var ms = $('#sb-ms'); if (!ms) return;
+    ms.hidden = false; $('#sb-mh1').classList.add('searching'); $('#sb-msearch-btn').setAttribute('aria-expanded', 'true'); $('#sb-msearch').focus();
+  }
+  function closePhoneSearch(clear) {
+    var ms = $('#sb-ms'); if (!ms) return;
+    ms.hidden = true; $('#sb-mh1').classList.remove('searching'); $('#sb-msearch-btn').setAttribute('aria-expanded', 'false');
+    if (clear && S.prefs.q) { S.prefs.q = ''; $('#sb-msearch').value = ''; $('#sb-search').value = ''; save(); renderBoard(); }
+    $('#sb-msearch-btn').focus();
+  }
+  var VIEWS = [['today', 'Due today'], ['week', 'Week'], ['all', 'All']];
+  function viewMenu(anchor) {
+    var items = VIEWS.map(function (v) { return { radio: true, label: v[1], checked: S.prefs.view === v[0], id: 'sb-v-' + v[0], onClick: function () { setView(v[0]); } }; });
+    if (S.prefs.view === 'week' && S.prefs.weekOffset) items.push({ sep: true }, { label: 'Back to ' + (weekendMode() ? 'next week' : 'this week'), icon: ICON.refresh, id: 'sb-v-now', onClick: function () { S.prefs.weekOffset = 0; save(); renderBoard(); } });
+    menu(anchor, items, { title: 'Show', label: 'Show', alignLeft: true });
+  }
+  // Row 1's second line: ‹ week › · freshness (or the Link Schoology link until a feed is saved).
+  function phoneFresh() {
+    var s = freshState();
+    if (s.k === 'none') return '<button type="button" class="mh-link" data-addlink title="' + esc(s.tip) + '">Link Schoology<span aria-hidden="true"> \u2192</span></button>';
+    if (s.k === 'off') return '<span class="mh-fr">' + esc(s.t) + '</span>';
+    if (s.k === 'sync') return '<span class="mh-fr fsync" role="status">Syncing\u2026</span>';
+    var f = S.lastFetch || {}, t = s.k === 'err' ? 'Sync failed' : 'Synced ' + ago(f.at);
+    var lab = s.k === 'err' ? 'The last refresh failed. ' + (f.at ? 'Last synced ' + ago(f.at) + '. ' : '') + 'Tap to try again' : s.k === 'stale' ? t + ', might be out of date. Tap to refresh' : t + '. Tap to refresh';
+    return '<button type="button" class="mh-fr ' + (s.k === 'err' ? 'ferr' : s.k) + '" data-refresh title="' + esc(s.tip) + '" aria-label="' + esc(lab) + '">' + (s.k === 'ok' ? '' : '<i class="fdot" aria-hidden="true"></i>') + esc(t) + '</button>';
+  }
+  function phoneSub() {
+    var el = $('#sb-msub'); if (!el) return;
+    var p = S.prefs, r = viewRange();
+    var when = p.view === 'week' ? '<button type="button" class="mh-ar" id="sb-mprev" aria-label="Previous week">' + ICON.left + '</button><span class="mh-wk">' + esc(r.label) + '</span><button type="button" class="mh-ar" id="sb-mnext" aria-label="Next week">' + ICON.right + '</button>' :
+      '<span class="mh-wk">' + (p.view === 'today' ? 'Due today' : 'All dates') + '</span>';
+    el.innerHTML = when + '<span class="mh-sep" aria-hidden="true">\u00b7</span>' + phoneFresh();
+    if ($('#sb-mprev')) { $('#sb-mprev').onclick = function () { S.prefs.weekOffset--; save(); renderBoard(); }; $('#sb-mnext').onclick = function () { S.prefs.weekOffset++; save(); renderBoard(); }; }
+    $('#sb-mbar-t').textContent = 'Board \u00b7 ' + (p.view === 'week' ? r.label : p.view === 'today' ? 'Due today' : 'All dates');
+    var v = VIEWS.filter(function (x) { return x[0] === p.view; })[0] || VIEWS[1];
+    $('#sb-vchip').innerHTML = esc(v[1]) + '<span class="vc" aria-hidden="true">\u25be</span>';
+    $('#sb-vchip').setAttribute('aria-label', 'Showing: ' + v[1] + '. Change view');
+    var on = !!(p.hidePast || p.showPre || p.groupBy === 'class');
+    $('#sb-mfilter').classList.toggle('on', on);
+    $('#sb-mfilter').setAttribute('aria-label', on ? 'Filter (some filters are on)' : 'Filter');
+    var mi = $('#sb-msearch'); if (document.activeElement !== mi) mi.value = p.q || '';
   }
   function filterMenu(anchor) {
     var items = [{ heading: 'Show' },
@@ -760,6 +839,7 @@
     $('#sb-thisweek').textContent = weekendMode() ? 'Next week' : 'This week';
     $('#sb-filter').classList.toggle('on', !!(p.hidePast || p.showPre || p.groupBy === 'class'));
     renderSync();
+    phoneSub();
     $('#sb-filter').setAttribute('aria-label', 'Filter' + (p.hidePast ? ' (hiding past)' : '') + (p.showPre ? ' (showing pre-board items)' : '') + (p.groupBy === 'class' ? ' (grouped by class)' : ''));
     if (document.activeElement !== $('#sb-search')) $('#sb-search').value = p.q || '';
     var counts = {};
@@ -770,6 +850,7 @@
       cats.filter(function (c) { return counts[c] || S.cats.indexOf(c) >= 0 || p.course === c; }).map(function (c) { return '<button class="chip" data-c="' + esc(c) + '" aria-pressed="' + (p.course === c) + '" title="' + (counts[c] || 0) + ' to do in this view" style="' + cvars(c) + '"><i class="cdot" aria-hidden="true"></i>' + esc(c) + ' <b>' + (counts[c] || 0) + '</b></button>'; }).join('');
     $$('#sb-chips .chip').forEach(function (b) { b.onclick = function () { S.prefs.course = b.dataset.c || null; save(); renderBoard(); }; });
     var sel = $('#sb-chips .chip[aria-pressed="true"]'), cw = $('#sb-chips');
+    if (cw.scrollWidth <= cw.clientWidth) cw = $('#sb-chipsw'); // phones scroll the whole row (view chip + classes)
     if (sel && cw.scrollWidth > cw.clientWidth && (sel.offsetLeft < cw.scrollLeft || sel.offsetLeft + sel.offsetWidth > cw.scrollLeft + cw.clientWidth)) cw.scrollLeft = sel.offsetLeft - 16;
     var shown = viewItems.filter(function (it) { return !p.course || it.course === p.course; });
     lastItems = shown;
@@ -815,7 +896,7 @@
       b.onclick = function () { var col = $('.col[data-col="' + b.dataset.col + '"]'), bd = $('#sb-board'); bd.scrollTo({ left: col.offsetLeft - (bd.clientWidth - col.offsetWidth) / 2, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); };
     });
     syncColnav();
-    if ($('#sb-clearq')) $('#sb-clearq').onclick = function () { S.prefs.q = ''; $('#sb-search').value = ''; $('#sb-tools').classList.remove('searching'); renderBoard(); };
+    if ($('#sb-clearq')) $('#sb-clearq').onclick = function () { S.prefs.q = ''; $('#sb-search').value = ''; if ($('#sb-ms')) { $('#sb-msearch').value = ''; $('#sb-ms').hidden = true; $('#sb-mh1').classList.remove('searching'); $('#sb-msearch-btn').setAttribute('aria-expanded', 'false'); } $('#sb-tools').classList.remove('searching'); renderBoard(); };
     if ($('#sb-nextup')) $('#sb-nextup').onclick = function (e) {
       e.preventDefault();
       S.prefs.view = 'week'; S.prefs.weekOffset = Math.round((monday(parseDay(this.dataset.d)) - defaultMonday()) / (7 * 864e5)); save(); renderBoard();
@@ -1674,6 +1755,7 @@
     if (!hasData()) return;
     if (k === 'n' || k === 'N') { openEditor(null); e.preventDefault(); }
     else if (k === 'i' || k === 'I') { openImport(); e.preventDefault(); }
+    else if (k === '/' && phoneHead()) { openPhoneSearch(); e.preventDefault(); }
     else if (k === '/') { var sb = $('#sb-search'); if (sb) { $('#sb-tools').classList.add('searching'); sb.focus(); e.preventDefault(); } }
     else if (k === '?') { openKeys(); e.preventDefault(); }
     else if (k === 't') setView('today');
@@ -1994,6 +2076,7 @@
   function renderSync() {
     if (!$('#sb-main') || !app) return;
     $$('.fresh', app).forEach(function (el) { var t = document.createElement('div'); t.innerHTML = freshHtml(); el.replaceWith(t.firstChild); });
+    if ($('#sb-msub', app) && $('#sb-vchip', app)) phoneSub();
     var head = $('.thero', app) || $('.bhead', app);
     if (head && !loadingNow()) {
       var host = $('#sb-banner', app), b = bannerHtml();
@@ -2627,6 +2710,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, week: function () { var now = new Date(); return plan.weekAhead(allItems(), pctx(), ics.defaultWeekStart(now), now); }, version: '1.9.0' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, week: function () { var now = new Date(); return plan.weekAhead(allItems(), pctx(), ics.defaultWeekStart(now), now); }, version: '1.10.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
