@@ -210,6 +210,9 @@
 :root[data-theme="minimal"][data-mode="dark"] dialog{border-color:#2A2A2A}
 :root[data-theme="minimal"] .menu,:root[data-theme="minimal"] [role=menu]{border:1px solid var(--hair2);box-shadow:none}
 :root[data-theme="minimal"][data-mode="dark"] .menu,:root[data-theme="minimal"][data-mode="dark"] [role=menu]{border-color:#2A2A2A}
+:root[data-theme="minimal"] .fpill.linkb{height:28px;border:1px solid var(--hair2);border-radius:6px;padding:0 10px;color:var(--ink);background:transparent}
+:root[data-theme="minimal"] .fpill.linkb:hover{background:var(--surf)}
+:root[data-theme="minimal"][data-mode="dark"] .fpill.linkb{border-color:#2A2A2A}
 :root[data-theme="minimal"] .tnm .tchip{font-family:var(--font-mono);font-weight:500;border-width:1px;border-color:var(--hair2)}
 :root[data-theme="minimal"] .tnm .trow.tlate{border-left:0}
 :root[data-theme="minimal"] .tnm .trow.tlate .due{color:var(--late)}
