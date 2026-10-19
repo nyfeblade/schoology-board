@@ -102,8 +102,9 @@
     st = normalizeState(st);
     // Every visit opens on the default week (next week from Friday 6 PM). "range" no longer exists.
     st.prefs.view = 'week'; st.prefs.weekOffset = 0; st.prefs.q = '';
-    // Returning students open on Tonight ("what do I do next?"); ?view=board|cal|ahead (e.g. from the installed app) picks another view.
-    var qv = (location.search.match(/[?&]view=(now|tonight|board|cal|ahead)\b/) || [])[1];
+    // Returning students open on Tonight ("what do I do next?"); ?view=board|ahead (e.g. from the installed app) picks another view.
+    // The Calendar view isn't built yet, so old ?view=cal links open Tonight instead of a dead end.
+    var qv = (location.search.match(/[?&]view=(now|tonight|board|ahead)\b/) || [])[1];
     st.prefs.tab = qv === 'tonight' ? 'now' : qv || 'now';
     // Pulled-in items only stay pulled for the night they were pulled.
     var tk = dayKey(new Date());
@@ -376,12 +377,11 @@
   }
 
   // Views behind the top nav (bottom nav on phones). Tonight is home; Calendar is announced, not built yet.
-  var NAV = [['now', 'Tonight', 'moon', ''], ['board', 'Board', 'board', ''], ['cal', 'Calendar', 'cal', 'soon'], ['ahead', 'Sunday plan', 'sun', '']];
-  var NAV_TIP = { now: 'Tonight: what to do and in what order', board: 'Every assignment by status', cal: 'Calendar is coming soon', ahead: 'Your week ahead: tests, the busiest day and what to start early' };
+  var NAV = [['now', 'Tonight', 'moon', ''], ['board', 'Board', 'board', ''], ['ahead', 'Sunday plan', 'sun', '']];
+  var NAV_TIP = { now: 'Tonight: what to do and in what order', board: 'Every assignment by status', ahead: 'Your week ahead: tests, the busiest day and what to start early' };
   var NICON = {
     moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/></svg>',
     board: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="9.5" y="4" width="5" height="11" rx="1.5"/><rect x="15.5" y="4" width="5" height="7" rx="1.5"/></svg>',
-    cal: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
     sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14.5h5M8 17h8"/></svg>',
     pal: '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 1.6-2.1-.5-1.2.3-2.4 1.6-2.4H17a4 4 0 0 0 4-4C21 7 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/></svg>',
     dots: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
@@ -440,6 +440,7 @@
     };
   }
   function setTab(t) {
+    if (t !== 'board' && t !== 'ahead') t = 'now';
     if (S.prefs.tab === t && $('#sb-main').firstChild) return;
     S.prefs.tab = t; save();
     $('#sb-main').innerHTML = '';
@@ -818,7 +819,6 @@
     document.body.dataset.tab = tab;
     if (ensureColors()) save();
     if (tab === 'now') { renderNow(); return mark(); }
-    if (tab === 'cal') { renderStub('cal'); return mark(); }
     if (tab === 'ahead') { renderAhead(); return mark(); }
     if (!$('#sb-board')) mountBoard();
     drawBoard();
@@ -963,7 +963,7 @@
     if (!S.feedUrl) return { k: 'none', t: 'Not linked to Schoology', tip: 'Add your Schoology calendar link so this updates by itself.' };
     var f = S.lastFetch || {}, at = f.at ? new Date(f.at) : null, tip = at ? 'Last good sync: ' + at.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + fmtT(at) : 'Not synced yet';
     if (syncing) return { k: 'sync', t: 'Syncing with Schoology\u2026', tip: tip };
-    if (f.ok === false) return { k: 'err', t: at ? 'Sync failed \u00b7 last good ' + fmtT(at) : 'Couldn\u2019t reach Schoology', tip: tip };
+    if (f.ok === false) return { k: 'err', t: at ? 'Sync failed \u00b7 last good ' + fmtT(at) : f.why ? 'Sync failed' : 'Couldn\u2019t reach Schoology', tip: tip };
     if (at && Date.now() - f.at > 6 * 36e5) return { k: 'stale', t: 'Synced ' + ago(f.at) + ' \u00b7 ' + fmtT(at), tip: tip };
     if (at) return { k: 'ok', t: 'Synced with Schoology ' + ago(f.at), tip: tip };
     return { k: 'sync', t: 'Syncing with Schoology\u2026', tip: tip };
@@ -978,7 +978,7 @@
   function bannerHtml() {
     if (MODE !== 'web' || !S.feedUrl || syncing) return '';
     var f = S.lastFetch || {};
-    if (f.ok === false) return '<div class="banner ferr" role="alert"><div class="bt"><b>Couldn\u2019t reach Schoology.</b> ' + (f.at ? 'Showing what we had at ' + fmtT(new Date(f.at)) + (sod(new Date(f.at)) < sod(new Date()) ? ' on ' + fmtShort(new Date(f.at)) : '') + '.' : 'Showing what\u2019s saved on this device.') +
+    if (f.ok === false) return '<div class="banner ferr" role="alert"><div class="bt">' + (f.why ? '<b>Couldn\u2019t update from Schoology.</b> ' + esc(f.why) + ' ' : '<b>Couldn\u2019t reach Schoology.</b> ') + (f.at ? 'Showing what we had at ' + fmtT(new Date(f.at)) + (sod(new Date(f.at)) < sod(new Date()) ? ' on ' + fmtShort(new Date(f.at)) : '') + '.' : 'Showing what\u2019s saved on this device.') +
       ' <span class="bs">Your check-offs still save on this device.</span></div><div class="ba"><button class="btn primary" data-refresh>Retry</button><a class="btn" href="' + esc(schoologyHome()) + '" target="_blank" rel="noopener">Open Schoology' + NICON.ext + '</a></div></div>';
     if (f.at && Date.now() - f.at > 6 * 36e5) return '<div class="banner stale" role="status"><div class="bt"><b>This list might be out of date.</b> The last sync was ' + esc(ago(f.at)) + ' (' + fmtT(new Date(f.at)) + '), so anything posted since then won\u2019t show yet.</div><div class="ba"><button class="btn primary" data-refresh>Refresh now</button></div></div>';
     return '';
@@ -1386,18 +1386,6 @@
       var el = $('.trow[data-id="' + cssEsc(mv) + '"]'); if (el) el.classList.add('arrive');
       toast('Order saved. You can go back to the suggested order anytime.');
     }
-  }
-
-  // ---------- Calendar (coming soon) ----------
-  function renderStub(v) {
-    var now = new Date();
-    document.body.dataset.view = v;
-    $('#sb-main').innerHTML = '<main class="tnm" id="tn-main"><section class="thero stubh"><div class="hl"><p class="greet">' + greeting(now) + '</p></div><div class="hr">' + freshHtml() + '</div></section>' +
-      '<section class="stub"><span class="soon">Coming soon</span><h1>Calendar</h1><p>Your whole month from Schoology on one calendar, with tests and big projects marked so you can see heavy weeks coming.</p>' +
-      '<div class="sa"><button type="button" class="btn primary" data-go="now">Back to Tonight</button><button type="button" class="btn" data-go="board">Open the board</button></div></section></main>';
-    var m = $('#tn-main'); bindFresh(m);
-    $$('[data-go]', m).forEach(function (b) { b.onclick = function () { setTab(b.dataset.go); }; });
-    document.title = 'Calendar (coming soon) \u00b7 Schoology Board';
   }
 
   // One-tap estimate editor: quick chips, a custom number, and the kind of work (Quiz/Test get study sessions).
@@ -2011,13 +1999,20 @@
   }
   // ---------- calendar link (fetched through the relay; the link lives only in this browser) ----------
   var syncing = false;
+  // A stalled connection gives up after 20 s (the relay itself gives Schoology 12 s), so "Syncing…" never hangs.
+  var RELAY_TIMEOUT_MS = 20000;
+  var MSG_UNREACHABLE = 'Couldn\u2019t reach Schoology. Check your connection and try again.';
   function relayFetch(url) {
     var proxy = MODE === 'web' ? (CFG.proxy || '/api/feed') : CFG.proxy;
-    return fetch(proxy, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }), cache: 'no-store' })
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null, timedOut = false;
+    var timer = setTimeout(function () { timedOut = true; if (ctl) ctl.abort(); }, RELAY_TIMEOUT_MS);
+    var unreachable = function () { var e = new Error(timedOut ? 'Couldn\u2019t reach Schoology. It took too long to answer. Try again.' : MSG_UNREACHABLE); e.retry = true; return e; };
+    return fetch(proxy, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }), cache: 'no-store', signal: ctl ? ctl.signal : undefined })
       .then(function (r) {
-        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || ('Could not fetch the calendar (' + r.status + ').')); });
+        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { var e = new Error(j.error || ('Couldn\u2019t get the calendar (error ' + r.status + '). Try again.')); e.retry = r.status >= 500; throw e; });
         return r.arrayBuffer();
-      });
+      }, function () { throw unreachable(); })
+      .then(function (buf) { clearTimeout(timer); return buf; }, function (e) { clearTimeout(timer); throw timedOut ? unreachable() : e; });
   }
   function importLink(url, remember, root, onDone) {
     url = normalizeFeedUrl(url);
@@ -2036,8 +2031,14 @@
         maybeNaming();
       })
       .catch(function (e) {
-        var msg = e && e.message && !/Failed to fetch|NetworkError|Load failed/i.test(e.message) ? e.message : 'Network error. Check your connection and try again.';
-        if (errEl) errEl.textContent = msg; else toastErr(msg);
+        var msg = e && e.message && !/Failed to fetch|NetworkError|Load failed/i.test(e.message) ? e.message : MSG_UNREACHABLE;
+        if (!errEl) return toastErr(msg);
+        errEl.textContent = msg;
+        if (e && e.retry) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.id = 'imp-retry'; b.textContent = 'Retry';
+          b.onclick = function () { importLink(url, remember, root, onDone); };
+          errEl.appendChild(document.createTextNode(' ')); errEl.appendChild(b);
+        }
       })
       .then(function () { busy(root, false); });
   }
@@ -2052,10 +2053,12 @@
     var url = S.feedUrl;
     relayFetch(url)
       .then(function (buf) { if (S.feedUrl !== url) return; applyIcs(ics.decodeBytes(buf), 'refresh', { quiet: true }); S.lastFetch = { at: Date.now(), ok: true }; BG.fails = 0; BG.next = 0; save(); })
-      .catch(function () {
+      .catch(function (e) {
         BG.fails++; BG.next = Date.now() + Math.min(60, Math.pow(2, BG.fails - 1)) * 60000;
-        S.lastFetch = { at: (S.lastFetch && S.lastFetch.at) || null, ok: false, failedAt: Date.now() }; save();
-        if (manual) toastErr('Still couldn\u2019t reach Schoology. Your check-offs still save on this device.');
+        // Network trouble and timeouts read "Couldn't reach Schoology"; when Schoology did answer (link reset, not a calendar), say why.
+        var why = e && !e.retry && e.message ? e.message : '';
+        S.lastFetch = { at: (S.lastFetch && S.lastFetch.at) || null, ok: false, failedAt: Date.now() }; if (why) S.lastFetch.why = why; save();
+        if (manual) toastErr(why || 'Still couldn\u2019t reach Schoology. Your check-offs still save on this device.');
       })
       .then(function () { syncing = false; if (wasLoading && S.prefs.tab !== 'board') renderBoard(); else renderSync(); });
   }
@@ -2710,6 +2713,6 @@
     document.body.appendChild(bar);
   }
   window.SchoologyBoard = { state: function () { return S; }, bg: function () { return BG; }, plan: function () { return lastPlan; },
-    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, week: function () { var now = new Date(); return plan.weekAhead(allItems(), pctx(), ics.defaultWeekStart(now), now); }, version: '1.10.0' };
+    estimate: function (id) { var items = allItems(), it = items.filter(function (i) { return i.id === id; })[0]; return it ? plan.estimate(it, pctx(), plan.learnedTable(items, pctx())) : null; }, render: render, matches: sameish, buildOfflineHtml: buildOfflineHtml, movePayload: function () { return movePayload(); }, theme: setTheme, items: function () { return allItems(); }, week: function () { var now = new Date(); return plan.weekAhead(allItems(), pctx(), ics.defaultWeekStart(now), now); }, version: '1.11.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

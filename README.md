@@ -1,6 +1,6 @@
 # Schoology Board
 
-**Know what to do tonight without opening Schoology.** Paste your Schoology calendar link and Schoology Board opens on **Tonight**: how many things are due and how long they'll take, what to do first, and the order to do it in. Behind it are the **Board** (every assignment by status), **Calendar** (coming soon) and the **Sunday plan**. Seven looks to pick from, it works offline, installs like an app, and nothing is stored on a server.
+**Know what to do tonight without opening Schoology.** Paste your Schoology calendar link and Schoology Board opens on **Tonight**: how many things are due and how long they'll take, what to do first, and the order to do it in. Behind it are the **Board** (every assignment by status) and the **Sunday plan**. Seven looks to pick from, it works offline, installs like an app, and nothing is stored on a server.
 
 **Live: https://schoology-board.vercel.app** · [See a sample plan](https://schoology-board.vercel.app) (no sign-in, made-up data)
 
@@ -29,17 +29,19 @@
 - **Keyboard-friendly.** `N` add · `I` import · `/` search · `T`/`W`/`A` board views · `[` `]` weeks · `M` card menu · `X` done · `?` all shortcuts.
 - **No notifications (yet).** See the note at the end.
 
-| Board | First run |
+Screenshots use the default Sticker Book look and made-up data only (`node scripts/readme-shots.mjs` regenerates them).
+
+| Tonight | Board |
 |---|---|
-| ![Board with the sample data](docs/board.png) | ![First-run screen](docs/first-run.png) |
-| **Course Assignment Sheet preview** | **A full (made-up) school year, mid-February** |
-| ![CAS import preview](docs/cas-preview.png) | ![This week from a 517-item feed](docs/year-this-week.png) |
+| ![Tonight with the sample data](docs/tonight.png) | ![Board with the sample data](docs/board.png) |
+| **First run** | **Course Assignment Sheet preview** |
+| ![First-run screen](docs/first-run.png) | ![CAS import preview](docs/cas-preview.png) |
 | **Name your classes (after an import)** | **Friday evening: Week shows next week** |
 | ![Name your classes step](docs/class-naming.png) | ![Next week view on a Friday evening](docs/weekend-week.png) |
 | **Move to phone** | **The phone after scanning** |
 | ![Move to phone dialog with QR code](docs/move-to-phone.png) | <img src="docs/phone-after-move.png" width="300" alt="Phone after the move"> |
 
-| Phone | Card menu on a phone |
+| Phone board | Card menu on a phone |
 |---|---|
 | <img src="docs/mobile.png" width="300" alt="Phone layout"> | <img src="docs/mobile-menu.png" width="300" alt="Move to… bottom sheet"> |
 
@@ -59,7 +61,7 @@ Some schools turn calendar sharing off; if you don't see **Export** or **Share C
 ## Privacy
 
 - **Nothing is stored on a server.** Your board, progress, custom tasks and categories live in your browser's `localStorage` (or inside your backup file). The saved calendar link stays in this browser's `localStorage` and is only ever sent, in a POST body, to the relay.
-- **The calendar proxy only relays.** Browsers can't read Schoology's feed directly (it has no CORS headers), so a tiny serverless route ([`app/api/feed/route.js`](app/api/feed/route.js)) fetches it and streams the bytes back. The link is sent in a POST body, so it never appears in a URL or request log. The route doesn't log, cache or store the link or the calendar. It refuses private network addresses and anything that isn't a calendar.
+- **The calendar proxy only relays.** Browsers can't read Schoology's feed directly (it has no CORS headers), so a tiny serverless route ([`app/api/feed/route.js`](app/api/feed/route.js)) fetches it and streams the bytes back. The link is sent in a POST body, so it never appears in a URL or request log. The route doesn't log, cache or store the link or the calendar. It only fetches Schoology links (https on `schoology.com` or a subdomain), checks the real address on every connection and every redirect so it can't be pointed at private or internal networks, gives up after 12 seconds, and refuses anything that isn't a calendar. In the browser, a refresh that gets no answer within 20 seconds stops and says "Couldn't reach Schoology" with a Retry button.
 - **Course Assignment Sheet PDFs never leave your device.** They're read in the browser.
 - **The installable app caches only the app itself.** Its service worker keeps the page, styles and scripts for offline use. It never caches calendar responses or anything with your link in it; your assignments live only in `localStorage`.
 - The calendar link is kept only if you tick *Remember the link on this device*. It is **never** put into a backup file.
@@ -102,7 +104,7 @@ Deploy to Vercel as a standard Next.js project; no environment variables are nee
 - `scripts/build-pwa.mjs`: writes the app manifest and service worker at build time (colors from the theme).
 - `public/board/ics.js`: the iCal parser (no dependencies; runs in the browser and Node).
 - `public/board/cas.js`: the CAS parser. It works on pdf.js text positions: it finds the *Class Dates* and *Assignments* columns, assigns each task to its class day (including rows that run onto the next page), and pulls out explicit due dates like "Due Saturday 09/12/26 at 12:00 pm ET" or "by midnight the evening prior to class".
-- `app/api/feed/route.js`: the calendar relay (Next.js route handler).
+- `app/api/feed/route.js`: the calendar relay (Next.js route handler); `app/api/feed/guard.js`: its Schoology-only host rule and address checks.
 - Tests: `test/ics.test.mjs`, `test/cas.test.mjs`, `test/year.test.mjs` and `test/e2e.mjs`. Fixtures are all made up: `public/sample/schoology-sample.ics`, `test/fixtures/messy.ics`, `test/fixtures/sample-cas.pdf`, and `test/fixtures/year.ics` (Aug–Jun, generated by `make-year-feed.mjs` together with an independently computed `year-expected.json`). The end-to-end run checks the exact Due today / This week / per-column / per-class counts for that year. To check the CAS parser against your own sheets without committing them: `CAS_SAMPLES_DIR=~/Downloads npm test`.
 
 ## Why no notifications

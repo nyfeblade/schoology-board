@@ -1,6 +1,6 @@
 {
   "name": "schoology-board",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "private": true,
   "description": "Turn your Schoology calendar (and Course Assignment Sheet PDFs) into a kanban board. Works offline.",
   "license": "MIT",
