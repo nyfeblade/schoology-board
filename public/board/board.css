@@ -618,3 +618,28 @@ dialog.reset .dlg-f .btn.danger{background:var(--late);border-color:var(--late);
  .mh-fr.stale .mh-frt{padding:0 3px}
  .mh-link .la{display:none}
 }
+/* CAS preview on phones (600px and narrower): each task becomes a two-line card instead of a wide table row.
+   Line 1: checkbox + the title (full width, easy to read and edit). Line 2: date, time, kind and "already on calendar". */
+@media (max-width:600px){
+  .cas-file header{gap:8px}
+  .cas-file header .cas-course{flex:1 1 100%;min-width:0;height:36px}
+  .cas-file header>span{flex:1 1 100%}
+  .cas-file header label{margin-left:0!important;flex:1 1 100%}
+  .cas-file header .cas-time{width:112px;height:36px}
+  .cas-file header .btn.small{padding:0 8px}
+  .cas-table,.cas-table tbody{display:block;width:100%}
+  .cas-table tr{display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);grid-template-areas:"c t t" ". d m" ". k u";gap:6px 8px;align-items:center;padding:10px 12px;border-bottom:var(--bw) solid var(--border-1)}
+  .cas-table tr:last-child{border-bottom:0}
+  .cas-table td{display:block;padding:0!important;border:0;min-width:0;width:auto!important}
+  .cas-table td:nth-child(1){grid-area:c}
+  .cas-table td:nth-child(2){grid-area:d}
+  .cas-table td:nth-child(3){grid-area:m}
+  .cas-table td:nth-child(4){grid-area:t}
+  .cas-table td.k{grid-area:k}
+  .cas-table td.dup{grid-area:u;justify-self:end}
+  .cas-table td.dup:empty{display:none}
+  .cas-table input[type=checkbox]{width:22px;height:22px;margin:0}
+  .cas-table input[type=text]{height:40px;font-size:16px}
+  .cas-table input[type=date],.cas-table input[type=time]{width:100%;min-width:0;height:36px;font-size:15px}
+  .cas-table tr.off td:not(:first-child){opacity:.5}
+}

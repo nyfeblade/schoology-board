@@ -1,4 +1,4 @@
-// Records docs/demo.gif with made-up data only: first run -> sample board -> drag -> done -> CAS preview.
+// Records docs/demo.gif with made-up data only: first run -> sample (Tonight) -> board -> drag -> done -> CAS preview.
 //   BASE_URL=http://localhost:3000 node scripts/record-demo.mjs   (needs ffmpeg)
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
@@ -13,7 +13,7 @@ const dir = mkdtempSync(join(tmpdir(), 'sb-demo-'));
 const W = 1280, H = 800;
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: W, height: H }, timezoneId: 'America/New_York', recordVideo: { dir, size: { width: W, height: H } } });
-await ctx.clock.setFixedTime(new Date('2026-10-19T07:00:00-04:00'));
+await ctx.clock.setFixedTime(new Date('2026-10-19T17:02:00-04:00'));
 // a visible pointer, since headless video has none
 await ctx.addInitScript(() => {
   addEventListener('DOMContentLoaded', () => {
@@ -33,7 +33,10 @@ await page.goto(BASE + '/'); await page.waitForSelector('#imp-sample');
 await page.mouse.move(700, 500); await page.waitForTimeout(1200);
 let [x, y] = await center(page.locator('#imp-sample')); await glide(x, y); await page.waitForTimeout(250);
 await page.mouse.down(); await page.mouse.up();
-await page.waitForSelector('#sb-board .card'); await page.waitForTimeout(1500);
+await page.waitForSelector('#tnList .trow'); await page.waitForTimeout(1800);
+[x, y] = await center(page.locator('#sb-tabs [data-tab=board]')); await glide(x, y); await page.waitForTimeout(200);
+await page.mouse.down(); await page.mouse.up();
+await page.waitForSelector('#sb-board .card'); await page.waitForTimeout(1300);
 // drag "DBQ" to Started
 const card = page.locator('.card', { hasText: 'DBQ' }).first();
 [x, y] = await center(card); await glide(x, y); await page.waitForTimeout(250);
@@ -46,7 +49,9 @@ const c2 = page.locator('.col[data-col="todo"] .card', { hasText: 'Cell Organell
 [x, y] = await center(c2); await glide(x, y); await page.waitForTimeout(250);
 await page.mouse.dblclick(x, y); await page.waitForTimeout(1200);
 // import a Course Assignment Sheet
-[x, y] = await center(page.locator('#sb-import')); await glide(x, y); await page.waitForTimeout(200);
+[x, y] = await center(page.locator('#sb-more')); await glide(x, y); await page.waitForTimeout(200);
+await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(500);
+[x, y] = await center(page.locator('#sb-import')); await glide(x, y, 10); await page.waitForTimeout(200);
 await page.mouse.down(); await page.mouse.up(); await page.waitForSelector('dialog #imp-file', { state: 'attached' }); await page.waitForTimeout(600);
 await page.setInputFiles('dialog #imp-file', join(root, 'test', 'fixtures', 'sample-cas.pdf'));
 await page.waitForSelector('.cas-table'); await page.mouse.move(640, 300, { steps: 10 }); await page.waitForTimeout(1300);

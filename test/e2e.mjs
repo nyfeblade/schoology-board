@@ -32,7 +32,7 @@ const browser = await chromium.launch();
 const errors = [];
 function watch(page, tag) {
   page.on('pageerror', (e) => errors.push(`${tag}: ${e.message}`));
-  page.on('console', (m) => { if (m.type() === 'error' && !(tag === 'link' && /status of 422/.test(m.text())) && !(tag === 'refresh' && /status of 502/.test(m.text())) && !(tag === 'qa' && /status of 502/.test(m.text())) && !(tag === 'bg-refresh' && /status of 502/.test(m.text())) && !(tag === 'pwa' && /status of (400|405|504)/.test(m.text()))) errors.push(`${tag} console: ${m.text()}`); }); // deliberate probes: the 422 bad link, stubbed 502 failures, and the pwa test's relay calls (405 GET; 504 unreachable host locally, 400 rejected host on the live relay)
+  page.on('console', (m) => { if (m.type() === 'error' && !(tag === 'link' && /status of 422/.test(m.text())) && !(tag === 'refresh' && /status of 502/.test(m.text())) && !(tag === 'qa' && /status of 502/.test(m.text())) && !(tag === 'bg-refresh' && /status of 502/.test(m.text())) && !(tag === 'pwa' && /status of (400|405|504)/.test(m.text())) && !(/^(link|v111-)/.test(tag) && /status of (400|404|422)/.test(m.text()))) errors.push(`${tag} console: ${m.text()}`); }); // deliberate probes: the 422 bad link, stubbed 502 failures, and the pwa test's relay calls (405 GET; 504 unreachable host locally, 400 rejected host on the live relay)
   page.on('dialog', (d) => d.accept());
 }
 const state = (page) => page.evaluate(() => window.SchoologyBoard.state());
@@ -260,13 +260,13 @@ if (LIVE_LINK) {
   const lctx = await newCtx();
   const lp = await lctx.newPage(); watch(lp, 'link');
   await lp.goto(BASE + '/');
+  // The relay only fetches Schoology links now, so the app's own sample URL is refused with a plain message.
   await lp.fill('#imp-url', BASE.replace(/^https:/, 'webcal:') + '/sample/schoology-sample.ics');
   await lp.click('#imp-go');
-  await board(lp, ' .card', { timeout: 20000 });
-  const n = Object.keys((await state(lp)).ics).length;
-  ok('paste-a-link import works through the serverless proxy (webcal:// link)', n === 19, `${n} events`);
+  await lp.waitForFunction(() => /\S/.test(document.querySelector('#imp-err').textContent), null, { timeout: 20000 });
+  ok('paste-a-link: a non-Schoology webcal:// link is refused by the serverless relay with a plain message', /That link isn’t from Schoology/.test(await lp.locator('#imp-err').innerText()), await lp.locator('#imp-err').innerText());
   const bad = await lp.evaluate(async () => (await fetch('/api/feed', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://example.com/' }) })).status);
-  ok('proxy refuses non-calendar responses', bad === 422, `status ${bad}`);
+  ok('proxy refuses non-Schoology hosts', bad === 400, `status ${bad}`);
   await lctx.close();
 }
 
@@ -739,7 +739,7 @@ await octx.close();
   ok('the backup shows "Saved copy" in the freshness pill', /Saved copy from/.test(await pill(bop)));
   await bo.close();
   // Sunday plan + share card
-  ok('the nav reads Tonight · Board · Calendar (Soon) · Sunday plan', (await np.locator('#sb-tabs').innerText()).replace(/\s+/g, ' ').trim().toLowerCase() === 'tonight board calendar soon sunday plan', await np.locator('#sb-tabs').innerText());
+  ok('the nav reads Tonight · Board · Sunday plan', (await np.locator('#sb-tabs').innerText()).replace(/\s+/g, ' ').trim().toLowerCase() === 'tonight board sunday plan', await np.locator('#sb-tabs').innerText());
   await tab(np, 'ahead'); await np.waitForSelector('.wkm');
   const wk = (await np.locator('#sb-main main').innerText()).replace(/\s+/g, ' ');
   ok('Sunday plan: quizzes and tests, the busiest day and what to start early', /Quizzes and tests/.test(wk) && /busiest day/.test(wk) && /Science Fair Project/.test(wk) && await np.locator('.wkb li').count() === 7 && await np.locator('.wkb li.heavy').count() === 1, wk.slice(0, 200));
@@ -749,17 +749,12 @@ await octx.close();
   const ipath = join(SHOTS, 'week-ahead-card.png'); await img.saveAs(ipath);
   const card = PNG.sync.read(readFileSync(ipath));
   ok('Save as image: a 1080×1350 PNG made in the browser (no network)', card.width === 1080 && card.height === 1350);
-  // Calendar is announced, not a dead end
-  await tab(np, 'cal'); await np.waitForSelector('.stub');
-  ok('Calendar says "Coming soon", explains itself and has a way back', /coming soon/i.test(await np.locator('.stub').innerText()) && await np.locator('.stub [data-go=now]').count() === 1 && await np.locator('.stub [data-go=board]').count() === 1 && await np.locator('#tn-main .fpill').isVisible());
-  await np.click('.stub [data-go=now]'); await np.waitForSelector('#tnList .trow');
-  ok('"Back to Tonight" goes home', await np.locator('#sb-tabs [data-tab=now][aria-current=page]').count() === 1);
   // phone width
   const pc = await newCtx({ now: PNOW, viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const pp = await pc.newPage(); watch(pp, 'planner-phone');
   await pp.goto(BASE + '/'); await pp.click('#imp-sample'); await pp.waitForSelector('#tnList .trow'); await pp.waitForTimeout(3500);
   const tb = await pp.locator('#sb-botnav').boundingBox();
-  ok('phone: Tonight, Board, Calendar and Sunday plan sit in a bottom bar; the top tabs hide', tb && tb.y + tb.height >= 843 && await pp.locator('#sb-botnav a').count() === 4 && !(await pp.locator('#sb-tabs').isVisible()));
+  ok('phone: Tonight, Board and Sunday plan sit in a bottom bar; the top tabs hide', tb && tb.y + tb.height >= 843 && await pp.locator('#sb-botnav a').count() === 3 && !(await pp.locator('#sb-tabs').isVisible()));
   ok('phone: Tonight fits without horizontal overflow', await pp.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   ok('phone: the theme button lives in the ⋯ menu', !(await pp.locator('#sb-theme').isVisible()) && (await pp.click('#sb-more'), await pp.locator('#sb-theme-m').isVisible()));
   await pp.keyboard.press('Escape');
@@ -789,7 +784,6 @@ await octx.close();
     await tab(pg, 'board'); await pg.waitForSelector('#sb-board .card'); await grab(pg, 'Board');
     await pg.locator('#sb-more, #sb-mmore').locator('visible=true').first().click(); await grab(pg, 'More menu'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
     await tab(pg, 'ahead'); await grab(pg, 'Sunday plan');
-    await tab(pg, 'cal'); await grab(pg, 'Calendar (soon)');
     await more(pg, '#sb-import'); await pg.waitForSelector('dialog #imp-url'); await grab(pg, 'Import dialog'); await pg.keyboard.press('Escape');
     await pg.click('#sb-more'); await pg.click('#sb-move'); await pg.waitForSelector('dialog.move'); await grab(pg, 'Move dialog'); await pg.keyboard.press('Escape');
     await tab(pg, 'now'); await pg.locator('#tnList .estb').first().click(); await grab(pg, 'Time menu'); await pg.locator('#sb-menu .menu-i', { hasText: 'More options' }).click(); await pg.waitForSelector('dialog.est'); await grab(pg, 'Estimate editor'); await pg.keyboard.press('Escape');
@@ -1384,7 +1378,7 @@ await octx.close();
   // every text color on every view is one of the contrast-checked ones (src/contrast.py: all AA)
   const OKC = new Set(['rgb(242, 238, 230)', 'rgb(169, 166, 184)', 'rgb(156, 153, 180)', 'rgb(243, 231, 184)', 'rgb(244, 126, 129)', 'rgb(233, 210, 122)', 'rgb(20, 18, 43)']);
   const seen = new Set();
-  for (const v of ['now', 'board', 'ahead', 'cal']) {
+  for (const v of ['now', 'board', 'ahead']) {
     await tab(pg, v); await pg.waitForTimeout(250);
     (await pg.evaluate(() => { const r = new Set(); const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) { if (!n.textContent.trim()) continue; const e = n.parentElement; if (!e.offsetParent && getComputedStyle(e).position !== 'fixed') continue; const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || +cs.opacity === 0) continue; r.add(cs.color); } return [...r]; })).forEach((x) => seen.add(x));
     const cy = await noCyan(pg); if (cy.length) seen.add('CYAN ' + cy[0]);
@@ -1562,6 +1556,115 @@ await octx.close();
     await c.close();
   }
   writeFileSync(join(SHOTS, 'mhead-geometry.txt'), rows.join('\n'));
+}
+// ---------- 23. v1.11 pre-launch fixes ----------
+{
+  const VNOW = new Date('2026-10-19T17:02:00-04:00');
+  const ICSTXT = readFileSync(ICS, 'utf8');
+  const THEMES23 = [['sticker', ''], ['arcade', ''], ['notebook', ''], ['notebook', 'dark'], ['varsity', ''], ['riso', ''], ['cafe', ''], ['minimal', ''], ['minimal', 'dark'], ['nocturne', '']];
+  // 23.1 CAS preview fits a phone: no sideways overflow, titles at least 200px wide and editable
+  for (const [W, H] of [[375, 812], [390, 844], [360, 780]]) {
+    const c = await newCtx({ now: VNOW, viewport: { width: W, height: H }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); const pg = await c.newPage(); watch(pg, 'v111-cas');
+    await pg.goto(BASE + '/?preview=nocturne'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+    await pg.keyboard.press('i'); await pg.setInputFiles('dialog #imp-file', CASPDF); await pg.waitForSelector('.cas-table', { timeout: 20000 }); await pg.waitForTimeout(250);
+    const fit = async () => pg.evaluate(() => { const ti = [...document.querySelectorAll('.cas-table input[type=text]')].map((e) => e.getBoundingClientRect());
+      const outside = [...document.querySelectorAll('dialog[open] *')].filter((e) => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 0.5 || r.left < -0.5); }).length;
+      const sec = document.querySelector('.cas-file');
+      return { rows: ti.length, minTitle: Math.round(Math.min(...ti.map((r) => r.width))), outside, secOver: sec.scrollWidth > sec.clientWidth + 1, bodyOver: document.querySelector('dialog[open] .dlg-b').scrollWidth > document.querySelector('dialog[open] .dlg-b').clientWidth + 1, docOver: document.documentElement.scrollWidth > innerWidth }; });
+    const r = await fit();
+    ok(`CAS preview at ${W}px: every task fits (no sideways overflow) and each title box is at least 200px wide`, r.rows === 14 && r.minTitle >= 200 && !r.outside && !r.secOver && !r.bodyOver && !r.docOver, JSON.stringify(r));
+    if (W === 375) {
+      await pg.screenshot({ path: join(SHOTS, 'cas-preview-375.png') });
+      const bad = [];
+      for (const [t, m] of THEMES23) { await pg.evaluate(([t, m]) => window.SchoologyBoard.theme(t, m), [t, m]); await pg.waitForTimeout(120); const x = await fit(); if (x.minTitle < 200 || x.outside || x.secOver || x.bodyOver || x.docOver) bad.push(t + (m ? '-' + m : '') + ' ' + JSON.stringify(x)); }
+      ok('CAS preview at 375px fits in every theme', bad.length === 0, bad.join(' | '));
+      await pg.evaluate(() => window.SchoologyBoard.theme('sticker', ''));
+      const title = pg.locator('.cas-table input[value*="Lesson 4.2"]');
+      await title.tap(); await title.fill('Read: Lesson 4.2 (edited on a phone)'); await title.dispatchEvent('change');
+      const vis = await title.evaluate((e) => { const r = e.getBoundingClientRect(); return r.width >= 200 && e.scrollWidth <= e.clientWidth + 40; });
+      await pg.click('#cas-add'); await pg.waitForTimeout(400);
+      const titles = Object.values((await state(pg)).cas).map((x) => x.title);
+      ok('CAS preview at 375px: a title can be edited on the phone and the edit is saved', vis && titles.includes('Read: Lesson 4.2 (edited on a phone)'), titles.length + ' added');
+    }
+    await c.close();
+  }
+
+  // 23.2 a stalled relay gives up after ~20 s: "Couldn't reach Schoology" + Retry, nothing lost
+  {
+    const FEED = 'https://app.schoology.com/calendar/feed/ical/0000000000/fake-e2e/ical.ics';
+    const c = await newCtx({ now: VNOW, viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); let mode = 'ok';
+    await c.route('**/api/feed', async (r) => { if (mode === 'hang') return; return r.fulfill({ status: 200, contentType: 'text/calendar', body: ICSTXT }); }); // 'hang' never answers
+    const pg = await c.newPage(); watch(pg, 'v111-timeout');
+    await pg.goto(BASE + '/'); await pg.fill('#imp-url', FEED); await pg.click('#imp-go'); await pg.waitForSelector('#tnList .trow, #sb-board .card', { timeout: 15000 }); await skipNaming(pg, 2000);
+    await pg.locator('#tnList .trow:not(.tdone) .bigchk').first().click();
+    await pg.waitForFunction(() => Object.values(window.SchoologyBoard.state().status).includes('done'), null, { timeout: 5000 });
+    await pg.evaluate(() => { const S = window.SchoologyBoard.state(), id = Object.keys(S.ics)[0]; S.ov[id] = Object.assign(S.ov[id] || {}, { course: 'Geometry' }); if (!S.cats.includes('Geometry')) S.cats.push('Geometry'); S.colors.sticker = { Geometry: 3 }; window.SchoologyBoard.render(); });
+    const snap = (s) => JSON.stringify({ status: s.status, colors: s.colorAuto, picks: s.colors, ov: s.ov, ics: Object.keys(s.ics).length, cats: s.cats });
+    const before = snap(await state(pg));
+    mode = 'hang';
+    const t0 = Date.now();
+    await pg.evaluate(() => { const S = window.SchoologyBoard.state(); S.lastFetch = { at: Date.now() - 40 * 60e3, ok: true }; window.SchoologyBoard.render(); });
+    await pg.locator('[data-refresh]:visible').first().click();
+    await pg.waitForTimeout(1500);
+    const mid = await pill(pg);
+    await pg.waitForSelector('.banner.ferr', { timeout: 30000 });
+    const secs = (Date.now() - t0) / 1000;
+    const ban = (await pg.locator('.banner.ferr').innerText()).replace(/\s+/g, ' ');
+    const after = await state(pg);
+    ok('stalled feed: "Syncing…" while waiting, then after about 20 seconds a "Couldn\'t reach Schoology" banner with Retry (not "Syncing…" forever)', /Syncing/.test(mid) && secs >= 18 && secs <= 28 && /Couldn’t reach Schoology/.test(ban) && /Retry/.test(ban) && !/Syncing/.test(await pill(pg)), `${secs.toFixed(1)}s; ${mid} → ${ban.slice(0, 90)}`);
+    ok('stalled feed: the pill says "Sync failed · last good …" and classes, colors and check-offs are unchanged', /Sync failed · last good/.test(await pill(pg)) && snap(after) === before && after.lastFetch.ok === false && !after.lastFetch.why, await pill(pg) + (snap(after) === before ? '' : ' DIFF ' + before.slice(0, 300) + ' VS ' + snap(after).slice(0, 300)));
+    await pg.screenshot({ path: join(SHOTS, 'timeout-error-390.png') });
+    mode = 'ok'; await pg.locator('.banner.ferr [data-refresh]').click(); await pg.waitForFunction(() => /Synced/.test(document.body.innerText) && !document.querySelector('.banner.ferr'), null, { timeout: 8000 });
+    ok('stalled feed: Retry recovers once Schoology answers', /Synced/.test(await pill(pg)) && snap(await state(pg)) === before, await pill(pg));
+    await c.close();
+    // first link paste with a stalled relay: the message and a Retry button in the link box
+    const c2 = await newCtx({ now: VNOW }); let m2 = 'hang';
+    await c2.route('**/api/feed', async (r) => { if (m2 === 'hang') return; return r.fulfill({ status: 200, contentType: 'text/calendar', body: ICSTXT }); });
+    const p2 = await c2.newPage(); watch(p2, 'v111-timeout2');
+    await p2.goto(BASE + '/'); await p2.fill('#imp-url', FEED); await p2.click('#imp-go');
+    await p2.waitForSelector('#imp-err #imp-retry', { timeout: 30000 });
+    const em = await p2.locator('#imp-err').innerText();
+    ok('stalled first paste: "Couldn\'t reach Schoology. It took too long to answer." with a Retry button; the button is usable again', /Couldn’t reach Schoology\. It took too long to answer/.test(em) && await p2.locator('#imp-go').isEnabled(), em);
+    m2 = 'ok'; await p2.click('#imp-retry'); await p2.waitForSelector('#tnList .trow, #sb-board .card', { timeout: 15000 });
+    ok('stalled first paste: Retry builds the board', Object.keys((await state(p2)).ics).length === 19);
+    await c2.close();
+  }
+
+  // 23.3 truthful messages: Schoology's own answers are passed on; a 404 is not called "Couldn't reach"
+  {
+    const c = await newCtx({ now: VNOW }); const pg = await c.newPage(); watch(pg, 'v111-msg');
+    await c.route('**/api/feed', (r) => r.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'Schoology couldn’t find that calendar. The link may have been reset. Copy it again from Schoology.' }) }));
+    await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+    await pg.evaluate(() => { const S = window.SchoologyBoard.state(); S.feedUrl = 'https://app.schoology.com/calendar/feed/ical/0/fake-e2e/ical.ics'; S.lastFetch = { at: Date.now() - 40 * 60e3, ok: true }; window.SchoologyBoard.render(); });
+    await pg.locator('[data-refresh]:visible').first().click(); await pg.waitForSelector('.banner.ferr', { timeout: 8000 });
+    const ban = (await pg.locator('.banner.ferr').innerText()).replace(/\s+/g, ' ');
+    ok('a reset link: the banner says Schoology couldn\'t find the calendar (not "couldn\'t reach"), with Retry and Open Schoology', /Couldn’t update from Schoology\. Schoology couldn’t find that calendar/.test(ban) && !/Couldn’t reach/.test(ban) && /Retry/.test(ban) && /Open Schoology/.test(ban), ban);
+    await c.close();
+    // a non-Schoology link goes to the real relay (local or live) and gets a clear answer
+    const c3 = await newCtx({ now: VNOW }); const p3 = await c3.newPage(); watch(p3, 'v111-host');
+    await p3.goto(BASE + '/'); await p3.fill('#imp-url', 'https://calendar.google.com/calendar/ical/someone%40example.com/public/basic.ics'); await p3.click('#imp-go');
+    await p3.waitForFunction(() => /\S/.test(document.querySelector('#imp-err').textContent), null, { timeout: 15000 });
+    const em = await p3.locator('#imp-err').innerText();
+    ok('pasting a non-Schoology link says so plainly and how to find the right one', /That link isn’t from Schoology/.test(em) && /Export/.test(em) && /Share Calendar/.test(em) && !(await state(p3)).feedUrl && await p3.locator('#imp-retry').count() === 0, em);
+    const rel = await p3.evaluate(async () => { const go = async (url) => { const r = await fetch('/api/feed', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }) }); return [r.status, (await r.json().catch(() => ({}))).error || '']; };
+      return { ex: await go('https://example.com/'), meta: await go('http://169.254.169.254/latest/meta-data/'), loop: await go('https://127.0.0.1/'), look: await go('https://schoology.com.example.net/a.ics'), port: await go('https://app.schoology.com:8443/a.ics'), junk: await go('hello') }; });
+    ok('relay: other sites, metadata and loopback addresses, look-alike hosts, odd ports and junk are refused (400) with plain messages', ['ex', 'meta', 'loop', 'look'].every((k) => rel[k][0] === 400 && /isn’t from Schoology/.test(rel[k][1])) && rel.port[0] === 400 && /extra parts/.test(rel.port[1]) && rel.junk[0] === 400 && /doesn’t look like a link/.test(rel.junk[1]), JSON.stringify(Object.fromEntries(Object.entries(rel).map(([k, v]) => [k, v[0]]))));
+    if (LIVE_LINK) {
+      const fake = await p3.evaluate(async () => { const r = await fetch('/api/feed', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'webcal://app.schoology.com/calendar/feed/ical/1700000000/0000000000000000000000000000000000000000/ical.ics' }) }); return [r.status, (await r.json().catch(() => ({}))).error || '']; });
+      ok('live relay: a made-up Schoology link reaches Schoology, follows its sign-in redirect hop by hop, and explains it isn\'t a calendar', fake[0] === 422 && /asked for a sign-in/.test(fake[1]), JSON.stringify(fake));
+    }
+    await c3.close();
+  }
+
+  // 23.4 no dead end: the Calendar (coming soon) tab is gone
+  {
+    const c = await newCtx({ now: VNOW, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const pg = await c.newPage(); watch(pg, 'v111-nav');
+    await pg.goto(BASE + '/'); await pg.click('#imp-sample'); await pg.waitForSelector('#tnList .trow');
+    const nav = (await pg.locator('#sb-botnav').innerText()).replace(/\s+/g, ' ').trim();
+    await pg.goto(BASE + '/?view=cal'); await pg.waitForSelector('#tnList .trow');
+    ok('no "Calendar (coming soon)" tab: phone and desktop navs read Tonight · Board · Sunday plan; an old ?view=cal link opens Tonight', nav === 'Tonight Board Sunday plan' && (await pg.locator('#sb-tabs').textContent()).replace(/\s+/g, ' ').trim() === 'TonightBoardSunday plan' && await pg.locator('.stub, [data-tab=cal], .soon').count() === 0 && await pg.locator('#sb-tabs [data-tab=now][aria-current=page]').count() === 1 && await pg.locator('#tnList .trow').count() > 0, nav);
+    await c.close();
+  }
 }
 await browser.close();
 ok('no page errors', errors.length === 0, errors.slice(0, 5).join(' | '));
