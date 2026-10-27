@@ -12,11 +12,16 @@
   var MODE = CFG.mode || 'web';
   var BASE = CFG.assetBase || '/board/';
   var K = MODE === 'offline' ? 'schoology-board:offline:' + CFG.boardId : 'schoology-board:v1';
-  var COLS = [['todo', 'Need to be done'], ['started', 'Started'], ['proctor', 'Needs to be proctored'], ['done', 'Completed']];
-  var COL_IDS = COLS.map(function (c) { return c[0]; });
+  var wedge = window.SBwedge;
   // "Needs to be proctored" is optional; with it off, its cards show in Need to be done (their status is kept).
-  function cols() { return S && S.proctorCol ? COLS : COLS.filter(function (c) { return c[0] !== 'proctor'; }); }
-  function colIds() { return cols().map(function (c) { return c[0]; }); }
+  function cols() { return wedge.visibleColumns(S && S.columns, !!(S && S.proctorCol)); }
+  function colIds() { return cols().map(function (c) { return c.id; }); }
+  function colById(id) {
+    var list = (S && S.columns) || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+  function icsSourceName() { return wedge.hostKind(S && S.feedUrl) === 'calendar' ? 'calendar' : 'Schoology calendar'; }
   var UNSORTED = 'Unsorted';
   var ics = window.SBics, cas = window.SBcas, plan = window.SBplan;
   var S, app;
@@ -71,6 +76,12 @@
   var BIG_UPLOAD = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>';
   var REPO = 'https://github.com/nyfeblade/schoology-board';
   var SHORT = { todo: 'To do', started: 'Started', proctor: 'Proctor', done: 'Done' };
+  var DEFAULT_COL = { todo: 'Need to be done', started: 'Started', proctor: 'Needs to be proctored', done: 'Completed' };
+  function shortCol(c) {
+    if (DEFAULT_COL[c.id] && c.name === DEFAULT_COL[c.id] && SHORT[c.id]) return SHORT[c.id];
+    var n = c.name || 'Column';
+    return n.length > 16 ? n.slice(0, 15) + '\u2026' : n;
+  }
 
   // ---------- state ----------
   function blank() {
@@ -82,7 +93,8 @@
       est: {}, ttype: {}, actual: {}, sdone: {}, timer: null, planStart: null,
       // Tonight: items pulled in early, the student's own order for today, flags they confirmed, class colors per theme
       pulled: {}, earlyPin: {}, tnOrder: null, checked: {}, colors: {}, colorAuto: {},
-      prefs: { tab: 'now', view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, q: '', theme: 'sticker', mode: '', showDone: false, groupBy: 'date' }
+      columns: null, labels: [],
+      prefs: { tab: 'now', view: 'week', weekOffset: 0, from: '', to: '', hidePast: false, showPre: false, course: null, label: null, q: '', theme: 'sticker', mode: '', showDone: false, groupBy: 'date' }
     };
   }
   function normalizeState(st) {
@@ -90,6 +102,9 @@
     st.prefs = Object.assign(blank().prefs, st.prefs || {});
     ['ics', 'cas', 'custom', 'rename', 'ov', 'hidden', 'status', 'classMap', 'namingSeen', 'est', 'ttype', 'actual', 'sdone', 'pulled', 'earlyPin', 'checked', 'colors', 'colorAuto'].forEach(function (k) { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
     ['cats', 'order', 'rules'].forEach(function (k) { if (!Array.isArray(st[k])) st[k] = []; });
+    st.columns = wedge.migrateColumns(st).columns;
+    st.labels = wedge.sanitizeLabels(st.labels);
+    if (st.prefs.label && !st.labels.some(function (l) { return l.id === st.prefs.label; })) st.prefs.label = null;
     return st;
   }
   function load() {
@@ -169,7 +184,7 @@
   }
 
   // ---------- items ----------
-  var OV_FIELDS = ['title', 'course', 'due', 'url', 'note', 'allDay'];
+  var OV_FIELDS = ['title', 'course', 'due', 'url', 'note', 'allDay', 'checks', 'labels'];
   var preItems = [];
   function allItems() {
     var out = [];
@@ -193,8 +208,8 @@
         if (sameish(it, icsItems[j])) {
           var m = icsItems[j];
           // The class sheet gives a definite date that disagrees with the calendar: we use the calendar, and say so.
-          if (it.note !== 'Before class' && dayDiff(it.due, m.due) !== 0 && !(S.ov[m.id] && S.ov[m.id].due)) m.check = { what: 'due date', src: 'Schoology calendar', url: safeUrl(m.url),
-            why: 'Your class sheet says ' + fmtDayShort(toDate(it.due)) + ', but the Schoology calendar says ' + fmtDayShort(toDate(m.due)) + '. This list uses the calendar date.' };
+          if (it.note !== 'Before class' && dayDiff(it.due, m.due) !== 0 && !(S.ov[m.id] && S.ov[m.id].due)) m.check = { what: 'due date', src: icsSourceName(), url: safeUrl(m.url),
+            why: 'Your class sheet says ' + fmtDayShort(toDate(it.due)) + ', but the ' + icsSourceName() + ' says ' + fmtDayShort(toDate(m.due)) + '. This list uses the calendar date.' };
           if (!m.explicitCourse) { m.course = it.course; m.explicitCourse = true; }
           if (!S.status[m.id] && S.status[it.id]) m.inheritStatus = S.status[it.id];
           return false;
@@ -207,11 +222,24 @@
     result.forEach(function (it) {
       if (it.source === 'ics' && !it.explicitCourse) { var g = guess(it.title, it.kind); if (g) { it.course = g.course; it.autoCourse = g.why; } }
     });
+    var knownCols = (S.columns || []).map(function (c) { return c.id; });
+    var labelIds = {};
+    (S.labels || []).forEach(function (l) { labelIds[l.id] = 1; });
     result.forEach(function (it) {
       it.course = alias(it.course || UNSORTED) || UNSORTED;
-      it.d = toDate(it.due);
+      if (it.source === 'custom' && (it.undated || !it.due)) {
+        var nowD = new Date();
+        it.undated = true;
+        it.allDay = true;
+        it.d = new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate(), 23, 59, 0, 0);
+      } else {
+        it.d = toDate(it.due);
+        it.undated = false;
+      }
+      it.labels = (Array.isArray(it.labels) ? it.labels : []).filter(function (id) { return labelIds[id]; });
+      it.checks = wedge.sanitizeChecks(it.checks);
       it.col = S.status[it.id] || it.inheritStatus || (/\bproctor/i.test(it.title) ? 'proctor' : 'todo');
-      if (COL_IDS.indexOf(it.col) < 0) it.col = 'todo';
+      if (knownCols.indexOf(it.col) < 0) it.col = 'todo';
       it.rawCol = it.col;
       if (it.col === 'proctor' && !S.proctorCol) it.col = 'todo';
       // Imported work due before the board existed counts as already handled: hidden, not overdue, not Completed.
@@ -223,7 +251,7 @@
   }
   // Things we read but aren't sure about. Each becomes a "Double-check this" note with its reason and source.
   function checkOf(it) {
-    var src = it.source === 'cas' ? 'class sheet' : it.source === 'ics' ? 'Schoology calendar' : '', url = it.source === 'ics' ? safeUrl(it.url) : '';
+    var src = it.source === 'cas' ? 'class sheet' : it.source === 'ics' ? icsSourceName() : '', url = it.source === 'ics' ? safeUrl(it.url) : '';
     if (!src) return null;
     if (it.source === 'cas' && it.dueWord && it.note === 'Before class') return { what: 'due date', src: src, url: url, why: 'The class sheet mentions a due date we couldn\u2019t read, so this uses the start of class (' + fmtDayShort(toDate(it.due)) + ').' };
     var kw = /\b(quiz|test|exam)\b/i.test(it.title) && it.title.match(/\b(open[- ]?book|take[- ]?home|practice|retake)\b/i);
@@ -427,7 +455,7 @@
       '<li>' + plural(n, 'task') + ' (from Schoology, class sheets and your own)</li>' +
       '<li>Your check-offs (' + done + ' done) and what you started</li>' +
       '<li>Time estimates, timings and tonight\u2019s order</li>' +
-      '<li>Class names, categories and colors</li>' + (S.feedUrl ? '<li>Your saved Schoology link</li>' : '') + '</ul>' +
+      '<li>Class names, categories and colors</li>' + (S.feedUrl ? '<li>Your saved calendar link</li>' : '') + '</ul>' +
       '<p class="hint">It can\u2019t be undone. Save a backup file first if you might want it back.</p>',
       '<button class="btn" id="rs-backup">' + ICON.dl + 'Save a backup first</button><span class="r"><button class="btn" data-close>Cancel</button><button class="btn danger" id="rs-go">Erase this board</button></span>');
     d.classList.add('reset');
@@ -699,7 +727,7 @@
     var v = VIEWS.filter(function (x) { return x[0] === p.view; })[0] || VIEWS[1];
     $('#sb-vchip').innerHTML = esc(v[1]) + '<span class="vc" aria-hidden="true">\u25be</span>';
     $('#sb-vchip').setAttribute('aria-label', 'Showing: ' + v[1] + '. Change view');
-    var on = !!(p.hidePast || p.showPre || p.groupBy === 'class');
+    var on = !!(p.hidePast || p.showPre || p.groupBy === 'class' || p.label);
     $('#sb-mfilter').classList.toggle('on', on);
     $('#sb-mfilter').setAttribute('aria-label', on ? 'Filter (some filters are on)' : 'Filter');
     var mi = $('#sb-msearch'); if (document.activeElement !== mi) mi.value = p.q || '';
@@ -711,11 +739,21 @@
     items.push({ sep: true }, { heading: 'Arrange' },
       { check: true, id: 'sb-groupcls', label: 'Group by class', checked: S.prefs.groupBy === 'class', onChange: function (v) { S.prefs.groupBy = v ? 'class' : 'date'; save(); renderBoard(); } });
     items.push({ sep: true }, { heading: 'Columns' },
-      { check: true, id: 'sb-proctorcol', label: '\u201cNeeds to be proctored\u201d column', checked: !!S.proctorCol, onChange: function (v) { setProctorCol(v); } });
+      { check: true, id: 'sb-proctorcol', label: '\u201cNeeds to be proctored\u201d column', checked: !!S.proctorCol, onChange: function (v) { setProctorCol(v); } },
+      { label: 'Edit columns\u2026', id: 'sb-columns', onClick: function () { openColumns(); } });
+    if (S.labels && S.labels.length) {
+      items.push({ sep: true }, { heading: 'Label' },
+        { radio: true, label: 'All labels', checked: !S.prefs.label, onClick: function () { S.prefs.label = null; save(); renderBoard(); } });
+      S.labels.forEach(function (l) {
+        items.push({ radio: true, label: l.name, checked: S.prefs.label === l.id, onClick: function () { S.prefs.label = l.id; save(); renderBoard(); } });
+      });
+    }
     menu(anchor, items, { title: 'Filter & settings', label: 'Filter and settings' });
   }
   function setProctorCol(on) {
-    S.proctorCol = !!on; save(); renderBoard();
+    S.proctorCol = !!on;
+    if (on) S.columns = wedge.ensureProctor(S.columns, true);
+    save(); renderBoard();
     if (!on) {
       var n = allItems().filter(function (i) { return i.rawCol === 'proctor'; }).length;
       if (n) toast(n + ' card' + (n === 1 ? '' : 's') + ' moved to Need to be done. Turn the column back on to restore ' + (n === 1 ? 'it' : 'them') + '.', 'Undo', function () { setProctorCol(true); });
@@ -724,9 +762,10 @@
   function moreMenu(anchor) {
     var items = [
       { label: 'Import tasks\u2026', icon: ICON.imp, kbd: 'I', id: 'sb-import', onClick: openImport },
-      S.feedUrl ? { label: 'Refresh from Schoology now', icon: ICON.refresh, id: 'sb-refresh', onClick: function () { refreshFeed(true); } } : null,
+      S.feedUrl ? { label: linkWords().refresh, icon: ICON.refresh, id: 'sb-refresh', onClick: function () { refreshFeed(true); } } : null,
       MODE === 'web' ? { label: 'Change theme', icon: NICON.pal, id: 'sb-theme-m', cls: 'm-only', onClick: openThemes } : null,
       { label: 'Edit categories', icon: ICON.edit, id: 'sb-cats', onClick: openCategories },
+      { label: 'Edit columns\u2026', id: 'sb-columns-m', onClick: function () { openColumns(); } },
       { label: 'Name your classes', icon: ICON.tag, id: 'sb-naming', onClick: function () { openNaming(true); } },
       { label: sheetMode() ? 'Send this board to another device' : 'Move this board to your phone', icon: ICON.phone, id: 'sb-move', onClick: openMove },
       { label: 'Save a backup file', icon: ICON.dl, id: 'sb-backup', onClick: downloadOffline },
@@ -772,31 +811,37 @@
   }
   function cardHtml(it, colId) {
     var h = (it.d - new Date()) / 36e5, done = colId === 'done';
-    var cls = done ? '' : (h < 0 ? ' overdue' : '');
+    var cls = done ? '' : (h < 0 && !it.undated ? ' overdue' : '');
     var url = safeUrl(it.url);
-    var when = it.allDay ? 'All day' : fmtT(it.d);
-    if (done) when = it.d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + when;
-    if (h < 0 && !done) when = 'Overdue \u00b7 ' + when;
+    var when = it.undated ? 'No date' : (it.allDay ? 'All day' : fmtT(it.d));
+    if (done && !it.undated) when = it.d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + when;
+    if (h < 0 && !done && !it.undated) when = 'Overdue \u00b7 ' + when;
     var src = it.source === 'cas' ? '<span class="src" title="From a Course Assignment Sheet (CAS) PDF">Sheet</span>' : it.source === 'custom' ? '<span class="src" title="Added by you">Mine</span>' : '';
     var fl = !done && cardFlags[it.id];
     if (fl && fl.early) src += '<span class="flag early" title="About ' + esc(plan.fmtMin(fl.est.min)) + ' of work, due in a few days. Tonight\u2019s plan includes a first chunk.">Start early</span>';
     else if (fl && fl.test) src += '<span class="flag test" title="Study sessions are planned on the nights before it">' + esc(plan.LABEL[fl.est.type]) + '</span>';
     if (S.timer && S.timer.id === it.id) src += '<span class="flag run" title="Timer running">' + ICON.clock + '<span class="run-t">' + timerText() + '</span></span>';
-    var label = it.title + ', ' + it.course + ', due ' + fmtDay(it.d) + ' ' + when + (done ? ', done' : '');
+    var label = it.title + ', ' + it.course + (it.undated ? ', no date' : ', due ' + fmtDay(it.d) + ' ' + when) + (done ? ', done' : '');
     var fg = it.check && !S.checked[it.id] && !done;
+    var labs = (it.labels || []).map(function (id) {
+      var l = null; (S.labels || []).forEach(function (x) { if (x.id === id) l = x; });
+      return l ? '<span class="lb" style="background:var(--swatch-' + l.swatch + ');color:var(--swatch-' + l.swatch + '-ink)">' + esc(l.name) + '</span>' : '';
+    }).join('');
+    var ck = it.checks && it.checks.length ? '<span class="ckn">' + it.checks.filter(function (c) { return c.done; }).length + '/' + it.checks.length + '</span>' : '';
     return '<div class="card' + cls + (done ? ' is-done' : '') + (fg ? ' flagged' : '') + '" tabindex="0" data-id="' + esc(it.id) + '" aria-label="' + esc(label + (fg ? ', double-check this' : '')) + '" style="' + cvars(it.course) + '">' +
       '<button type="button" class="chk" tabindex="-1" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Mark not done: ' : 'Mark done: ') + it.title) + '" title="' + (done ? 'Mark not done' : 'Mark done') + ' (X)">' + NICON.ck + '</button>' +
       (url ? '<a class="t" href="' + esc(url) + '" target="_blank" rel="noopener" draggable="false" tabindex="-1">' + esc(it.title) + '</a>' : '<span class="t">' + esc(it.title) + '</span>') +
       (it.note ? '<div class="note">' + esc(it.note) + '</div>' : '') +
+      (labs ? '<div class="lbs">' + labs + '</div>' : '') +
       (fg ? '<span class="flagtag" title="' + esc(it.check.why) + '">' + NICON.flag + 'Double-check this</span>' : '') +
-      '<div class="m"><span class="l"><span class="tag">' + esc(it.course) + '</span>' + src + '</span><span class="tm">' + esc(when) + '</span></div>' +
+      '<div class="m"><span class="l"><span class="tag">' + esc(it.course) + '</span>' + src + ck + '</span><span class="tm">' + esc(when) + '</span></div>' +
       '<button class="more" type="button" tabindex="-1" aria-label="Card actions" aria-haspopup="menu" aria-expanded="false" title="Actions (M)">' + ICON.more + '</button></div>';
   }
   function cardMenu(el) {
     var id = el.dataset.id, it = itemById(id); if (!it) return;
     var url = safeUrl(it.url);
-    var items = [{ heading: 'Move to\u2026' }];
-    cols().forEach(function (c, i) { if (c[0] !== it.col) items.push({ label: c[1], icon: ICON.arrow, kbd: String(i + 1), cls: 'move', onClick: function () { setStatus(id, c[0]); } }); });
+    var items = [{ label: 'Open card', icon: ICON.edit, onClick: function () { openCard(id); } }, { heading: 'Move to\u2026' }];
+    cols().forEach(function (c, i) { if (c.id !== it.col) items.push({ label: c.name, icon: ICON.arrow, kbd: String(i + 1), cls: 'move', onClick: function () { setStatus(id, c.id); } }); });
     items.push({ sep: true },
       { label: it.col === 'done' ? 'Mark not done' : 'Mark done', icon: ICON.check, kbd: 'X', onClick: function () { toggleDone(id); } },
       { label: 'Edit\u2026', icon: ICON.edit, kbd: 'E', onClick: function () { openEditor(id); } },
@@ -828,7 +873,7 @@
   function drawBoard() {
     var items = allItems(), r = viewRange(), p = S.prefs, now = new Date();
     cardFlags = plan.flags(items, pctx(), now);
-    var viewItems = items.filter(function (it) { return inView(it, r) && matchesQ(it); });
+    var viewItems = items.filter(function (it) { return inView(it, r) && matchesQ(it) && (!p.label || (it.labels || []).indexOf(p.label) >= 0); });
     var cats = categories(items);
     $('#sb-label').textContent = r.label;
     $$('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === p.view)); });
@@ -837,10 +882,10 @@
     $('#sb-week').innerHTML = wi > 0 ? '<span class="wl">' + esc(wn.slice(0, wi + 3)) + '</span>' + esc(wn.slice(wi + 3)) : esc(wn);
     $('#sb-thisweek').style.display = p.weekOffset ? '' : 'none';
     $('#sb-thisweek').textContent = weekendMode() ? 'Next week' : 'This week';
-    $('#sb-filter').classList.toggle('on', !!(p.hidePast || p.showPre || p.groupBy === 'class'));
+    $('#sb-filter').classList.toggle('on', !!(p.hidePast || p.showPre || p.groupBy === 'class' || p.label));
     renderSync();
     phoneSub();
-    $('#sb-filter').setAttribute('aria-label', 'Filter' + (p.hidePast ? ' (hiding past)' : '') + (p.showPre ? ' (showing pre-board items)' : '') + (p.groupBy === 'class' ? ' (grouped by class)' : ''));
+    $('#sb-filter').setAttribute('aria-label', 'Filter' + (p.hidePast ? ' (hiding past)' : '') + (p.showPre ? ' (showing pre-board items)' : '') + (p.groupBy === 'class' ? ' (grouped by class)' : '') + (p.label ? ' (one label)' : ''));
     if (document.activeElement !== $('#sb-search')) $('#sb-search').value = p.q || '';
     var counts = {};
     viewItems.forEach(function (it) { if (it.col !== 'done') counts[it.course] = (counts[it.course] || 0) + 1; });
@@ -857,11 +902,14 @@
     var q = (p.q || '').trim(), openShown = shown.filter(function (i) { return i.col !== 'done'; }).length;
     var html = '', nav = '', today = dayKey(now);
     var visCols = cols();
-    $('#sb-board').classList.toggle('three', visCols.length === 3);
+    var ncol = visCols.length;
+    $('#sb-board').classList.toggle('three', ncol === 3);
+    $('#sb-board').classList.toggle('many', ncol > 4);
+    $('#sb-board').style.gridTemplateColumns = (ncol === 3 || ncol === 4) ? '' : 'repeat(' + ncol + ',minmax(0,1fr))';
     visCols.forEach(function (c) {
-      var id = c[0], list = shown.filter(function (it) { return it.col === id; }).sort(function (a, b) { return a.d - b.d || a.title.localeCompare(b.title); });
-      nav += '<button type="button" data-col="' + id + '" title="' + list.length + ' card' + (list.length === 1 ? '' : 's') + '">' + esc(SHORT[id]) + '<b>' + list.length + '</b></button>';
-      html += '<section class="col' + (id === 'done' ? ' done' : '') + '" data-col="' + id + '" aria-label="' + esc(c[1]) + '"><h2>' + esc(c[1]) + '<span title="' + list.length + ' card' + (list.length === 1 ? '' : 's') + '">' + list.length + '</span></h2>';
+      var id = c.id, list = shown.filter(function (it) { return it.col === id; }).sort(function (a, b) { return a.d - b.d || a.title.localeCompare(b.title); });
+      nav += '<button type="button" data-col="' + id + '" title="' + list.length + ' card' + (list.length === 1 ? '' : 's') + '">' + esc(shortCol(c)) + '<b>' + list.length + '</b></button>';
+      html += '<section class="col' + (c.kind === 'done' ? ' done' : '') + '" data-col="' + id + '" aria-label="' + esc(c.name) + '"><h2><button type="button" class="coln">' + esc(c.name) + '</button><span title="' + list.length + ' card' + (list.length === 1 ? '' : 's') + '">' + list.length + '</span></h2>';
       if (!list.length) {
         if (id === 'todo' && q && !shown.length) {
           html += '<div class="empty-state"><p class="es-t">No matches for \u201c' + esc(q) + '\u201d</p><button class="btn" id="sb-clearq" type="button">Clear search</button></div>';
@@ -916,6 +964,7 @@
     $('#sb-hsky').innerHTML = curTheme() === 'nocturne' ? constel(done, shown.length, { id: 'b' }) : '';
     document.body.dataset.view = 'board'; document.title = 'Board \u00b7 Schoology Board';
     $('#sb-bar').style.width = (shown.length ? Math.round(100 * done / shown.length) : 0) + '%';
+    $$('#sb-board .coln').forEach(function (b) { b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); openColumns(); }; });
     bindCards();
   }
 
@@ -955,31 +1004,50 @@
   function loadingNow() { return MODE === 'web' && !!S.feedUrl && !Object.keys(S.ics).length && (syncing || !S.lastFetch); }
   // "Open Schoology" goes to the student's own school site (taken from their saved link, in this browser only).
   function schoologyHome() {
-    try { var u = new URL(S.feedUrl); if (u.protocol === 'https:' || u.protocol === 'webcal:') return 'https://' + u.host + '/home'; } catch (e) { }
+    try {
+      var raw = String(S.feedUrl || '').replace(/^webcals?:\/\//i, 'https://');
+      var u = new URL(raw);
+      if (u.protocol === 'https:' || u.protocol === 'http:') return 'https://' + u.host + (wedge.hostKind(S.feedUrl) === 'calendar' ? '/' : '/home');
+    } catch (e) { }
     return 'https://www.schoology.com/';
+  }
+  // Schoology wording stays for Schoology links and for unknown saved hosts (including test doubles).
+  // A saved Google, Outlook, or iCloud link does not claim to be Schoology.
+  function linkWords() {
+    var cal = wedge.hostKind(S && S.feedUrl) === 'calendar';
+    return {
+      cal: cal,
+      sync: cal ? 'Syncing your calendar\u2026' : 'Syncing with Schoology\u2026',
+      reach: cal ? 'Couldn\u2019t reach your calendar' : 'Couldn\u2019t reach Schoology',
+      update: cal ? 'Couldn\u2019t update your calendar.' : 'Couldn\u2019t update from Schoology.',
+      open: cal ? 'Open calendar' : 'Open Schoology',
+      refresh: cal ? 'Refresh calendar now' : 'Refresh from Schoology now',
+      synced: cal ? 'Synced ' : 'Synced with Schoology '
+    };
   }
   function freshState() {
     if (MODE === 'offline') return { k: 'off', t: 'Saved copy from ' + fmtShort(new Date(CFG.exportedAt || S.updated || Date.now())), tip: 'This is a backup file. Open the website to update from Schoology.' };
     if (!S.feedUrl) return { k: 'none', t: 'Not linked to Schoology', tip: 'Add your Schoology calendar link so this updates by itself.' };
+    var w = linkWords();
     var f = S.lastFetch || {}, at = f.at ? new Date(f.at) : null, tip = at ? 'Last good sync: ' + at.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + fmtT(at) : 'Not synced yet';
-    if (syncing) return { k: 'sync', t: 'Syncing with Schoology\u2026', tip: tip };
-    if (f.ok === false) return { k: 'err', t: at ? 'Sync failed \u00b7 last good ' + fmtT(at) : f.why ? 'Sync failed' : 'Couldn\u2019t reach Schoology', tip: tip };
+    if (syncing) return { k: 'sync', t: w.sync, tip: tip };
+    if (f.ok === false) return { k: 'err', t: at ? 'Sync failed \u00b7 last good ' + fmtT(at) : f.why ? 'Sync failed' : w.reach, tip: tip };
     if (at && Date.now() - f.at > 6 * 36e5) return { k: 'stale', t: 'Synced ' + ago(f.at) + ' \u00b7 ' + fmtT(at), tip: tip };
-    if (at) return { k: 'ok', t: 'Synced with Schoology ' + ago(f.at), tip: tip };
-    return { k: 'sync', t: 'Syncing with Schoology\u2026', tip: tip };
+    if (at) return { k: 'ok', t: w.synced + ago(f.at), tip: tip };
+    return { k: 'sync', t: w.sync, tip: tip };
   }
   function freshHtml() {
-    var s = freshState();
+    var s = freshState(), w = linkWords();
     if (s.k === 'none') return '<div class="fresh"><button type="button" class="fpill none linkb" data-addlink title="' + esc(s.tip) + '"><i class="fdot"></i><span class="ft">Link Schoology</span><span aria-hidden="true">\u2192</span></button></div>';
     var btn = s.k === 'none' ? '<button type="button" class="btn small" data-addlink>Add your link</button>' :
-      s.k === 'off' ? '' : '<button type="button" class="refresh" data-refresh' + (s.k === 'sync' ? ' disabled' : '') + ' aria-label="Refresh from Schoology" title="Refresh from Schoology now">' + NICON.ref + '</button>';
+      s.k === 'off' ? '' : '<button type="button" class="refresh" data-refresh' + (s.k === 'sync' ? ' disabled' : '') + ' aria-label="' + esc(w.refresh) + '" title="' + esc(w.refresh) + '">' + NICON.ref + '</button>';
     return '<div class="fresh"><span class="fpill ' + (s.k === 'ok' ? 'ok' : s.k === 'sync' ? 'fsync' : s.k === 'err' ? 'ferr' : s.k) + '" role="status" title="' + esc(s.tip) + '"><i class="fdot"></i><span class="ft">' + esc(s.t) + '</span></span>' + btn + '</div>';
   }
   function bannerHtml() {
     if (MODE !== 'web' || !S.feedUrl || syncing) return '';
-    var f = S.lastFetch || {};
-    if (f.ok === false) return '<div class="banner ferr" role="alert"><div class="bt">' + (f.why ? '<b>Couldn\u2019t update from Schoology.</b> ' + esc(f.why) + ' ' : '<b>Couldn\u2019t reach Schoology.</b> ') + (f.at ? 'Showing what we had at ' + fmtT(new Date(f.at)) + (sod(new Date(f.at)) < sod(new Date()) ? ' on ' + fmtShort(new Date(f.at)) : '') + '.' : 'Showing what\u2019s saved on this device.') +
-      ' <span class="bs">Your check-offs still save on this device.</span></div><div class="ba"><button class="btn primary" data-refresh>Retry</button><a class="btn" href="' + esc(schoologyHome()) + '" target="_blank" rel="noopener">Open Schoology' + NICON.ext + '</a></div></div>';
+    var f = S.lastFetch || {}, w = linkWords();
+    if (f.ok === false) return '<div class="banner ferr" role="alert"><div class="bt">' + (f.why ? '<b>' + esc(w.update) + '</b> ' + esc(f.why) + ' ' : '<b>' + esc(w.reach) + '.</b> ') + (f.at ? 'Showing what we had at ' + fmtT(new Date(f.at)) + (sod(new Date(f.at)) < sod(new Date()) ? ' on ' + fmtShort(new Date(f.at)) : '') + '.' : 'Showing what\u2019s saved on this device.') +
+      ' <span class="bs">Your check-offs still save on this device.</span></div><div class="ba"><button class="btn primary" data-refresh>Retry</button><a class="btn" href="' + esc(schoologyHome()) + '" target="_blank" rel="noopener">' + esc(w.open) + NICON.ext + '</a></div></div>';
     if (f.at && Date.now() - f.at > 6 * 36e5) return '<div class="banner stale" role="status"><div class="bt"><b>This list might be out of date.</b> The last sync was ' + esc(ago(f.at)) + ' (' + fmtT(new Date(f.at)) + '), so anything posted since then won\u2019t show yet.</div><div class="ba"><button class="btn primary" data-refresh>Refresh now</button></div></div>';
     return '';
   }
@@ -1594,7 +1662,8 @@
     focusCard(id);
     markMoved(id, col === 'done' ? 'sb-done-now' : 'sb-landed');
     if (!quiet) {
-      var name = COLS.filter(function (c) { return c[0] === col; })[0][1];
+      var colDef = colById(col);
+      var name = colDef ? colDef.name : 'that column';
       toast('Moved to ' + name, 'Undo', function () { S.status[id] = prev; save(); renderBoard(); focusCard(id); }, 4000);
     }
   }
@@ -1623,12 +1692,23 @@
   }
 
   // ---------- drag and drop (mouse, pen and touch via pointer events) ----------
-  var drag = null, suppressClick = false;
+  var drag = null, suppressClick = false, openTimer = null;
   function bindCards() {
     $$('#sb-board .card').forEach(function (el) {
       el.addEventListener('pointerdown', onDown);
-      el.addEventListener('dblclick', function (e) { if (e.target.closest('.more')) return; e.preventDefault(); toggleDone(el.dataset.id); });
+      el.addEventListener('click', function (e) {
+        if (suppressClick || e.target.closest('a, button, .more, .chk')) return;
+        var id = el.dataset.id;
+        clearTimeout(openTimer);
+        openTimer = setTimeout(function () { openTimer = null; if (!suppressClick) openCard(id); }, 280);
+      });
+      el.addEventListener('dblclick', function (e) {
+        clearTimeout(openTimer); openTimer = null;
+        if (e.target.closest('.more')) return; e.preventDefault(); toggleDone(el.dataset.id);
+      });
       el.querySelector('.more').addEventListener('click', function (e) { e.stopPropagation(); cardMenu(el); });
+      var chk = el.querySelector('.chk');
+      if (chk) chk.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); clearTimeout(openTimer); openTimer = null; toggleDone(el.dataset.id); });
       var a = el.querySelector('a.t');
       if (a) a.addEventListener('click', function (e) { if (suppressClick) { e.preventDefault(); suppressClick = false; } });
     });
@@ -1643,6 +1723,7 @@
     document.addEventListener('pointercancel', onCancel);
   }
   function startDrag(x, y) {
+    clearTimeout(openTimer); openTimer = null;
     var r = drag.el.getBoundingClientRect();
     var g = drag.el.cloneNode(true); g.classList.add('drag-ghost'); g.style.width = r.width + 'px';
     g.removeAttribute('tabindex'); g.setAttribute('aria-hidden', 'true');
@@ -1716,7 +1797,7 @@
       if (k === 'e' || k === 'E') { openEditor(id); e.preventDefault(); return; }
       if (k === 'm' || k === 'M' || (k === 'F10' && e.shiftKey) || k === 'ContextMenu') { cardMenu(card); e.preventDefault(); return; }
       if (k === 'x' || k === ' ') { toggleDone(id); e.preventDefault(); return; }
-      if (/^[1-4]$/.test(k) && CI[+k - 1]) { setStatus(id, CI[+k - 1]); e.preventDefault(); return; }
+      if (/^[1-9]$/.test(k) && CI[+k - 1]) { setStatus(id, CI[+k - 1]); e.preventDefault(); return; }
       if (k === 'Delete' || k === 'Backspace') { deleteItem(id); e.preventDefault(); return; }
       if ((k === 'ArrowLeft' || k === 'ArrowRight') && e.shiftKey) {
         var ni = Math.max(0, Math.min(CI.length - 1, ci + (k === 'ArrowLeft' ? -1 : 1)));
@@ -1773,8 +1854,8 @@
   }
 
   function openKeys() {
-    var rows = [['N', 'Add a task'], ['I', 'Import from Schoology or a Course Assignment Sheet'], ['/', 'Search'], ['T W A', 'Due today, Week, All'], ['[ ]', 'Previous / next week'], ['H', 'Hide past'],
-      ['\u2191 \u2193 \u2190 \u2192', 'Move focus between cards'], ['1 2 3 4', 'Move the card to a column'], ['Shift+\u2190 Shift+\u2192', 'Move the card one column'], ['X Space', 'Toggle done (or double-click)'],
+    var rows = [['N', 'Add a task'], ['I', 'Import a calendar, a to-do list, or a Course Assignment Sheet'], ['/', 'Search'], ['T W A', 'Due today, Week, All'], ['[ ]', 'Previous / next week'], ['H', 'Hide past'],
+      ['\u2191 \u2193 \u2190 \u2192', 'Move focus between cards'], ['1\u20139', 'Move the card to a column'], ['Shift+\u2190 Shift+\u2192', 'Move the card one column'], ['X Space', 'Toggle done (or double-click)'],
       ['E', 'Edit the card'], ['M', 'Card menu (move, done, edit, delete)'], ['Enter', 'Open it in Schoology'], ['Delete', 'Delete the card (with undo)'], ['?', 'This list']];
     dialog('Keyboard shortcuts', '<div class="keys">' + rows.map(function (r) {
       return '<span>' + r[0].split(' ').map(function (x) { return '<kbd>' + esc(x) + '</kbd>'; }).join(' ') + '</span><span class="muted">' + esc(r[1]) + '</span>';
@@ -1807,15 +1888,15 @@
     var timeStr = it && !it.allDay ? pad(d0.getHours()) + ':' + pad(d0.getMinutes()) : '';
     var cats = categories();
     var defCourse = it ? it.course : (S.prefs.course || (cats[0] && cats[0] !== UNSORTED ? cats[0] : UNSORTED));
-    var note = it && it.source === 'ics' ? '<p class="hint">From your Schoology calendar. Your edits are kept when the board updates.</p>' :
-      it && it.source === 'cas' ? '<p class="hint">From a Course Assignment Sheet (CAS) PDF. Your edits are kept when the board updates from Schoology.</p>' : '';
+    var note = it && it.source === 'ics' ? '<p class="hint">From your ' + (wedge.hostKind(S.feedUrl) === 'calendar' ? 'calendar' : 'Schoology calendar') + '. Your edits are kept when the board updates.</p>' :
+      it && it.source === 'cas' ? '<p class="hint">From a Course Assignment Sheet (CAS) PDF. Your edits are kept when the board updates.</p>' : '';
     var body = '<form class="form" id="ed-form" autocomplete="off">' +
       '<label for="ed-title">Title</label><input type="text" id="ed-title" required value="' + esc(it ? it.title : '') + '" placeholder="e.g. Read chapter 4, pp 80-95">' +
       '<label for="ed-cat">Category</label><select id="ed-cat">' + catOptions(defCourse) + '</select>' +
       '<label for="ed-date">Due</label><span class="two"><input type="date" id="ed-date" required value="' + dayKey(d0) + '"><input type="time" id="ed-time" value="' + timeStr + '" aria-label="Due time (optional)"></span>' +
       '<label for="ed-url">Link</label><input type="url" id="ed-url" placeholder="https://\u2026 (optional)" value="' + esc(it && it.url || '') + '">' +
       '<label for="ed-note">Note</label><input type="text" id="ed-note" placeholder="e.g. Before class (optional)" value="' + esc(it && it.note || '') + '">' +
-      (it ? '' : '<label for="ed-col">Column</label><select id="ed-col">' + cols().map(function (c) { return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('') + '</select>') +
+      (it ? '' : '<label for="ed-col">Column</label><select id="ed-col">' + cols().map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join('') + '</select>') +
       '<button type="submit" hidden></button></form>' + note;
     var foot = (it ? '<button class="btn danger" id="ed-del">Delete</button>' + (it.source !== 'custom' && S.ov[id] ? '<button class="btn ghost" id="ed-revert">Reset to original</button>' : '') : '') +
       '<span class="r"><button class="btn" data-close>Cancel</button><button class="btn primary" id="ed-save">' + (it ? 'Save changes' : 'Add task') + '</button></span>';
@@ -1837,7 +1918,7 @@
         save(); d.close(); renderBoard(); focusCard(nid); toast('Added "' + title.slice(0, 40) + '"');
         return;
       }
-      if (it.source === 'custom') Object.assign(S.custom[id], rec);
+      if (it.source === 'custom') { Object.assign(S.custom[id], rec); S.custom[id].undated = false; }
       else {
         var ov = {}, b = base || {}, prevOv = S.ov[id] || {};
         var baseDue = b.due ? toDate(b.due) : null;
@@ -1846,6 +1927,8 @@
         if (!baseDue || localStr(baseDue) !== rec.due.slice(0, 16) || !!b.allDay !== rec.allDay) { ov.due = rec.due; ov.allDay = rec.allDay; }
         if ((rec.url || null) !== (b.url || null)) ov.url = rec.url;
         if ((rec.note || '') !== (b.note || '')) ov.note = rec.note;
+        if (prevOv.checks) ov.checks = prevOv.checks;
+        if (prevOv.labels) ov.labels = prevOv.labels;
         if (Object.keys(ov).length) S.ov[id] = ov; else delete S.ov[id];
       }
       save(); d.close(); renderBoard(); focusCard(id);
@@ -1933,40 +2016,239 @@
     cats[i] = cats[j]; cats[j] = name; S.order = cats; save();
   }
 
+  // ---------- columns, labels, card detail ----------
+  function writeCardField(it, key, val) {
+    if (!it) return;
+    if (it.source === 'custom') { if (S.custom[it.id]) S.custom[it.id][key] = val; }
+    else S.ov[it.id] = Object.assign({}, S.ov[it.id] || {}, (function () { var o = {}; o[key] = val; return o; })());
+  }
+  function openColumns() {
+    function draw() {
+      var vis = cols();
+      return '<div class="cats"><ul>' + vis.map(function (c, i) {
+        var locked = c.id === 'todo' || c.kind === 'done';
+        return '<li data-id="' + esc(c.id) + '"><input type="text" maxlength="60" value="' + esc(c.name) + '" aria-label="Column name">' +
+          '<button class="btn ghost" type="button" data-up ' + (i === 0 ? 'disabled' : '') + ' aria-label="Move up">' + ICON.up + '</button>' +
+          '<button class="btn ghost" type="button" data-down ' + (i >= vis.length - 1 ? 'disabled' : '') + ' aria-label="Move down">' + ICON.down + '</button>' +
+          (locked ? '<span style="width:38px;display:inline-block"></span>' : '<button class="btn ghost danger" type="button" data-del aria-label="Delete column ' + esc(c.name) + '">' + ICON.x + '</button>') + '</li>';
+      }).join('') + '</ul>' +
+        '<form class="row" id="col-add" style="margin-top:14px"><input type="text" id="col-new" maxlength="60" placeholder="New column" aria-label="New column name"><button class="btn primary">Add</button></form>' +
+        '<p class="hint">Need to be done is where cards go when a column is deleted. Completed is where finished cards live, and Tonight hides them.</p></div>';
+    }
+    var d = dialog('Edit columns', draw(), '<span class="r"><button class="btn primary" data-close>Done</button></span>');
+    function bind() {
+      var b = $('.dlg-b', d);
+      $$('li', b).forEach(function (li) {
+        var id = li.dataset.id, inp = $('input', li);
+        inp.onchange = function () {
+          var res = wedge.renameColumn(S.columns, id, inp.value);
+          if (!res.ok) { toast('A column needs a name.'); refresh(); return; }
+          S.columns = res.columns; save(); refresh();
+        };
+        inp.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } };
+        var up = $('[data-up]', li), dn = $('[data-down]', li), del = $('[data-del]', li);
+        if (up) up.onclick = function () { S.columns = wedge.reorderVisible(S.columns, S.proctorCol, id, -1); save(); refresh(); };
+        if (dn) dn.onclick = function () { S.columns = wedge.reorderVisible(S.columns, S.proctorCol, id, 1); save(); refresh(); };
+        if (del) del.onclick = function () {
+          var col = colById(id);
+          if (!confirm('Delete column "' + (col ? col.name : 'this column') + '"? Its cards move to Need to be done.')) return;
+          var res = wedge.deleteColumn(S.columns, S.status, id);
+          if (!res.ok) return;
+          S.columns = res.columns; S.status = res.status;
+          if (id === 'proctor') S.proctorCol = false;
+          save(); refresh();
+        };
+      });
+      $('#col-add', b).onsubmit = function (e) {
+        e.preventDefault();
+        var before = (S.columns || []).length;
+        S.columns = wedge.addColumn(S.columns, $('#col-new', b).value);
+        if (S.columns.length === before) { toast('12 columns is the limit.'); return; }
+        save(); refresh();
+      };
+    }
+    function refresh() { $('.dlg-b', d).innerHTML = draw(); bind(); renderBoard(); }
+    bind();
+  }
+  function stripLabel(id) {
+    function drop(bag) {
+      if (!bag || !Array.isArray(bag.labels)) return;
+      bag.labels = bag.labels.filter(function (x) { return x !== id; });
+      if (!bag.labels.length) delete bag.labels;
+    }
+    Object.keys(S.custom).forEach(function (k) { drop(S.custom[k]); });
+    Object.keys(S.ov).forEach(function (k) { drop(S.ov[k]); });
+    if (S.prefs.label === id) S.prefs.label = null;
+  }
+  function openCard(id) {
+    var swPick = 1;
+    function cur() { return itemById(id); }
+    function saveNote() {
+      var el = $('#cd-note', d); if (!el) return;
+      var it = cur(); if (!it) return;
+      writeCardField(it, 'note', el.value.trim());
+      save();
+    }
+    function draw() {
+      var it = cur(); if (!it) return '<p>That card is gone.</p>';
+      var checks = it.checks || [];
+      var on = {}; (it.labels || []).forEach(function (x) { on[x] = 1; });
+      return '<div class="cd"><p class="cd-t">' + esc(it.title) + '</p>' +
+        '<div class="dim">Labels</div><ul class="cd-ll">' + (S.labels || []).map(function (l) {
+          return '<li><button type="button" class="lb' + (on[l.id] ? ' on' : '') + '" data-lb="' + esc(l.id) + '" style="background:var(--swatch-' + l.swatch + ');color:var(--swatch-' + l.swatch + '-ink)">' + esc(l.name) + '</button>' +
+            '<button type="button" class="btn ghost" data-lbr="' + esc(l.id) + '">Rename</button>' +
+            '<button type="button" class="btn ghost" data-lbd="' + esc(l.id) + '" aria-label="Delete label ' + esc(l.name) + '">' + ICON.x + '</button></li>';
+        }).join('') + '</ul>' +
+        '<form class="row" id="cd-lb"><input type="text" id="cd-lbn" maxlength="40" placeholder="New label" aria-label="New label name">' +
+        '<span class="sws">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) {
+          return '<button type="button" class="sw' + (n === swPick ? ' on' : '') + '" data-sw="' + n + '" style="background:var(--swatch-' + n + ')" aria-label="Color ' + n + '"></button>';
+        }).join('') + '</span><button class="btn">Add</button></form>' +
+        '<label for="cd-note">Note</label><textarea id="cd-note" rows="3">' + esc(it.note || '') + '</textarea>' +
+        '<div class="cd-cks"><div class="dim">Checklist</div><ul>' + checks.map(function (c) {
+          return '<li><label><input type="checkbox" data-ck="' + esc(c.id) + '"' + (c.done ? ' checked' : '') + '> ' + esc(c.text) + '</label>' +
+            '<button type="button" class="btn ghost" data-ckdel="' + esc(c.id) + '" aria-label="Remove checklist item">' + ICON.x + '</button></li>';
+        }).join('') + '</ul>' +
+        '<form class="row" id="cd-ck"><input type="text" id="cd-ckn" maxlength="200" placeholder="Add a checklist item" aria-label="New checklist item"><button class="btn">Add</button></form></div></div>';
+    }
+    var it0 = cur(); if (!it0) return;
+    var d = dialog(it0.title, draw(), '<button class="btn" type="button" id="cd-done">' + (it0.col === 'done' ? 'Mark not done' : 'Mark done') + '</button><span class="r"><button class="btn primary" data-close>Done</button></span>');
+    function refresh() { saveNote(); $('.dlg-b', d).innerHTML = draw(); bind(); renderBoard(); }
+    function bind() {
+      $$('.sw', d).forEach(function (b) { b.onclick = function () { swPick = +b.dataset.sw; $$('.sw', d).forEach(function (x) { x.classList.toggle('on', +x.dataset.sw === swPick); }); }; });
+      $$('[data-lb]', d).forEach(function (b) { b.onclick = function () {
+        var it = cur(); if (!it) return;
+        var labs = (it.labels || []).slice();
+        var i = labs.indexOf(b.dataset.lb);
+        if (i >= 0) labs.splice(i, 1); else labs.push(b.dataset.lb);
+        writeCardField(it, 'labels', labs);
+        save(); refresh();
+      }; });
+      $$('[data-lbr]', d).forEach(function (b) { b.onclick = function () {
+        var l = null; (S.labels || []).forEach(function (x) { if (x.id === b.dataset.lbr) l = x; });
+        if (!l) return;
+        var name = prompt('Label name', l.name);
+        if (name == null) return;
+        var res = wedge.renameLabel(S.labels, l.id, name);
+        if (!res.ok) { toast('A label needs a name.'); return; }
+        S.labels = res.labels; save(); refresh();
+      }; });
+      $$('[data-lbd]', d).forEach(function (b) { b.onclick = function () {
+        var l = null; (S.labels || []).forEach(function (x) { if (x.id === b.dataset.lbd) l = x; });
+        if (!l || !confirm('Delete label "' + l.name + '"?')) return;
+        S.labels = wedge.deleteLabel(S.labels, l.id);
+        stripLabel(l.id); save(); refresh();
+      }; });
+      var lf = $('#cd-lb', d);
+      if (lf) lf.onsubmit = function (e) {
+        e.preventDefault();
+        var res = wedge.addLabel(S.labels, $('#cd-lbn', d).value, swPick);
+        if (!res.ok) { toast(res.error === 'full' ? '8 labels is the limit.' : 'Name the label first.'); return; }
+        S.labels = res.labels;
+        var it = cur();
+        if (it) { var labs = (it.labels || []).slice(); labs.push(res.id); writeCardField(it, 'labels', labs); }
+        save(); refresh();
+      };
+      $$('[data-ck]', d).forEach(function (box) { box.onchange = function () {
+        var it = cur(); if (!it) return;
+        var checks = wedge.sanitizeChecks(it.checks).map(function (c) { if (c.id === box.dataset.ck) c.done = box.checked; return c; });
+        writeCardField(it, 'checks', checks); save(); renderBoard();
+      }; });
+      $$('[data-ckdel]', d).forEach(function (b) { b.onclick = function () {
+        var it = cur(); if (!it) return;
+        writeCardField(it, 'checks', wedge.sanitizeChecks(it.checks).filter(function (c) { return c.id !== b.dataset.ckdel; }));
+        save(); refresh();
+      }; });
+      var cf = $('#cd-ck', d);
+      if (cf) cf.onsubmit = function (e) {
+        e.preventDefault();
+        var text = $('#cd-ckn', d).value.trim(); if (!text) return;
+        var it = cur(); if (!it) return;
+        var checks = wedge.sanitizeChecks(it.checks).concat([{ id: 'k' + rid(), text: text, done: false }]);
+        writeCardField(it, 'checks', wedge.sanitizeChecks(checks));
+        save(); refresh();
+      };
+    }
+    bind();
+    $('#cd-done', d).onclick = function () {
+      saveNote();
+      var it = cur(); if (!it) return;
+      setStatus(id, it.col === 'done' ? 'todo' : 'done', true);
+      var now = cur();
+      this.textContent = now && now.col === 'done' ? 'Mark not done' : 'Mark done';
+    };
+    d.addEventListener('close', function () { saveNote(); renderBoard(); });
+  }
+
   // ---------- import ----------
   function importPanel(first) {
     var canLink = MODE === 'web' || !!CFG.proxy;
     return '<div class="imp">' +
-      '<form id="imp-form" novalidate><label class="imp-l" for="imp-url">Paste your Schoology calendar link</label>' +
-      '<div class="row"><input type="url" id="imp-url" placeholder="Paste the link from Schoology here" value="' + esc(S.feedUrl || '') + '"' + (canLink ? '' : ' disabled') + ' autocomplete="off" spellcheck="false">' +
+      '<form id="imp-form" novalidate><label class="imp-l" for="imp-url">Calendar link</label>' +
+      '<div class="row"><input type="url" id="imp-url" placeholder="Paste a calendar link" value="' + esc(S.feedUrl || '') + '"' + (canLink ? '' : ' disabled') + ' autocomplete="off" spellcheck="false">' +
       '<button class="btn primary" id="imp-go"' + (canLink ? '' : ' disabled') + '>' + (hasBoard() ? 'Update my board' : 'Build my board') + '</button></div>' +
       '<label class="remember"><input type="checkbox" id="imp-remember"' + (S.feedUrl || first ? ' checked' : '') + '> Remember the link on this device so the board keeps itself up to date</label>' +
       '<div class="err" id="imp-err" role="alert"></div>' +
-      (MODE === 'offline' ? '<p class="hint">Needs internet: the link is opened through ' + esc(CFG.home || 'the website') + '. Offline, drop a calendar file (.ics) instead.</p>' : '') +
-      '<details class="how"' + (first ? ' open' : '') + '><summary>Where do I find this link?</summary><ol class="how-steps">' +
+      (MODE === 'offline' ? '<p class="hint">Needs internet: the link is opened through ' + esc(CFG.home || 'the website') + '. Offline, drop a calendar file (.ics) or a to-do list instead.</p>' : '') +
+      '<details class="how"' + (first ? ' open' : '') + '><summary>Schoology</summary><ol class="how-steps">' +
       '<li>In Schoology, open <b>Calendar</b>.</li>' +
       '<li>At the bottom of the month grid, click <b>Export</b>, then <b>Share Calendar</b>.</li>' +
       '<li>Copy the link in that box (Schoology labels it \u201ciCal\u201d) and paste it above.</li></ol>' +
-      '<p class="small dim">Some schools turn calendar sharing off. Treat the link like a password.</p></details></form>' +
+      '<p class="small dim">Some schools turn calendar sharing off. Treat the link like a password.</p></details>' +
+      '<details class="how"><summary>Google Calendar</summary><ol class="how-steps">' +
+      '<li>Open Google Calendar and choose the calendar.</li>' +
+      '<li>Open <b>Settings for that calendar</b>, then <b>Integrate calendar</b>.</li>' +
+      '<li>Copy the secret address and paste it above.</li></ol></details>' +
+      '<details class="how"><summary>Outlook</summary><ol class="how-steps">' +
+      '<li>Open the calendar in Outlook on the web.</li>' +
+      '<li>Go to <b>Settings</b>, then <b>Shared calendars</b>.</li>' +
+      '<li>Copy the secret address and paste it above.</li></ol></details>' +
+      '<details class="how"><summary>iCloud</summary><ol class="how-steps">' +
+      '<li>Open the calendar on iCloud.</li>' +
+      '<li>Share it as a public calendar.</li>' +
+      '<li>Copy the address and paste it above.</li></ol></details></form>' +
       '<div class="or">or</div>' +
-      '<label class="drop" id="imp-drop" tabindex="0"><input type="file" id="imp-file" class="sr" tabindex="-1" multiple accept=".ics,.ical,.ifb,.pdf,text/calendar,application/pdf">' +
-      '<span class="drop-ic">' + BIG_UPLOAD + '</span><span class="drop-t">Drop a Schoology calendar file (.ics) or Course Assignment Sheet (CAS) PDFs</span>' +
+      '<label class="drop" id="imp-drop" tabindex="0"><input type="file" id="imp-file" class="sr" tabindex="-1" multiple accept=".ics,.ical,.ifb,.pdf,.txt,.md,.markdown,text/calendar,application/pdf,text/plain,text/markdown">' +
+      '<span class="drop-ic">' + BIG_UPLOAD + '</span><span class="drop-t">Drop any calendar file (.ics), a to-do list (.txt or .md), or a Course Assignment Sheet (CAS) PDF</span>' +
       '<span class="drop-s">or click to choose files \u00b7 PDFs are read here in your browser, never uploaded</span></label>' +
-      '<div class="err" id="imp-ferr" role="alert"></div></div>';
+      '<div class="err" id="imp-ferr" role="alert"></div>' +
+      '<form id="imp-todo-form" class="todo-imp"><label class="imp-l" for="imp-todos">To-do list</label>' +
+      '<textarea id="imp-todos" rows="4" placeholder="One task per line"></textarea>' +
+      '<button class="btn" id="imp-todo-go" type="submit">Add these tasks</button>' +
+      '<div class="err" id="imp-terr" role="alert"></div></form></div>';
   }
   function bindImport(root, onDone) {
     $('#imp-form', root).onsubmit = function (e) {
       e.preventDefault();
       var url = $('#imp-url', root).value.trim();
-      if (!url) { $('#imp-err', root).textContent = 'Paste your Schoology calendar link first.'; $('#imp-url', root).focus(); return; }
+      if (!url) { $('#imp-err', root).textContent = 'Paste a calendar link first.'; $('#imp-url', root).focus(); return; }
       importLink(url, $('#imp-remember', root).checked, root, onDone);
+    };
+    var todoForm = $('#imp-todo-form', root);
+    if (todoForm) todoForm.onsubmit = function (e) {
+      e.preventDefault();
+      var errEl = $('#imp-terr', root);
+      var text = $('#imp-todos', root).value;
+      if (!text.trim()) { if (errEl) errEl.textContent = 'Paste a to-do list first.'; return; }
+      try { applyTodos(wedge.parseTodos(text)); if (onDone) onDone(); }
+      catch (ex) { if (errEl) errEl.textContent = (ex && ex.message) || 'No tasks found. Put one task on each line.'; }
     };
     var drop = $('#imp-drop', root), file = $('#imp-file', root);
     file.onchange = function () { var fs = Array.prototype.slice.call(file.files); file.value = ''; importFiles(fs, root, onDone); };
     drop.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); file.click(); } };
     ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
     ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
-    drop.addEventListener('drop', function (e) { importFiles(Array.prototype.slice.call(e.dataTransfer.files), root, onDone); });
+    drop.addEventListener('drop', function (e) {
+      var fs = Array.prototype.slice.call((e.dataTransfer && e.dataTransfer.files) || []);
+      if (fs.length) { importFiles(fs, root, onDone); return; }
+      var text = e.dataTransfer ? e.dataTransfer.getData('text/plain') : '';
+      if (!String(text || '').trim()) return;
+      var errEl = $('#imp-terr', root) || $('#imp-ferr', root);
+      try {
+        if (/^\s*(\uFEFF)?BEGIN:VCALENDAR/i.test(String(text).slice(0, 2048))) applyIcs(text, 'file');
+        else applyTodos(wedge.parseTodos(text));
+        if (onDone) onDone();
+      } catch (ex) { if (errEl) errEl.textContent = (ex && ex.message) || 'Could not read that list.'; }
+    });
   }
   function openImport() {
     var d = dialog('Import tasks', importPanel(false), '');
@@ -1978,7 +2260,7 @@
     var two = !!CFG.preview;
     app.innerHTML = '<div class="hero' + (two ? ' two' : '') + '"><div class="hero-l">' +
       '<h2>Know what to do tonight without opening Schoology.</h2>' +
-      '<p class="lead">Paste your Schoology calendar link and get tonight\u2019s plan: what to do first, how long it takes, and when you\u2019ll be done. Everything stays in your browser.</p>' +
+      '<p class="lead">Paste a calendar link, drop a calendar file, or paste a to-do list. Get tonight\u2019s plan: what to do first, how long it takes, and when you\u2019ll be done. Everything stays in your browser.</p>' +
       (CFG.sampleUrl ? '<button class="btn" id="imp-sample">See a sample plan ' + ICON.arrow + '</button>' : '') +
       importPanel(true) + '</div>' +
       (two ? '<div class="hero-r" aria-hidden="true"><img src="' + esc(CFG.preview) + '" alt="" width="1200" height="750" decoding="async"></div>' : '') +
@@ -2001,12 +2283,16 @@
   var syncing = false;
   // A stalled connection gives up after 20 s (the relay itself gives Schoology 12 s), so "Syncing…" never hangs.
   var RELAY_TIMEOUT_MS = 20000;
-  var MSG_UNREACHABLE = 'Couldn\u2019t reach Schoology. Check your connection and try again.';
+  function reachCopy(url, timedOut) {
+    var cal = wedge.hostKind(url) === 'calendar';
+    if (timedOut) return cal ? 'Couldn\u2019t reach your calendar. It took too long to answer. Try again.' : 'Couldn\u2019t reach Schoology. It took too long to answer. Try again.';
+    return cal ? 'Couldn\u2019t reach your calendar. Check your connection and try again.' : 'Couldn\u2019t reach Schoology. Check your connection and try again.';
+  }
   function relayFetch(url) {
     var proxy = MODE === 'web' ? (CFG.proxy || '/api/feed') : CFG.proxy;
     var ctl = typeof AbortController === 'function' ? new AbortController() : null, timedOut = false;
     var timer = setTimeout(function () { timedOut = true; if (ctl) ctl.abort(); }, RELAY_TIMEOUT_MS);
-    var unreachable = function () { var e = new Error(timedOut ? 'Couldn\u2019t reach Schoology. It took too long to answer. Try again.' : MSG_UNREACHABLE); e.retry = true; return e; };
+    var unreachable = function () { var e = new Error(reachCopy(url, timedOut)); e.retry = true; return e; };
     return fetch(proxy, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }), cache: 'no-store', signal: ctl ? ctl.signal : undefined })
       .then(function (r) {
         if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { var e = new Error(j.error || ('Couldn\u2019t get the calendar (error ' + r.status + '). Try again.')); e.retry = r.status >= 500; throw e; });
@@ -2031,7 +2317,7 @@
         maybeNaming();
       })
       .catch(function (e) {
-        var msg = e && e.message && !/Failed to fetch|NetworkError|Load failed/i.test(e.message) ? e.message : MSG_UNREACHABLE;
+        var msg = e && e.message && !/Failed to fetch|NetworkError|Load failed/i.test(e.message) ? e.message : reachCopy(url, false);
         if (!errEl) return toastErr(msg);
         errEl.textContent = msg;
         if (e && e.retry) {
@@ -2055,10 +2341,10 @@
       .then(function (buf) { if (S.feedUrl !== url) return; applyIcs(ics.decodeBytes(buf), 'refresh', { quiet: true }); S.lastFetch = { at: Date.now(), ok: true }; BG.fails = 0; BG.next = 0; save(); })
       .catch(function (e) {
         BG.fails++; BG.next = Date.now() + Math.min(60, Math.pow(2, BG.fails - 1)) * 60000;
-        // Network trouble and timeouts read "Couldn't reach Schoology"; when Schoology did answer (link reset, not a calendar), say why.
+        // Network trouble and timeouts stay generic. When the site did answer (link reset, not a calendar), say why.
         var why = e && !e.retry && e.message ? e.message : '';
         S.lastFetch = { at: (S.lastFetch && S.lastFetch.at) || null, ok: false, failedAt: Date.now() }; if (why) S.lastFetch.why = why; save();
-        if (manual) toastErr(why || 'Still couldn\u2019t reach Schoology. Your check-offs still save on this device.');
+        if (manual) toastErr(why || (wedge.hostKind(url) === 'calendar' ? 'Still couldn\u2019t reach your calendar. Your check-offs still save on this device.' : 'Still couldn\u2019t reach Schoology. Your check-offs still save on this device.'));
       })
       .then(function () { syncing = false; if (wasLoading && S.prefs.tab !== 'board') renderBoard(); else renderSync(); });
   }
@@ -2129,8 +2415,12 @@
       f: feed, c: S.createdAt, pc: S.proctorCol ? 1 : 0, st: remap(S.status), ov: remap(S.ov), hd: remap(S.hidden),
       cu: S.custom, ca: S.cats, or: S.order, rn: S.rename, ru: S.rules, cm: S.classMap, cas: S.cas,
       es: remap(S.est), ty: remap(S.ttype), ac: remap(S.actual), sd: remapDay(S.sdone), pu: remap(S.pulled), ok: remap(S.checked), co: S.colors, ka: S.colorAuto,
-      pr: prune({ hp: S.prefs.hidePast ? 1 : 0, sp: S.prefs.showPre ? 1 : 0, th: S.prefs.theme !== 'sticker' ? S.prefs.theme : '', md: S.prefs.mode || '' })
+      pr: prune({ hp: S.prefs.hidePast ? 1 : 0, sp: S.prefs.showPre ? 1 : 0, th: S.prefs.theme !== 'sticker' ? S.prefs.theme : '', md: S.prefs.mode || '', lf: S.prefs.label || '' })
     });
+    var cols = wedge.columnsForMove(S.columns);
+    if (cols) p.cols = cols;
+    var lbs = wedge.sanitizeLabels(S.labels);
+    if (lbs.length) p.lb = lbs;
     if (S.pending) MOVE_MAPS.map(function (x) { return x[0]; }).forEach(function (k) { if (S.pending[k]) p[k] = Object.assign({}, S.pending[k], p[k] || {}); });
     if (!feed) { // no link to refetch from: send the events still in play, minimal fields only
       p.ev = Object.keys(S.ics).filter(function (id) {
@@ -2169,9 +2459,9 @@
         (fits ? '<div class="mv-qr"><canvas id="mv-qr" role="img" aria-label="QR code with the move link"></canvas></div>' : '') +
         '<div class="mv-link"><input type="text" id="mv-url" readonly value="' + esc(url) + '" aria-label="Move link"><button class="btn" id="mv-copy">Copy link</button>' +
         (navigator.share ? '<button class="btn" id="mv-share">Share link</button>' : '') + '</div>' +
-        '<p class="mv-note">' + ICON.lock + '<span>' + (p.f ? 'The link includes your Schoology calendar link, so treat it like a password. ' : 'The link contains your board, so only send it to yourself. ') +
+        '<p class="mv-note">' + ICON.lock + '<span>' + (p.f ? 'The link includes your calendar link, so treat it like a password. ' : 'The link contains your board, so only send it to yourself. ') +
         'Everything sits after the \u201c#\u201d, which your browser never sends to any server. Nothing is uploaded.' +
-        (p.f ? '' : ' Your phone won\u2019t update from Schoology until you paste your Schoology calendar link there.') + '</span></p>';
+        (p.f ? '' : ' Your phone won\u2019t update on its own until you paste a calendar link there.') + '</span></p>';
       var d = dialog(sheetMode() ? 'Send this board to another device' : 'Move this board to your phone', body, '<span class="r"><button class="btn primary" data-close>Done</button></span>');
       d.classList.add('move');
       if (fits && !drawQr($('#mv-qr', d), url)) { var w = $('.mv-qr', d); if (w) w.remove(); }
@@ -2200,6 +2490,9 @@
     st.classMap = p.cm || {}; st.cas = p.cas || {}; st.proctorCol = !!p.pc; st.createdAt = p.c || null; st.feedUrl = p.f || '';
     st.prefs = { hidePast: !!(p.pr && p.pr.hp), showPre: !!(p.pr && p.pr.sp), theme: (p.pr && p.pr.th) || 'sticker', mode: (p.pr && p.pr.md) || '' };
     st.colors = p.co || {}; st.colorAuto = p.ka || {};
+    if (p.cols) st.columns = p.cols;
+    if (p.lb) st.labels = p.lb;
+    if (p.pr && p.pr.lf) st.prefs.label = p.pr.lf;
     return st;
   }
   function resolvePending() {
@@ -2238,6 +2531,8 @@
       cur.proctorCol = !!(cur.proctorCol || inc.proctorCol);
       if (inc.feedUrl && MODE === 'web') cur.feedUrl = inc.feedUrl;
       if (inc.pending) { cur.pending = cur.pending || {}; Object.keys(inc.pending).forEach(function (k) { cur.pending[k] = Object.assign({}, cur.pending[k], inc.pending[k]); }); }
+      if (inc.columns) cur.columns = wedge.mergeColumns(cur.columns, inc.columns);
+      if (inc.labels) cur.labels = wedge.mergeLabels(cur.labels, inc.labels);
       S = normalizeState(cur);
     }
     if (MODE !== 'web') S.feedUrl = '';
@@ -2295,8 +2590,8 @@
       if (el) data = JSON.parse(el.textContent);
     }
     if (data && data.state && typeof data.state === 'object') data = data.state;
-    if (!data || typeof data !== 'object' || !(data.ics || data.custom || data.status || data.cas)) throw new Error('That file isn\u2019t a Schoology Board backup.');
-    delete data.boardId; delete data.seenExport;
+    if (!data || typeof data !== 'object' || !(data.ics || data.custom || data.status || data.cas || data.columns)) throw new Error('That file isn\u2019t a Schoology Board backup.');
+    delete data.boardId; delete data.seenExport; delete data.feedUrl;
     return data;
   }
   function pickBackup() {
@@ -2401,6 +2696,24 @@
     renderBoard();
     if (!(opts && opts.quiet)) toast('Imported ' + items.length + ' calendar item' + (items.length === 1 ? '' : 's') + (Object.keys(before).length ? ' (' + fresh + ' new)' : '') + '.');
   }
+  function applyTodos(tasks) {
+    tasks = tasks || [];
+    if (!tasks.length) throw new Error('No tasks found. Put one task on each line.');
+    markCreated();
+    tasks.forEach(function (t) {
+      var id = 'custom-' + rid();
+      var rec = { id: id, source: 'custom', title: t.title, course: UNSORTED, url: null, note: '', created: Date.now() };
+      if (t.due) { rec.due = t.due + 'T23:59'; rec.allDay = true; }
+      else { rec.due = ''; rec.allDay = true; rec.undated = true; }
+      S.custom[id] = rec;
+      if (t.done) S.status[id] = 'done';
+    });
+    S.lastImport = { at: Date.now(), source: 'todo', count: tasks.length };
+    save();
+    if (!$('#sb-main')) renderShell();
+    renderBoard();
+    toast('Added ' + tasks.length + ' task' + (tasks.length === 1 ? '' : 's') + '.');
+  }
 
   function readFile(f, asText) {
     return new Promise(function (res, rej) {
@@ -2411,11 +2724,19 @@
   function importFiles(files, root, onDone) {
     var errEl = root ? $('#imp-ferr', root) : null;
     if (errEl) errEl.textContent = '';
-    var icsFiles = files.filter(function (f) { return /\.(ics|ical|ifb)$/i.test(f.name) || /calendar/.test(f.type); });
+    var icsFiles = files.filter(function (f) { return /\.(ics|ical|ifb)$/i.test(f.name) || (/calendar/.test(f.type || '') && !/\.(txt|md|markdown|pdf)$/i.test(f.name)); });
     var pdfs = files.filter(function (f) { return /\.pdf$/i.test(f.name) || f.type === 'application/pdf'; });
-    if (!icsFiles.length && !pdfs.length) { if (errEl) errEl.textContent = 'Use a calendar file from Schoology (it ends in .ics) or a Course Assignment Sheet PDF.'; return; }
+    var todoFiles = files.filter(function (f) { return icsFiles.indexOf(f) < 0 && pdfs.indexOf(f) < 0 && (/\.(txt|md|markdown)$/i.test(f.name) || f.type === 'text/plain' || f.type === 'text/markdown'); });
+    if (!icsFiles.length && !pdfs.length && !todoFiles.length) { if (errEl) errEl.textContent = 'Use a calendar file (.ics), a to-do list (.txt or .md), or a Course Assignment Sheet PDF.'; return; }
     var chain = Promise.resolve();
+    var wantNaming = !!icsFiles.length;
     icsFiles.forEach(function (f) { chain = chain.then(function () { return readFile(f); }).then(function (b) { applyIcs(ics.decodeBytes(b), 'file'); }); });
+    todoFiles.forEach(function (f) {
+      chain = chain.then(function () { return readFile(f, true); }).then(function (text) {
+        if (/^\s*(\uFEFF)?BEGIN:VCALENDAR/i.test(String(text).slice(0, 2048))) { wantNaming = true; applyIcs(text, 'file'); }
+        else applyTodos(wedge.parseTodos(text));
+      });
+    });
     if (pdfs.length) {
       chain = chain.then(function () {
         if (errEl) errEl.innerHTML = '<span class="loadmsg"><span class="spinner"></span> Reading ' + pdfs.length + ' PDF' + (pdfs.length > 1 ? 's' : '') + '\u2026</span>';
@@ -2425,7 +2746,7 @@
         if (onDone) onDone();
         openCasPreview(results);
       });
-    } else chain = chain.then(function () { if (onDone) onDone(); if (icsFiles.length) maybeNaming(); });
+    } else chain = chain.then(function () { if (onDone) onDone(); if (wantNaming) maybeNaming(); });
     chain.catch(function (e) { var m = (e && e.message) || 'Could not read that file.'; if (errEl) errEl.textContent = m; else toastErr(m); });
   }
 
@@ -2608,6 +2929,7 @@
       getSrc('ics.js', 'sb-src-ics').then(function (t) { files.ics = t; }),
       getSrc('cas.js', 'sb-src-cas').then(function (t) { files.cas = t; }),
       getSrc('plan.js', 'sb-src-plan').then(function (t) { files.plan = t; }),
+      getSrc('wedge.js', 'sb-src-wedge').then(function (t) { files.wedge = t; }),
       getSrc('board.js', 'sb-src-board').then(function (t) { files.board = t; }),
       getSrc('vendor/qrcode.js', 'sb-src-qr').then(function (t) { files.qr = t; }, function () { }),
       getSrc('vendor/pdf.min.mjs', 'sb-pdfjs').then(function (t) { files.pdf = t; }, function () { }),
@@ -2634,6 +2956,7 @@
         '<script id="sb-src-ics">' + scriptSafe(files.ics) + '</script>\n' +
         '<script id="sb-src-cas">' + scriptSafe(files.cas) + '</script>\n' +
         '<script id="sb-src-plan">' + scriptSafe(files.plan) + '</script>\n' +
+        '<script id="sb-src-wedge">' + scriptSafe(files.wedge) + '</script>\n' +
         '<script id="sb-src-board">' + scriptSafe(files.board) + '</script>\n</body></html>\n';
     });
   }
