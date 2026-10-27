@@ -2067,7 +2067,18 @@
         save(); refresh();
       };
     }
-    function refresh() { $('.dlg-b', d).innerHTML = draw(); bind(); renderBoard(); }
+    function refresh() {
+      // Wait until the rename field's change/blur finishes. Rewriting the dialog during that event
+      // detaches the field the browser is still updating.
+      setTimeout(function () {
+        if (!d.open) return;
+        var body = $('.dlg-b', d);
+        if (!body) return;
+        body.innerHTML = draw();
+        bind();
+        renderBoard();
+      }, 0);
+    }
     bind();
   }
   function stripLabel(id) {
