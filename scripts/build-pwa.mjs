@@ -24,7 +24,7 @@ writeFileSync(new URL('manifest.webmanifest', root), JSON.stringify(manifest, nu
 // Every theme's CSS is tiny, so all seven are in the shell; only the default theme's fonts are. Other fonts are kept after first use.
 const THEMES = ['sticker', 'arcade', 'notebook', 'varsity', 'riso', 'cafe', 'minimal', 'nocturne'];
 const SHELL = ['/', '/board/theme/default.css', '/board/tonight.css', '/board/board.css', ...THEMES.map((n) => `/board/theme/${n}.css`),
-  '/board/theme/fonts/Fredoka.woff2', '/board/theme/fonts/Nunito.woff2', '/board/vendor/qrcode.js', '/board/ics.js', '/board/cas.js', '/board/plan.js', '/board/board.js',
+  '/board/theme/fonts/Fredoka.woff2', '/board/theme/fonts/Nunito.woff2', '/board/vendor/qrcode.js', '/board/ics.js', '/board/cas.js', '/board/plan.js', '/board/wedge.js', '/board/board.js',
   '/favicon.svg', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/apple-touch-icon.png'];
 const h = createHash('sha256');
 for (const f of SHELL) { const p = new URL('.' + (f === '/' ? '/index.html' : f), root); if (existsSync(p)) h.update(readFileSync(p)); }

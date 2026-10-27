@@ -264,7 +264,7 @@ if (LIVE_LINK) {
   await lp.fill('#imp-url', BASE.replace(/^https:/, 'webcal:') + '/sample/schoology-sample.ics');
   await lp.click('#imp-go');
   await lp.waitForFunction(() => /\S/.test(document.querySelector('#imp-err').textContent), null, { timeout: 20000 });
-  ok('paste-a-link: a non-Schoology webcal:// link is refused by the serverless relay with a plain message', /That link isn’t from Schoology/.test(await lp.locator('#imp-err').innerText()), await lp.locator('#imp-err').innerText());
+  ok('paste-a-link: a non-allowlisted webcal:// link is refused by the serverless relay with a plain message', /isn’t supported/.test(await lp.locator('#imp-err').innerText()), await lp.locator('#imp-err').innerText());
   const bad = await lp.evaluate(async () => (await fetch('/api/feed', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://example.com/' }) })).status);
   ok('proxy refuses non-Schoology hosts', bad === 400, `status ${bad}`);
   await lctx.close();
@@ -1642,13 +1642,13 @@ await octx.close();
     await c.close();
     // a non-Schoology link goes to the real relay (local or live) and gets a clear answer
     const c3 = await newCtx({ now: VNOW }); const p3 = await c3.newPage(); watch(p3, 'v111-host');
-    await p3.goto(BASE + '/'); await p3.fill('#imp-url', 'https://calendar.google.com/calendar/ical/someone%40example.com/public/basic.ics'); await p3.click('#imp-go');
+    await p3.goto(BASE + '/'); await p3.fill('#imp-url', 'https://evil.example/calendar.ics'); await p3.click('#imp-go');
     await p3.waitForFunction(() => /\S/.test(document.querySelector('#imp-err').textContent), null, { timeout: 15000 });
     const em = await p3.locator('#imp-err').innerText();
-    ok('pasting a non-Schoology link says so plainly and how to find the right one', /That link isn’t from Schoology/.test(em) && /Export/.test(em) && /Share Calendar/.test(em) && !(await state(p3)).feedUrl && await p3.locator('#imp-retry').count() === 0, em);
+    ok('pasting a non-allowlisted link says so plainly and names the calendars that work', /isn’t supported/.test(em) && /Google Calendar/.test(em) && /Export/.test(em) && /Share Calendar/.test(em) && !(await state(p3)).feedUrl && await p3.locator('#imp-retry').count() === 0, em);
     const rel = await p3.evaluate(async () => { const go = async (url) => { const r = await fetch('/api/feed', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }) }); return [r.status, (await r.json().catch(() => ({}))).error || '']; };
       return { ex: await go('https://example.com/'), meta: await go('http://169.254.169.254/latest/meta-data/'), loop: await go('https://127.0.0.1/'), look: await go('https://schoology.com.example.net/a.ics'), port: await go('https://app.schoology.com:8443/a.ics'), junk: await go('hello') }; });
-    ok('relay: other sites, metadata and loopback addresses, look-alike hosts, odd ports and junk are refused (400) with plain messages', ['ex', 'meta', 'loop', 'look'].every((k) => rel[k][0] === 400 && /isn’t from Schoology/.test(rel[k][1])) && rel.port[0] === 400 && /extra parts/.test(rel.port[1]) && rel.junk[0] === 400 && /doesn’t look like a link/.test(rel.junk[1]), JSON.stringify(Object.fromEntries(Object.entries(rel).map(([k, v]) => [k, v[0]]))));
+    ok('relay: other sites, metadata and loopback addresses, look-alike hosts, odd ports and junk are refused (400) with plain messages', ['ex', 'meta', 'loop', 'look'].every((k) => rel[k][0] === 400 && /isn’t supported/.test(rel[k][1])) && rel.port[0] === 400 && /extra parts/.test(rel.port[1]) && rel.junk[0] === 400 && /doesn’t look like a link/.test(rel.junk[1]), JSON.stringify(Object.fromEntries(Object.entries(rel).map(([k, v]) => [k, v[0]]))));
     if (LIVE_LINK) {
       const fake = await p3.evaluate(async () => { const r = await fetch('/api/feed', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'webcal://app.schoology.com/calendar/feed/ical/1700000000/0000000000000000000000000000000000000000/ical.ics' }) }); return [r.status, (await r.json().catch(() => ({}))).error || '']; });
       ok('live relay: a made-up Schoology link reaches Schoology, follows its sign-in redirect hop by hop, and explains it isn\'t a calendar', fake[0] === 422 && /asked for a sign-in/.test(fake[1]), JSON.stringify(fake));

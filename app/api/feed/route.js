@@ -1,7 +1,7 @@
-// Relays a Schoology iCal feed so the browser can read it (Schoology doesn't send
+// Relays an allowlisted calendar so the browser can read it (those hosts don't send
 // CORS headers). Privacy: nothing is stored, cached or logged. The URL arrives in
 // a POST body (so it never lands in request logs), is fetched once, and the
-// response is sent straight back. Only Schoology links are fetched; see guard.js.
+// response is sent straight back. Only allowlisted calendar links are fetched; see guard.js.
 import { relay } from './guard.js';
 
 export const runtime = 'nodejs';

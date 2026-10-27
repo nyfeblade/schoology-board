@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { hostAllowed, checkUrl, blockedIp, makeSafeLookup, relay, httpsGet, MSG } from '../app/api/feed/guard.js';
 
-test('host rule: schoology.com and its subdomains only', () => {
-  for (const h of ['schoology.com', 'app.schoology.com', 'lms.district.schoology.com', 'APP.SCHOOLOGY.COM']) assert.ok(hostAllowed(h), h);
-  for (const h of ['evilschoology.com', 'schoology.com.evil.example', 'schoology.co', 'example.com', 'app.schoology.com.', 'xschoology.com', '', 'schoology.com@evil.example', 'a..schoology.com'])
+test('host rule: Schoology subdomains plus known calendar hosts, nothing else', () => {
+  for (const h of ['schoology.com', 'app.schoology.com', 'lms.district.schoology.com', 'APP.SCHOOLOGY.COM', 'calendar.google.com', 'www.google.com', 'outlook.live.com', 'outlook.office365.com', 'outlook.office.com', 'calendar.icloud.com']) assert.ok(hostAllowed(h), h);
+  for (const h of ['evilschoology.com', 'schoology.com.evil.example', 'schoology.co', 'example.com', 'app.schoology.com.', 'xschoology.com', '', 'schoology.com@evil.example', 'a..schoology.com', 'google.com', 'www.icloud.com', 'icloud.com', 'evil.google.com', 'calendar.google.com.evil.example', 'localhost', 'evil.test'])
     assert.ok(!hostAllowed(h), h);
 });
 
@@ -16,10 +16,26 @@ test('pasted links: webcal/http become https; other sites, ports, user:pass and 
   assert.equal(checkUrl('http://app.schoology.com/a.ics').url.protocol, 'https:');
   assert.equal(checkUrl('  https://app.schoology.com./a.ics ').url.hostname, 'app.schoology.com');
   assert.equal(checkUrl('https://app.schoology.com:443/a.ics').url.port, '');
-  assert.equal(checkUrl('https://calendar.google.com/calendar/ical/x/basic.ics').error, MSG.notSchoology);
-  assert.equal(checkUrl('https://schoology.com.evil.example/a.ics').error, MSG.notSchoology);
-  assert.equal(checkUrl('https://169.254.169.254/latest/meta-data').error, MSG.notSchoology);
-  assert.equal(checkUrl('https://[::1]/a').error, MSG.notSchoology);
+  assert.equal(checkUrl('https://calendar.google.com/calendar/ical/x/basic.ics').url.href, 'https://calendar.google.com/calendar/ical/x/basic.ics');
+  assert.equal(checkUrl('https://www.google.com/calendar/ical/abc/public/basic.ics').url.hostname, 'www.google.com');
+  assert.equal(checkUrl('https://outlook.office365.com/owa/calendar/x.ics').url.hostname, 'outlook.office365.com');
+  assert.equal(checkUrl('https://outlook.live.com/calendar/published/x').url.hostname, 'outlook.live.com');
+  assert.equal(checkUrl('https://outlook.office.com/secret.ics').url.pathname, '/secret.ics');
+  assert.equal(checkUrl('https://calendar.icloud.com/published/2/abc').url.hostname, 'calendar.icloud.com');
+  assert.equal(checkUrl('webcal://calendar.google.com/calendar/ical/x/basic.ics').url.protocol, 'https:');
+  assert.equal(checkUrl('https://calendar.google.com/').error, MSG.notFeed);
+  assert.equal(checkUrl('https://www.google.com/search').error, MSG.notFeed);
+  assert.equal(checkUrl('https://outlook.office.com/mail/').error, MSG.notFeed);
+  assert.equal(checkUrl('https://calendar.icloud.com/').error, MSG.notFeed);
+  assert.equal(checkUrl('https://www.icloud.com/calendar/').error, MSG.notAllowed);
+  assert.equal(checkUrl('https://u:p@calendar.google.com/calendar/ical/x/basic.ics').error, MSG.oddLink);
+  assert.equal(checkUrl('https://calendar.google.com:8443/calendar/ical/x/basic.ics').error, MSG.oddLink);
+  assert.equal(checkUrl('https://schoology.com.evil.example/a.ics').error, MSG.notAllowed);
+  assert.equal(checkUrl('https://169.254.169.254/latest/meta-data').error, MSG.notAllowed);
+  assert.equal(checkUrl('https://[::1]/a').error, MSG.notAllowed);
+  assert.equal(checkUrl('https://evil.test/calendar.ics').error, MSG.notAllowed);
+  assert.match(MSG.notAllowed, /isn\u2019t supported/);
+  assert.match(MSG.notAllowed, /Google Calendar/);
   assert.equal(checkUrl('https://app.schoology.com:8443/a.ics').error, MSG.oddLink);
   assert.equal(checkUrl('https://u:p@app.schoology.com/a.ics').error, MSG.oddLink);
   assert.equal(checkUrl('ftp://app.schoology.com/a.ics').error, MSG.notLink);
@@ -27,11 +43,13 @@ test('pasted links: webcal/http become https; other sites, ports, user:pass and 
   assert.equal(checkUrl(undefined).error, MSG.notLink);
 });
 
-test('redirect hops: must stay https on Schoology (no downgrade, no other site)', () => {
+test('redirect hops: must stay https on an allowlisted calendar path (no downgrade, no other site)', () => {
   assert.ok(checkUrl('https://app.schoology.com/login?d=1', { hop: true }).url);
   assert.equal(checkUrl('http://app.schoology.com/a.ics', { hop: true }).error, MSG.offSite);
   assert.equal(checkUrl('https://evil.example/a.ics', { hop: true }).error, MSG.offSite);
   assert.equal(checkUrl('https://169.254.169.254/', { hop: true }).error, MSG.offSite);
+  assert.equal(checkUrl('https://calendar.google.com/', { hop: true }).error, MSG.offSite);
+  assert.ok(checkUrl('https://calendar.google.com/calendar/ical/x/basic.ics', { hop: true }).url);
 });
 
 test('non-public addresses are blocked (IPv4, IPv6 and IPv4 hidden inside IPv6)', () => {
@@ -98,7 +116,7 @@ test('relay: honest messages for not found, refused, sign-in pages, non-calendar
   assert.equal((await go({ 'https://app.schoology.com/a.ics': { status: 200, body: '<html>' } })).error, MSG.notCalendar);
   assert.equal((await go({ 'https://app.schoology.com/a.ics': { status: 503 } })).error, 'Schoology answered with an error (503). Try again later.');
   assert.equal((await relay('https://nowhere.schoology.com/a.ics', scripted({}, PUB))).error, MSG.dns);
-  assert.equal((await relay('https://example.com/', scripted({}, PUB))).error, MSG.notSchoology);
+  assert.equal((await relay('https://example.com/', scripted({}, PUB))).error, MSG.notAllowed);
   for (const m of Object.values(MSG)) { const t = typeof m === 'function' ? m(500) : m; assert.ok(!/does not exist|Schoology says/i.test(t), t); }
 });
 
@@ -107,6 +125,23 @@ test('relay: a stalled answer times out with a plain message', async () => {
   const keep = setInterval(() => {}, 50); // AbortSignal.timeout doesn't hold the event loop open by itself
   const r = await relay('https://app.schoology.com/a.ics', { get, resolve: fakeResolve(PUB), timeoutMs: 200 }); clearInterval(keep);
   assert.deepEqual(r, { status: 504, error: MSG.timeout });
+});
+
+test('relay: an allowlisted Google calendar is fetched; a private redirect is blocked before it is read', async () => {
+  const pub = { 'calendar.google.com': ['142.250.1.1'], 'calendar.icloud.com': ['10.1.2.3'] };
+  let n = scripted({ 'https://calendar.google.com/calendar/ical/x/basic.ics': { status: 200, body: CAL } }, pub);
+  const ok = await relay('https://calendar.google.com/calendar/ical/x/basic.ics', n);
+  assert.equal(ok.status, 200); assert.equal(ok.body.toString(), CAL);
+  n = scripted({ 'https://calendar.google.com/calendar/ical/x/basic.ics': { status: 302, headers: { location: 'https://calendar.icloud.com/published/secret.ics' } } }, pub);
+  const blocked = await relay('https://calendar.google.com/calendar/ical/x/basic.ics', n);
+  assert.deepEqual(blocked, { status: 400, error: MSG.blockedOther }); assert.equal(n.seen.length, 1);
+  n = scripted({ 'https://calendar.google.com/calendar/ical/x/basic.ics': { status: 302, headers: { location: 'https://evil.example/x.ics' } } }, { ...pub, 'evil.example': ['52.20.9.9'] });
+  assert.equal((await relay('https://calendar.google.com/calendar/ical/x/basic.ics', n)).error, MSG.offSite); assert.equal(n.seen.length, 1);
+  n = scripted({ 'https://calendar.google.com/calendar/ical/x/basic.ics': { status: 503 } }, pub);
+  const up = await relay('https://calendar.google.com/calendar/ical/x/basic.ics', n);
+  assert.equal(up.status, 502); assert.match(up.error, /error \(503\)/); assert.doesNotMatch(up.error, /Schoology/);
+  n = scripted({ 'https://app.schoology.com/a.ics': { status: 200, body: CAL + 'X'.repeat(80) } }, PUB);
+  assert.equal((await relay('https://app.schoology.com/a.ics', { ...n, maxBytes: 40 })).status, 413);
 });
 
 test('httpsGet uses the given lookup for the socket', async () => {
